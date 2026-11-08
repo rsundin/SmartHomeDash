@@ -1,0 +1,42 @@
+name: Validate
+
+on:
+  push:
+  pull_request:
+  schedule:
+    - cron: "0 3 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  hassfest:
+    name: Home Assistant (hassfest)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: home-assistant/actions/hassfest@master
+
+  hacs:
+    name: HACS
+    runs-on: ubuntu-latest
+    # HACS can only validate public repositories; advisory until this one is public.
+    continue-on-error: true
+    steps:
+      - uses: hacs/action@main
+        with:
+          category: integration
+          # While the repository is private, HACS cannot list it; these checks
+          # need a public repository with a description and topics.
+          ignore: brands description topics
+
+  frontend:
+    name: JavaScript syntax
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: for f in $(find custom_components/smarthomedash/frontend -name '*.js'); do node --check "$f"; done

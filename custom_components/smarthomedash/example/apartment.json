@@ -1,0 +1,192 @@
+{
+  "name": "Example apartment",
+  "language": "en",
+  "locale": "en-GB",
+  "currency": "SEK",
+  "comfort": {
+    "low": 19,
+    "high": 23
+  },
+  "floorplans": [
+    {
+      "id": "apartment",
+      "name": "Apartment",
+      "unit": "px",
+      "image": {
+        "src": "example_plan_apartment.webp",
+        "bounds": [
+          0,
+          0,
+          1024,
+          1024
+        ]
+      },
+      "outline": [[90, 90], [935, 90], [935, 830], [905, 830], [905, 960], [118, 960], [118, 830], [90, 830]],
+      "rooms": [
+        {
+          "id": "hall",
+          "name": "Hall",
+          "area": [[110, 115], [420, 115], [420, 350], [760, 350], [760, 470], [160, 470], [160, 375], [110, 375]],
+          "lights": [
+            {
+              "entity": "light.hall",
+              "name": "Ceiling light",
+              "at": [300, 260]
+            },
+            {
+              "entity": "light.corridor",
+              "name": "Corridor",
+              "at": [600, 410]
+            }
+          ]
+        },
+        {
+          "id": "living_room",
+          "name": "Living room",
+          "area": [[110, 375], [160, 375], [160, 470], [440, 470], [440, 775], [110, 775]],
+          "climate": "climate.living_room",
+          "lights": [
+            {
+              "entity": "light.living_room_ceiling",
+              "name": "Ceiling light",
+              "at": [330, 690]
+            },
+            {
+              "entity": "light.living_room_floor_lamp",
+              "name": "Floor lamp",
+              "at": [175, 740]
+            }
+          ]
+        },
+        {
+          "id": "kitchen",
+          "name": "Kitchen",
+          "area": [[440, 470], [670, 470], [670, 775], [440, 775]],
+          "lights": [
+            {
+              "entity": "light.kitchen_pendant",
+              "name": "Pendant",
+              "at": [520, 560]
+            },
+            {
+              "entity": "light.dining_table",
+              "name": "Dining table",
+              "at": [490, 720]
+            }
+          ]
+        },
+        {
+          "id": "office",
+          "name": "Office",
+          "area": [[430, 115], [665, 115], [665, 350], [430, 350]],
+          "climate": "climate.office",
+          "lights": [
+            {
+              "entity": "light.office",
+              "name": "Ceiling light",
+              "at": [545, 300]
+            }
+          ]
+        },
+        {
+          "id": "bathroom",
+          "name": "Bathroom",
+          "area": [[675, 115], [915, 115], [915, 465], [770, 465], [770, 350], [675, 350]],
+          "climate": "climate.bathroom_floor",
+          "lights": [
+            {
+              "entity": "light.bathroom_ceiling",
+              "name": "Ceiling light",
+              "at": [740, 300]
+            },
+            {
+              "entity": "light.bathroom_mirror",
+              "name": "Mirror light",
+              "at": [890, 170]
+            }
+          ]
+        },
+        {
+          "id": "bedroom",
+          "name": "Bedroom",
+          "area": [[675, 475], [915, 475], [915, 800], [675, 800]],
+          "climate": "climate.bedroom",
+          "lights": [
+            {
+              "entity": "light.bedroom",
+              "name": "Ceiling light",
+              "at": [730, 530]
+            },
+            {
+              "entity": "light.bedside",
+              "name": "Bedside lamp",
+              "at": [868, 560]
+            }
+          ]
+        },
+        {
+          "id": "balcony",
+          "name": "Balcony",
+          "area": [[118, 830], [905, 830], [905, 955], [118, 955]],
+          "temperature": "sensor.balcony_temperature",
+          "lights": [
+            {
+              "entity": "light.balcony_string",
+              "name": "String lights",
+              "at": [720, 900]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "energy": {
+    "grid_power": "sensor.grid_power",
+    "energy_today": "sensor.energy_today",
+    "cost_today": "sensor.energy_cost_today",
+    "price": {
+      "entity": "sensor.nordpool_kwh_se3_sek",
+      "today_attribute": "today"
+    }
+  },
+  "weather": "weather.home",
+  "scenes": [
+    {
+      "entity": "scene.evening",
+      "name": "Evening",
+      "mock": {
+        "on": [
+          "light.living_room_floor_lamp",
+          "light.kitchen_pendant",
+          "light.balcony_string",
+          "light.bedside"
+        ],
+        "off": "all"
+      }
+    },
+    {
+      "entity": "scene.away",
+      "name": "Away",
+      "mock": {
+        "on": [
+          "light.hall"
+        ],
+        "off": "all"
+      }
+    }
+  ],
+  "mock": {
+    "sun": {
+      "rise": "07:30",
+      "set": "16:00"
+    },
+    "lights_on": [
+      "light.living_room_floor_lamp",
+      "light.kitchen_pendant",
+      "light.dining_table",
+      "light.balcony_string",
+      "light.bedside",
+      "light.corridor"
+    ]
+  }
+}

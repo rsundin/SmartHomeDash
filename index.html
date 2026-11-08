@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="sv">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>SmartHomeDash</title>
+<!-- Add to home screen on iPad/Android: opens full screen like an app -->
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#0b1512">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Hemmet">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="icon" type="image/png" href="icon-192.png">
+</head>
+<!-- Default object when no ?site= is given. Change to your own site id. -->
+<body data-default-site="example-house">
+<div id="app"></div>
+<script>
+// Home Assistant serves /local/ files with a 31-day browser cache, so an updated
+// dashboard would keep running old code. Read the version from version.json
+// without the cache, then load every file with ?v=<version> so updates show at once.
+// When adding a JavaScript file, add it to MODULES.
+(function () {
+  var MODULES = ['custom_components/smarthomedash/frontend/js/main.js', 'custom_components/smarthomedash/frontend/js/util.js', 'custom_components/smarthomedash/frontend/js/store.js', 'custom_components/smarthomedash/frontend/js/site.js', 'custom_components/smarthomedash/frontend/js/entities.js', 'custom_components/smarthomedash/frontend/js/i18n.js', 'custom_components/smarthomedash/frontend/js/adapters/ha.js', 'custom_components/smarthomedash/frontend/js/adapters/mock.js', 'custom_components/smarthomedash/frontend/js/views/overview.js', 'custom_components/smarthomedash/frontend/js/views/floorplan.js', 'custom_components/smarthomedash/frontend/js/ui/panel.js', 'custom_components/smarthomedash/frontend/js/ui/cards.js', 'custom_components/smarthomedash/frontend/js/ui/settings.js', 'custom_components/smarthomedash/frontend/js/ui/editor.js', 'custom_components/smarthomedash/frontend/js/ui/setup.js'];
+  function boot(version) {
+    var q = '?v=' + encodeURIComponent(version);
+    window.SHD_VERSION = version;
+    var css = document.createElement('link');
+    css.rel = 'stylesheet';
+    css.href = 'custom_components/smarthomedash/frontend/css/style.css' + q;
+    document.head.appendChild(css);
+    var imports = {};
+    MODULES.forEach(function (m) { var u = new URL(m, location.href).href; imports[u] = u + q; });
+    var map = document.createElement('script');
+    map.type = 'importmap';
+    map.textContent = JSON.stringify({ imports: imports });
+    document.head.appendChild(map);
+    var main = document.createElement('script');
+    main.type = 'module';
+    main.src = 'custom_components/smarthomedash/frontend/js/main.js' + q;
+    document.body.appendChild(main);
+  }
+  fetch('version.json', { cache: 'no-store' })
+    .then(function (r) { return r.ok ? r.json() : {}; })
+    .then(function (j) { boot(j.version || String(Date.now())); })
+    .catch(function () { boot(String(Date.now())); });
+})();
+</script>
+</body>
+</html>

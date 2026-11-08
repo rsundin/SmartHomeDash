@@ -1,0 +1,15 @@
+# Changelog
+
+## 0.4.0
+
+First public version.
+
+- Sidebar panel behind the Home Assistant login; no access tokens
+- Set up from the UI: add a dashboard, choose house or apartment, then a setup guide for pictures, buildings, solar panels, windows, floor plans and rooms, energy and weather sensors, and buttons
+- Placement mode: tap where each light, switch, thermostat and temperature sensor is
+- Overview picture with live lamp light, lit windows and solar panels glowing while they produce; separate evening picture
+- Lift the roof to open a building's floor plan; rooms tinted by temperature, lamps switchable in place
+- Room panel with thermostat target, mode and presets, 24-hour temperature graph and dimmers
+- Cards for weather, power, energy, hourly electricity price, lights, scenes and scripts, and heating
+- Example house and apartment as starting points
+- Wall screen layout, evening dimming, Swedish and English

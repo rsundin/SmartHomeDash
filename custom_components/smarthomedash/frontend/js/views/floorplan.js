@@ -1,0 +1,109 @@
+// Floor plan: rooms drawn to scale from the site config (millimetres by default),
+// tinted by temperature, with a lamp for every light and a chip per room.
+
+import { el, sv, pts, centroid, bbox, press, fmt } from '../util.js';
+import { level, roomTemp, comfort, heating, climate } from '../entities.js';
+import { t } from '../i18n.js';
+
+const FLAME = 'M12 2c1 3.5-1.5 5-1.5 7.5A2.5 2.5 0 0 0 13 12c0-1 .5-2 1.5-2.5C16 12 18 13.5 18 16a6 6 0 0 1-12 0c0-4 3-6 6-14z';
+
+export function createFloorplan({ site, plan, store, adapter, onRoom }) {
+  const rooms = plan.rooms ?? [];
+  const outline = plan.outline ?? rooms.flatMap((r) => r.area);
+  const bb = bbox([outline, ...rooms.map((r) => r.area)]);
+  const pad = Math.max(bb.w, bb.h) * 0.06;
+  const unit = Math.max(bb.w, bb.h) / 42; // base type size in plan units
+  const wall = plan.wall ?? unit * 0.38;
+
+  const gradId = `lamp-${plan.id}`;
+  // Optional realistic top-down picture of the plan, placed under the rooms.
+  // bounds = [x, y, width, height] in plan units; defaults to the outline's box.
+  const picture = plan.image ? (typeof plan.image === 'string' ? { src: plan.image } : plan.image) : null;
+  const ob = bbox([outline]);
+  const [ix, iy, iw, ih] = picture?.bounds ?? [ob.x, ob.y, ob.w, ob.h];
+  const floor = sv('g', { class: 'fp-floor' },
+    sv('polygon', { class: 'fp-outline', points: pts(outline) }),
+    picture ? sv('image', { href: site.asset(picture.src), x: ix, y: iy, width: iw, height: ih, preserveAspectRatio: 'none', class: 'fp-picture' }) : null);
+  const fills = sv('g', { class: 'fp-fills' });
+  const glows = sv('g', { class: 'fp-glows' });
+  const walls = sv('g', { class: 'fp-walls' },
+    rooms.map((r) => sv('polygon', { class: 'fp-inner', points: pts(r.area), 'stroke-width': wall * 0.4 })),
+    sv('polygon', { class: 'fp-outer', points: pts(outline), 'stroke-width': wall }));
+  const labels = sv('g', { class: 'fp-labels' });
+  const lamps = sv('g', { class: 'fp-lamps' });
+
+  for (const room of rooms) {
+    const [cx, cy] = room.label ?? centroid(room.area);
+    const fill = sv('polygon', { class: 'fp-room', points: pts(room.area), tabindex: 0, role: 'button', 'aria-label': room.name });
+    fill.addEventListener('click', () => onRoom(room));
+    fill.addEventListener('keydown', (e) => { if (e.key === 'Enter') onRoom(room); });
+    fills.append(fill);
+
+    // Shrink the name to fit narrow rooms (cupboards, utility rooms).
+    const roomW = bbox([room.area]).w;
+    const nameSize = Math.min(unit * 0.95, (roomW * 0.8) / (room.name.length * 0.82));
+    const name = sv('text', { class: 'fp-name', x: cx, y: cy - unit * 0.35, 'font-size': nameSize, 'text-anchor': 'middle' }, room.name);
+    const tempText = sv('text', { class: 'fp-temp', x: cx, y: cy + unit * 1.15, 'font-size': unit * 1.25, 'text-anchor': 'middle' });
+    const flame = sv('path', { class: 'fp-flame', d: FLAME, transform: `translate(${cx - unit * 2.6} ${cy + unit * 0.05}) scale(${unit / 18})` });
+    const g = sv('g', { class: 'fp-label' }, name, tempText, flame);
+    labels.append(g);
+
+    const ids = [room.climate, room.temperature];
+    store.watch(ids, () => {
+      const temp = roomTemp(store, room);
+      const c = room.climate ? climate(store, room.climate) : null;
+      const state = comfort(store, room, site);
+      fill.setAttribute('data-comfort', state ?? 'none');
+      const cur = temp == null ? '' : `${fmt(temp, 1, site.locale)}°`;
+      const showTarget = temp != null && c?.target != null && c.mode !== 'off';
+      const tgt = showTarget ? ` /${fmt(c.target, Number.isInteger(c.target) ? 0 : 1, site.locale)}` : '';
+      tempText.replaceChildren(cur, tgt ? sv('tspan', { class: 'fp-target', 'font-size': unit * 0.8 }, tgt) : '');
+      const heat = heating(store, room);
+      const half = (cur.length * 0.6 + tgt.length * 0.4) * unit * 1.25 / 2;
+      flame.setAttribute('transform', `translate(${cx - half - unit * 1.5} ${cy - unit * 0.05}) scale(${unit / 19})`);
+      flame.style.display = heat ? '' : 'none';
+    });
+
+    for (const light of room.lights) {
+      const [x, y] = light.at ?? [cx, cy + unit * 2.5];
+      const halo = sv('circle', { class: 'fp-halo', cx: x, cy: y, r: unit * 4.5, fill: `url(#${gradId})` });
+      glows.append(halo);
+      const lamp = sv('g', { class: 'fp-lamp', tabindex: 0, role: 'button', 'aria-label': t('overview.toggle', { name: light.name ?? room.name }) },
+        sv('circle', { class: 'fp-lamp-hit', cx: x, cy: y, r: unit * 1.1 }),
+        sv('circle', { class: 'fp-lamp-ring', cx: x, cy: y, r: unit * 0.55, 'stroke-width': unit * 0.14 }),
+        sv('circle', { class: 'fp-lamp-core', cx: x, cy: y, r: unit * 0.3 }),
+        sv('title', {}, t('plan.lampHint', { name: light.name ?? room.name })));
+      press(lamp,
+        () => adapter.call('homeassistant', 'toggle', { entity_id: light.entity }),
+        () => onRoom(room));
+      lamps.append(lamp);
+      store.watch([light.entity], () => {
+        const lv = level(store.get(light.entity));
+        halo.style.opacity = String(lv);
+        lamp.classList.toggle('is-on', lv > 0);
+        lamp.classList.toggle('is-missing', !store.get(light.entity));
+      });
+    }
+  }
+
+  const svg = sv('svg', {
+    class: 'fp-svg', viewBox: `${bb.x - pad} ${bb.y - pad} ${bb.w + pad * 2} ${bb.h + pad * 2}`,
+    role: 'group', 'aria-label': t('plan.label', { name: plan.name }),
+  },
+  sv('defs', {},
+    sv('radialGradient', { id: gradId },
+      sv('stop', { offset: '0', style: { stopColor: 'var(--glow-core)', stopOpacity: '0.85' } }),
+      sv('stop', { offset: '0.3', style: { stopColor: 'var(--glow)', stopOpacity: '0.45' } }),
+      sv('stop', { offset: '1', style: { stopColor: 'var(--glow)', stopOpacity: '0' } }))),
+  floor, fills, glows, walls, labels, lamps);
+
+  const root = el('div', { class: `view fp${picture ? ' has-picture' : ''}`, 'data-plan': plan.id }, svg);
+
+  return {
+    el: root,
+    svg,
+    select(roomId) {
+      fills.querySelectorAll('.fp-room').forEach((n, i) => n.classList.toggle('is-selected', rooms[i].id === roomId));
+    },
+  };
+}

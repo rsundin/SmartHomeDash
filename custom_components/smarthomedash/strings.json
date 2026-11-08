@@ -1,0 +1,62 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Add a dashboard",
+        "description": "Each dashboard gets its own sidebar panel. Pictures, floor plans, lights, heating and energy are set up in the panel afterwards.",
+        "data": {
+          "title": "Name",
+          "icon": "Sidebar icon",
+          "url_path": "Address",
+          "require_admin": "Only for administrators",
+          "layout": "Type of home"
+        },
+        "data_description": {
+          "title": "Shown in the sidebar, for example Home or Summer house.",
+          "url_path": "The dashboard opens at your Home Assistant address followed by /address. Leave empty to use the name.",
+          "layout": "A house is shown with a picture from outside and floor plans. An apartment is shown with its floor plan only. This can be changed later in the setup guide."
+        }
+      }
+    },
+    "error": {
+      "invalid_url_path": "Use lowercase letters, digits, - and _ only.",
+      "url_path_taken": "Another panel already uses this address.",
+      "site_in_yaml": "A dashboard with this name is set up in configuration.yaml."
+    },
+    "abort": {
+      "already_configured": "A dashboard with this name already exists."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Dashboard settings",
+        "data": {
+          "title": "Name",
+          "icon": "Sidebar icon",
+          "require_admin": "Only for administrators"
+        }
+      }
+    }
+  },
+  "services": {
+    "update": {
+      "name": "Update",
+      "description": "Install the latest SmartHomeDash from GitHub. A site.json saved on Home Assistant is kept.",
+      "fields": {
+        "overwrite_site": {
+          "name": "Overwrite site.json",
+          "description": "Replace the saved site.json with the one in the repository (the old one is kept as site.json.bak)."
+        }
+      }
+    }
+  },
+  "selector": {
+    "layout": {
+      "options": {
+        "house": "House with a picture from outside",
+        "apartment": "Apartment, floor plan only"
+      }
+    }
+  }
+}

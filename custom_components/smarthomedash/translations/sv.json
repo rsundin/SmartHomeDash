@@ -1,0 +1,62 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Lägg till en dashboard",
+        "description": "Varje dashboard får en egen panel i sidomenyn. Bilder, planlösningar, lampor, värme och energi ställs in i panelen efteråt.",
+        "data": {
+          "title": "Namn",
+          "icon": "Ikon i sidomenyn",
+          "url_path": "Adress",
+          "require_admin": "Bara för administratörer",
+          "layout": "Typ av bostad"
+        },
+        "data_description": {
+          "title": "Visas i sidomenyn, till exempel Hemmet eller Sommarstugan.",
+          "url_path": "Dashboarden öppnas på din Home Assistant-adress följd av /adress. Lämna tomt för att använda namnet.",
+          "layout": "Ett hus visas med en bild utifrån och planlösningar. En lägenhet visas bara med planlösningen. Det går att ändra senare i setup-guiden."
+        }
+      }
+    },
+    "error": {
+      "invalid_url_path": "Använd bara små bokstäver, siffror, - och _.",
+      "url_path_taken": "En annan panel använder redan den adressen.",
+      "site_in_yaml": "En dashboard med det namnet finns redan i configuration.yaml."
+    },
+    "abort": {
+      "already_configured": "Det finns redan en dashboard med det namnet."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Inställningar för dashboarden",
+        "data": {
+          "title": "Namn",
+          "icon": "Ikon i sidomenyn",
+          "require_admin": "Bara för administratörer"
+        }
+      }
+    }
+  },
+  "services": {
+    "update": {
+      "name": "Uppdatera",
+      "description": "Installera senaste SmartHomeDash från GitHub. En site.json som sparats i Home Assistant behålls.",
+      "fields": {
+        "overwrite_site": {
+          "name": "Skriv över site.json",
+          "description": "Ersätt den sparade site.json med den i repot (den gamla sparas som site.json.bak)."
+        }
+      }
+    }
+  },
+  "selector": {
+    "layout": {
+      "options": {
+        "house": "Hus med bild utifrån",
+        "apartment": "Lägenhet, bara planlösning"
+      }
+    }
+  }
+}

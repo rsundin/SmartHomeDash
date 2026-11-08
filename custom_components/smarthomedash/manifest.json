@@ -1,0 +1,19 @@
+{
+  "domain": "smarthomedash",
+  "name": "SmartHomeDash",
+  "codeowners": [
+    "@rsundin"
+  ],
+  "config_flow": true,
+  "dependencies": [
+    "http",
+    "frontend",
+    "panel_custom"
+  ],
+  "documentation": "https://github.com/rsundin/SmartHomeDash",
+  "integration_type": "service",
+  "iot_class": "local_push",
+  "issue_tracker": "https://github.com/rsundin/SmartHomeDash/issues",
+  "requirements": [],
+  "version": "0.4.0"
+}

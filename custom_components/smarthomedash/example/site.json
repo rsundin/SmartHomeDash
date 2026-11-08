@@ -1,0 +1,367 @@
+{
+  "name": "Example house",
+  "language": "en",
+  "locale": "en-GB",
+  "currency": "SEK",
+  "comfort": {
+    "low": 19,
+    "high": 23
+  },
+  "overview": {
+    "image": "example_day.jpg",
+    "night_image": "example_night.jpg",
+    "size": [1264, 848],
+    "buildings": [
+      {
+        "id": "house",
+        "name": "House",
+        "floorplan": "house",
+        "area": [[248, 362], [322, 318], [730, 175], [778, 214], [928, 292], [910, 302], [908, 398], [795, 438], [440, 532], [278, 452], [262, 405]]
+      },
+      {
+        "id": "garage",
+        "name": "Garage",
+        "floorplan": "garage",
+        "area": [[940, 305], [1000, 262], [1085, 240], [1145, 285], [1122, 358], [1062, 388], [955, 363]]
+      }
+    ],
+    "zones": [
+      {
+        "id": "facade",
+        "name": "Facade",
+        "lights": [
+          "light.facade"
+        ],
+        "lamps": [
+          {
+            "at": [455, 460],
+            "type": "wall",
+            "size": 30
+          },
+          {
+            "at": [527, 423],
+            "type": "wall",
+            "size": 30
+          },
+          {
+            "at": [630, 375],
+            "type": "wall",
+            "size": 30
+          }
+        ]
+      },
+      {
+        "id": "entrance",
+        "name": "Entrance",
+        "lights": [
+          "light.entrance"
+        ],
+        "lamps": [
+          {
+            "at": [835, 362],
+            "type": "wall",
+            "size": 26
+          },
+          {
+            "at": [865, 345],
+            "type": "wall",
+            "size": 26
+          }
+        ]
+      },
+      {
+        "id": "garage_outdoor",
+        "name": "Garage",
+        "lights": [
+          "light.garage_outdoor"
+        ],
+        "lamps": [
+          {
+            "at": [1070, 342],
+            "type": "wall",
+            "size": 28
+          }
+        ]
+      }
+    ],
+    "windows": [
+      {
+        "room": "living_room",
+        "area": [[298, 393], [318, 402], [318, 435], [298, 425]]
+      },
+      {
+        "room": "living_room",
+        "area": [[370, 432], [402, 447], [402, 500], [370, 487]]
+      },
+      {
+        "room": "living_room",
+        "area": [[470, 435], [507, 425], [507, 490], [470, 500]]
+      },
+      {
+        "room": "kitchen",
+        "area": [[545, 393], [610, 373], [610, 445], [545, 463]]
+      },
+      {
+        "room": "office",
+        "area": [[645, 352], [665, 346], [665, 383], [645, 390]]
+      },
+      {
+        "room": "bedroom_2",
+        "area": [[735, 352], [762, 355], [762, 392], [735, 390]]
+      },
+      {
+        "room": "hall",
+        "area": [[815, 357], [826, 353], [826, 370], [815, 374]]
+      },
+      {
+        "room": "bathroom",
+        "area": [[875, 322], [886, 318], [886, 335], [875, 339]]
+      }
+    ],
+    "solar": {
+      "peak_kw": 8,
+      "panels": [
+        [[356, 327], [600, 240], [680, 310], [430, 418]]
+      ]
+    }
+  },
+  "floorplans": [
+    {
+      "id": "house",
+      "name": "House",
+      "unit": "px",
+      "image": {
+        "src": "example_plan_house.webp",
+        "bounds": [
+          0,
+          0,
+          1024,
+          1024
+        ]
+      },
+      "outline": [[55, 55], [970, 55], [970, 460], [700, 460], [700, 970], [55, 970]],
+      "rooms": [
+        {
+          "id": "kitchen",
+          "name": "Kitchen",
+          "area": [[78, 80], [430, 80], [430, 370], [78, 370]],
+          "lights": [
+            {
+              "entity": "light.kitchen_ceiling",
+              "name": "Ceiling light",
+              "at": [290, 200]
+            },
+            {
+              "entity": "light.kitchen_counter",
+              "name": "Counter lights",
+              "at": [200, 115]
+            }
+          ]
+        },
+        {
+          "id": "living_room",
+          "name": "Living room",
+          "area": [[78, 370], [430, 370], [430, 440], [455, 440], [455, 945], [78, 945]],
+          "climate": "climate.living_room",
+          "lights": [
+            {
+              "entity": "light.dining_table",
+              "name": "Dining table",
+              "at": [270, 470]
+            },
+            {
+              "entity": "light.living_room_ceiling",
+              "name": "Ceiling light",
+              "at": [250, 700]
+            },
+            {
+              "entity": "light.living_room_floor_lamp",
+              "name": "Floor lamp",
+              "at": [160, 880]
+            }
+          ]
+        },
+        {
+          "id": "bedroom",
+          "name": "Bedroom",
+          "area": [[435, 80], [692, 80], [692, 345], [435, 345]],
+          "climate": "climate.bedroom",
+          "lights": [
+            {
+              "entity": "light.bedroom",
+              "name": "Ceiling light",
+              "at": [560, 300]
+            }
+          ]
+        },
+        {
+          "id": "bathroom",
+          "name": "Bathroom",
+          "area": [[695, 80], [820, 80], [820, 290], [695, 290]],
+          "climate": "climate.bathroom_floor",
+          "lights": [
+            {
+              "entity": "light.bathroom_ceiling",
+              "name": "Ceiling light",
+              "at": [740, 250]
+            },
+            {
+              "entity": "light.bathroom_mirror",
+              "name": "Mirror light",
+              "at": [800, 140]
+            }
+          ]
+        },
+        {
+          "id": "storage",
+          "name": "Storage",
+          "area": [[820, 80], [945, 80], [945, 290], [820, 290]],
+          "lights": []
+        },
+        {
+          "id": "hall",
+          "name": "Hall",
+          "area": [[430, 345], [695, 345], [695, 290], [945, 290], [945, 440], [455, 440], [455, 370], [430, 370]],
+          "lights": [
+            {
+              "entity": "light.hall",
+              "name": "Ceiling light",
+              "at": [800, 390]
+            }
+          ]
+        },
+        {
+          "id": "office",
+          "name": "Office",
+          "area": [[460, 445], [690, 445], [690, 660], [460, 660]],
+          "climate": "climate.office",
+          "lights": [
+            {
+              "entity": "light.office",
+              "name": "Ceiling light",
+              "at": [600, 620]
+            }
+          ]
+        },
+        {
+          "id": "bedroom_2",
+          "name": "Guest room",
+          "area": [[455, 665], [690, 665], [690, 945], [455, 945]],
+          "climate": "climate.guest_room",
+          "lights": [
+            {
+              "entity": "light.guest_room",
+              "name": "Ceiling light",
+              "at": [520, 720]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "garage",
+      "name": "Garage",
+      "unit": "px",
+      "image": {
+        "src": "example_plan_garage.webp",
+        "bounds": [
+          0,
+          0,
+          1024,
+          1024
+        ]
+      },
+      "outline": [[30, 30], [995, 30], [995, 975], [30, 975]],
+      "rooms": [
+        {
+          "id": "workshop",
+          "name": "Workshop",
+          "area": [[75, 75], [415, 75], [415, 945], [75, 945]],
+          "lights": [
+            {
+              "entity": "light.workshop",
+              "name": "Ceiling light",
+              "at": [320, 450]
+            }
+          ]
+        },
+        {
+          "id": "garage_room",
+          "name": "Garage",
+          "area": [[430, 85], [950, 85], [950, 945], [430, 945]],
+          "lights": [
+            {
+              "entity": "light.garage",
+              "name": "Ceiling light",
+              "at": [690, 520]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "climates": [
+    {
+      "entity": "climate.heat_pump",
+      "name": "Heat pump"
+    }
+  ],
+  "energy": {
+    "load_power": "sensor.house_power",
+    "grid_power": "sensor.grid_power",
+    "pv_power": "sensor.solar_power",
+    "battery_power": "sensor.battery_power",
+    "battery_soc": "sensor.battery_level",
+    "energy_today": "sensor.energy_today",
+    "pv_energy_today": "sensor.solar_energy_today",
+    "cost_today": "sensor.energy_cost_today",
+    "price": {
+      "entity": "sensor.nordpool_kwh_se3_sek",
+      "today_attribute": "today"
+    }
+  },
+  "weather": "weather.home",
+  "scenes": [
+    {
+      "entity": "scene.evening",
+      "name": "Evening",
+      "mock": {
+        "on": [
+          "light.facade",
+          "light.entrance",
+          "light.living_room_floor_lamp",
+          "light.kitchen_counter",
+          "light.dining_table"
+        ],
+        "off": "all"
+      }
+    },
+    {
+      "entity": "scene.away",
+      "name": "Away",
+      "mock": {
+        "on": [
+          "light.entrance",
+          "light.garage_outdoor"
+        ],
+        "off": "all"
+      }
+    }
+  ],
+  "mock": {
+    "sun": {
+      "rise": "07:30",
+      "set": "16:00"
+    },
+    "lights_on": [
+      "light.facade",
+      "light.entrance",
+      "light.garage_outdoor",
+      "light.living_room_floor_lamp",
+      "light.kitchen_counter",
+      "light.dining_table",
+      "light.bedroom",
+      "light.hall"
+    ]
+  }
+}
