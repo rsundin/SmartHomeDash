@@ -21,15 +21,12 @@ jobs:
   hacs:
     name: HACS
     runs-on: ubuntu-latest
-    # HACS can only validate public repositories; advisory until this one is public.
-    continue-on-error: true
     steps:
       - uses: hacs/action@main
         with:
           category: integration
-          # While the repository is private, HACS cannot list it; these checks
-          # need a public repository with a description and topics.
-          ignore: brands description topics
+          # The icon ships in custom_components/smarthomedash/brand/.
+          ignore: brands
 
   frontend:
     name: JavaScript syntax

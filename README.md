@@ -109,7 +109,7 @@ See [SECURITY.md](SECURITY.md) for how access is handled and how to report a pro
 
 ## Support
 
-SmartHomeDash is free and open source. If it brightens your wall, you can support its development through [GitHub Sponsors](https://github.com/sponsors/rsundin).
+SmartHomeDash is free and open source. If it brightens your wall, you can support its development through [GitHub Sponsors](https://github.com/sponsors/rsundin) or [Buy Me a Coffee](https://buymeacoffee.com/rsundin).
 
 ## License
 

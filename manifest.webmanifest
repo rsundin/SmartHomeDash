@@ -1,6 +1,6 @@
 {
   "name": "SmartHomeDash",
-  "short_name": "Hemmet",
+  "short_name": "SmartHomeDash",
   "start_url": "./index.html",
   "scope": "./",
   "display": "fullscreen",
