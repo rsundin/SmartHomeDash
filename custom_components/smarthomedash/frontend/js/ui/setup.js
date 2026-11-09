@@ -16,6 +16,20 @@ import { noAreas, areaName, fillRoomFromArea, matchRoomsByName } from '../areas.
 
 const STEPS = ['basics', 'overview', 'plans', 'energy', 'buttons', 'lights'];
 
+// Prompts for making the overview pictures from a map screenshot with an image model.
+// English on purpose: image models follow it most consistently. Kept in step with
+// docs/overview-picture.md.
+const PROMPT_DAY = `Turn this screenshot from a 3D map into a photorealistic drone photograph of the same property. Keep the exact camera angle, framing and aspect ratio. Keep every building, roof shape, window, door, solar panel, driveway, tree and fence where it is and in its real proportions; do not add or remove buildings.
+Clean up map artefacts: melted or blurry geometry, smeared trees, flat textures, labels, icons, cars and people.
+Light: bright overcast midday, soft even daylight, gentle shadows, natural colours.
+Make building outlines, roof edges, windows and solar panels crisp and clearly visible.
+All lights are OFF: no lit windows, no outdoor lamps.
+No text, no watermark, no people, no vehicles.`;
+const PROMPT_NIGHT = `Edit this exact image. Keep the camera angle, framing, image size and every building, roof, window, solar panel, tree and path exactly where they are; change nothing but the light. Change the time of day to blue hour shortly after sunset: deep blue sky glow, cool ambient light, soft shadows, buildings still clearly readable.
+All lights are OFF: no lit windows, no outdoor lamps, no glow anywhere.
+Photorealistic. No text, no people.`;
+const GUIDE_URL = 'https://github.com/rsundin/SmartHomeDash/blob/main/docs/overview-picture.md';
+
 export function createSetup({ site, store, saveSite, uploadFile, reload, openPlacement }) {
   const cfg = structuredClone(site.raw);
   cfg.floorplans ??= [];
@@ -168,6 +182,7 @@ export function createSetup({ site, store, saveSite, uploadFile, reload, openPla
           ov.night_image = name;
           render();
         }, ov.night_image ? () => { delete ov.night_image; changed(); render(); } : null, t('setup.nightHelp')) : null)));
+    out.push(noDroneGuide(!ov?.image || isExample(ov.image)));
     if (!ov?.image) return out;
     out.push(section(t('setup.removeOverview'), el('p', { class: 'muted small' }, t('setup.removeOverviewHelp')),
       el('button', { class: 'chip chip-danger', type: 'button', onclick: () => { delete cfg.overview; changed(); step = 'plans'; render(); } }, t('setup.removeOverview'))));
@@ -209,6 +224,32 @@ export function createSetup({ site, store, saveSite, uploadFile, reload, openPla
       }) : null));
     out.push(el('p', { class: 'muted small' }, t('setup.outdoorLightsHint')));
     return out;
+  }
+
+  // No drone: make the pictures from a 3D map screenshot and an image model.
+  function noDroneGuide(open) {
+    const prompt = (title, text) => {
+      const copy = el('button', { class: 'chip', type: 'button' }, t('editor.copy'));
+      copy.addEventListener('click', () => navigator.clipboard?.writeText(text)
+        .then(() => { status.textContent = t('editor.copied'); })
+        .catch(() => { status.textContent = t('setup.copyManual'); }));
+      return el('div', { class: 'setup-prompt' },
+        el('div', { class: 'row-between' }, el('strong', {}, title), copy),
+        el('pre', {}, text));
+    };
+    return el('details', { class: 'setup-section setup-guide', open },
+      el('summary', { class: 'eyebrow' }, t('setup.noDrone')),
+      el('p', { class: 'muted small' }, t('setup.noDroneIntro')),
+      el('ol', { class: 'setup-steps' },
+        el('li', {}, t('setup.noDrone1')),
+        el('li', {}, t('setup.noDrone2')),
+        el('li', {}, t('setup.noDrone3')),
+        el('li', {}, t('setup.noDrone4')),
+        el('li', {}, t('setup.noDrone5'))),
+      prompt(t('setup.promptDay'), PROMPT_DAY),
+      prompt(t('setup.promptNight'), PROMPT_NIGHT),
+      el('p', { class: 'muted small' }, t('setup.noDroneNote'), ' ',
+        el('a', { href: GUIDE_URL, target: '_blank', rel: 'noopener' }, t('setup.noDroneMore'))));
   }
 
   function overviewShapes() {

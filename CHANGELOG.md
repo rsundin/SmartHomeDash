@@ -6,6 +6,7 @@
 - Room names follow their area when it is renamed in Home Assistant
 - Placement mode shows the area of unplaced entities and searches by area
 - Outdoor lamps in the same area share one switch in the lights card
+- No drone? A guide in the setup guide and in docs/overview-picture.md makes the day and evening pictures from a 3D map screenshot and an AI image model, with prompts to copy
 
 ## 0.4.0
 

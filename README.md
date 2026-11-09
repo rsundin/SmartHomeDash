@@ -27,6 +27,8 @@ Then **Settings → Devices & services → Add integration → SmartHomeDash**, 
 
 **→ [Setting up a new dashboard](docs/setup.md)**: the full walkthrough, with tips for the pictures.
 
+**→ [An overview picture without a drone](docs/overview-picture.md)**: a day and evening picture from a 3D map and an AI image model.
+
 ## What it shows
 
 | Part | What it does |

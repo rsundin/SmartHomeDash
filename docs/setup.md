@@ -8,7 +8,7 @@ Plan for about an hour, most of it spent on the pictures.
 
 - Home Assistant 2024.8 or newer, with an administrator account.
 - [HACS](https://hacs.xyz), or SSH or Samba access to copy files.
-- **An overview picture** of the property from above. A drone photo taken at an angle works best. Any size is fine; about 1200 to 2500 pixels wide keeps it sharp without being slow.
+- **An overview picture** of the property from above. A drone photo taken at an angle works best; without a drone, [make one from a 3D map](overview-picture.md). Any size is fine; about 1200 to 2500 pixels wide keeps it sharp without being slow.
 - **A floor plan picture** per building or storey: a scanned drawing, an estate agent's plan or a realistic render seen from above, cropped to the outer walls.
 - Optional: an **evening picture**, the same view at dusk with every light off.
 
@@ -99,6 +99,8 @@ New outdoor lamps are drawn as wall lamps. To make one a flood or deck light, ch
 ## Tips for the pictures
 
 **Overview from a drone photo.** Fly high enough to have the whole property in view, camera tilted down about 45°. Daylight with soft shadows works best.
+
+**No drone?** Make the day and evening pictures from a 3D map and an AI image model: see [An overview picture without a drone](overview-picture.md). The setup guide has the same steps and prompts under **Overview picture**.
 
 **Evening picture with an image model.** Give the day picture to an image model with a prompt like:
 
