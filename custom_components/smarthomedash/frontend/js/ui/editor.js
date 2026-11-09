@@ -185,8 +185,9 @@ export function createEditor({ site, store, saveSite = null, reload = () => loca
       if (!g) continue;
       const name = nameOf(s.entity_id);
       const area = site.areas ? areaName(site.areas, areaOf(site.areas, s.entity_id)) : null;
+      const auto = site.autoPlaced?.has(s.entity_id);
       if (filter && !`${name} ${s.entity_id} ${area ?? ''}`.toLowerCase().includes(filter)) continue;
-      g.rows.push({ id: s.entity_id, name, area, where: placementOf(s.entity_id) });
+      g.rows.push({ id: s.entity_id, name, area, auto, where: placementOf(s.entity_id) });
     }
     list.replaceChildren(...groups.filter((g) => g.rows.length).map(({ k, rows }) => {
       rows.sort((a, b) => (!!a.where - !!b.where) || a.name.localeCompare(b.name, site.locale));
@@ -198,7 +199,7 @@ export function createEditor({ site, store, saveSite = null, reload = () => loca
             onclick: () => select(r.id),
           },
           el('span', { class: 'editor-ent-name' }, r.name),
-          el('span', { class: 'editor-ent-where' }, r.where ?? (r.area ? t('editor.unplacedIn', { area: r.area }) : t('editor.unplaced'))),
+          el('span', { class: 'editor-ent-where' }, r.where ?? (r.auto ? t('editor.autoIn', { area: r.area }) : r.area ? t('editor.unplacedIn', { area: r.area }) : t('editor.unplaced'))),
           el('span', { class: 'editor-ent-id' }, r.id))))));
     }));
     if (!list.children.length) list.append(el('p', { class: 'muted small' }, t('editor.noEntities')));

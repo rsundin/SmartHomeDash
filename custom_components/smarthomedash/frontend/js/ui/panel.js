@@ -1,9 +1,9 @@
 // Room panel: thermostat, 24 h temperature, and every light in the room.
 
-import { el, sv, fmt, clamp } from '../util.js';
+import { el, sv, fmt, clamp, num } from '../util.js';
 import { isOn, level, roomTemp, climate } from '../entities.js';
 import { t, has } from '../i18n.js';
-import { kindOf, isOpen, isUnlocked, isAlarm, isDead, statusIds } from '../status.js';
+import { kindOf, isOpen, isUnlocked, isAlarm, isDead, statusIds, isClosedCover } from '../status.js';
 
 export function createPanel({ site, store, adapter }) {
   const body = el('div', { class: 'panel-body' });
@@ -32,7 +32,8 @@ export function createPanel({ site, store, adapter }) {
     if (room.photo) body.append(el('img', { class: 'room-photo', src: site.asset(room.photo), alt: room.name, loading: 'lazy' }));
     if (room.climate || room.temperature) body.append(climateSection(room));
     if (room.lights.length) body.append(lightsSection(room));
-    if (statusIds(room).length) body.append(statusSection(room));
+    if (room.status?.cover.length) body.append(coversSection(room));
+    if (sensorIds(room).length) body.append(statusSection(room));
     if (!room.climate && !room.temperature && !room.lights.length && !statusIds(room).length) {
       body.append(el('p', { class: 'muted' }, t('panel.empty')));
     }
@@ -108,9 +109,40 @@ export function createPanel({ site, store, adapter }) {
 
   // Doors, windows, locks, presence, alarms and batteries in the room. Read only:
   // a wall screen is no place to unlock the front door.
+  const sensorIds = (room) => statusIds(room).filter((id) => !(room.status?.cover ?? []).includes(id));
+
+  // Blinds and curtains: up, stop and down, and a position slider where supported.
+  function coversSection(room) {
+    const list = el('ul', { class: 'light-list cover-list' });
+    for (const id of room.status.cover) {
+      const call = (service, data = {}) => adapter.call('cover', service, { entity_id: id, ...data });
+      const state = el('span', { class: 'pct' });
+      const range = el('input', { type: 'range', min: 0, max: 100, 'aria-label': t('panel.coverPosition') });
+      range.addEventListener('change', () => call('set_cover_position', { position: Number(range.value) }));
+      const btn = (label, aria, fn) => el('button', { class: 'step', type: 'button', 'aria-label': aria, onclick: fn }, label);
+      const li = el('li', {},
+        el('div', { class: 'light-top' }, el('span', { class: 'light-name' }), state,
+          el('div', { class: 'cover-btns' },
+            btn('▲', t('panel.coverOpen'), () => call('open_cover')),
+            btn('■', t('panel.coverStop'), () => call('stop_cover')),
+            btn('▼', t('panel.coverClose'), () => call('close_cover')))),
+        range);
+      list.append(li);
+      unwatch.push(store.watch([id], () => {
+        const s = store.get(id);
+        li.querySelector('.light-name').textContent = s?.attributes?.friendly_name ?? id;
+        const pos = num(s?.attributes?.current_position);
+        state.textContent = isDead(s) ? t('status.unavailable') : pos != null ? `${pos} %` : t(isClosedCover(s) ? 'status.closed' : 'status.open');
+        range.hidden = pos == null || !((s?.attributes?.supported_features ?? 0) & 4);
+        if (pos != null && document.activeElement !== range) range.value = String(pos);
+      }));
+    }
+    return el('section', { class: 'psec' }, el('h3', { class: 'eyebrow' }, t('panel.covers')), list);
+  }
+
   function statusSection(room) {
     const list = el('ul', { class: 'status-list' });
-    const ids = statusIds(room);
+    const ids = sensorIds(room);
     unwatch.push(store.watch(ids, () => {
       list.replaceChildren(...ids.map((id) => {
         const s = store.get(id);

@@ -19,7 +19,7 @@ import { createSettings, connKey } from './ui/settings.js';
 import { createEditor } from './ui/editor.js';
 import { createSetup } from './ui/setup.js';
 import { createZoom } from './ui/zoom.js';
-import { loadAreas, applyAreaNames, noAreas } from './areas.js';
+import { loadAreas, applyAreaNames, noAreas, linkByName, autoPlace } from './areas.js';
 import { assignSensors, warnings, warningIds } from './status.js';
 
 // The online demo sets data-demo on <body> (see .github/workflows/pages.yml).
@@ -173,7 +173,11 @@ export async function start(opts) {
   }
   // Home Assistant areas: room names follow the area they are linked to.
   site.areas = store.all().length ? await loadAreas(adapter) : noAreas();
+  // Rooms named like an area count as linked; what is in a linked room's area in Home
+  // Assistant but not placed yet shows up in that room by itself.
+  linkByName(site, site.areas);
   applyAreaNames(site, site.areas);
+  site.autoPlaced = new Set(autoPlace(site, site.areas, store));
   // Doors, windows, locks, presence and alarms per room, from the room's area and site.json.
   assignSensors(site, store);
 
@@ -185,7 +189,7 @@ export async function start(opts) {
   // Rooms open on their floor plan; a device without a plan (heat pump) opens its panel directly.
   const openRoom = (room) => { if (room.plan) showPlan(room.plan, room.id); else panel.open(room); };
   const overview = site.overview
-    ? createOverview({ site, store, adapter, onOpenBuilding: (b) => showPlan(b.floorplan) })
+    ? createOverview({ site, store, adapter, onOpenBuilding: (b) => (b.floorplan ? showPlan(b.floorplan) : panel.open(site.index.rooms.get(`building:${b.id}`))) })
     : null;
   if (overview) { zoom.layer.append(overview.el); editor?.attach(overview.svg, { label: t('app.editorOverview') }); }
 
@@ -271,10 +275,19 @@ export async function start(opts) {
   const NIGHT_KEY = `shd:${site.id}:night`;
   let nightMode = storage.get(NIGHT_KEY, 'auto');
   // Evening dims the pictures, overview and floor plans alike, so the lights stand out.
+  // Auto follows the sun: the day picture fades into the evening one from 3° above the
+  // horizon to 6° below it (civil twilight), instead of switching at sunset.
+  const duskLevel = () => {
+    const sun = store.get('sun.sun');
+    const elev = Number(sun?.attributes?.elevation);
+    if (!Number.isFinite(elev)) return sun?.state === 'below_horizon' ? 1 : 0;
+    return Math.min(1, Math.max(0, (3 - elev) / 9));
+  };
   const applyNight = () => {
-    const auto = store.get('sun.sun')?.state === 'below_horizon';
-    const night = nightMode === 'auto' ? auto : nightMode === 'night';
-    overview?.setNight(night);
+    const level = nightMode === 'auto' ? duskLevel() : nightMode === 'night' ? 1 : 0;
+    const auto = duskLevel() >= 0.5;
+    const night = level >= 0.5;
+    overview?.setDusk(level);
     stage.classList.toggle('is-night', night);
     adapter.setDemoMode?.(nightMode);
     nightBtn.textContent = { auto: t('app.nightAuto', { state: t(auto ? 'app.nightAutoNight' : 'app.nightAutoDay') }), day: t('app.day'), night: t('app.night') }[nightMode];
@@ -285,6 +298,7 @@ export async function start(opts) {
     applyNight();
   });
   store.watch(['sun.sun'], applyNight);
+  if (site.weather) store.watch([site.weather], () => overview?.setWeather(store.get(site.weather)?.state));
 
   document.addEventListener('keydown', (e) => {
     if (e.key !== 'Escape') return;

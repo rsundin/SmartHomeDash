@@ -94,6 +94,13 @@ function index(site) {
     }
   }
 
+  // A building linked to a Home Assistant area but without a floor plan (a shed, a
+  // workshop) works as a room: tapping it opens its area's lights, heating and sensors.
+  for (const b of site.overview?.buildings ?? []) {
+    if (!b.ha_area || b.floorplan) continue;
+    roomById.set(`building:${b.id}`, { id: `building:${b.id}`, name: b.name, ha_area: b.ha_area, lights: [], plan: null, building: b.id, sensors: b.sensors });
+  }
+
   // Climate devices that are not a room, such as a heat pump: listed in the heating card.
   for (const c of site.climates ?? []) {
     const room = { id: `climate:${c.entity}`, name: c.name ?? c.entity, climate: c.entity, temperature: c.temperature, lights: [], plan: null, device: true };

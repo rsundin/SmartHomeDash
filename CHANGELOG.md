@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.7.0
+
+- Energy flow on the overview picture: dots running from the solar panels, the grid and the battery to the house, and from the house to the grid, the battery and the car charger, faster with more power. Place the house, grid, battery and charger in the setup guide
+- Dusk: with the header on Auto, the day picture fades into the evening picture as the sun goes down instead of switching at sunset
+- Weather on the picture: a light veil for cloud and fog, falling rain and snow
+- Blinds and curtains: up, stop, down and position in the room panel; windows glow less while they are closed; garage doors and gates count as doors
+- Electricity price: "cheap now" or "expensive now", and the cheapest hours ahead (today or tomorrow) marked in the chart
+- Rooms named like a Home Assistant area count as linked to it, and lights, thermostats and temperature sensors in a linked room's area show up in the room by themselves until placed
+- The setup guide asks for the Home Assistant area while you draw a room or a building. Buildings can be linked to an area too: one without a floor plan, such as a shed, opens its area's lights, heating and sensors when tapped, and gets a badge when a door there is open
+- The examples have a car charger, blinds and curtains in their test data
+
 ## 0.6.1
 
 - Fixed: leaving placement mode in the Home Assistant panel left its list on screen

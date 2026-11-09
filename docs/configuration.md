@@ -52,6 +52,8 @@ Everything except `name` and at least one floor plan is optional. A card whose e
 
 `area` is the outline of the building. Tapping it lifts the roof and opens the floor plan named in `floorplan`.
 
+`ha_area` links the building to a Home Assistant area: it takes the area's name, and a building without `floorplan` (a shed, a workshop) opens the lights, heating and sensors of its area when tapped, and gets a badge when a door or window there is open.
+
 ### zones: outdoor lights
 
 ```json
@@ -124,6 +126,9 @@ Each panel outline glows green while the panels produce, stronger as production 
 - `lights[].at` is where the lamp is. Tap to switch, hold to open the room.
 - A light can be a `light.*` or a `switch.*` entity. Only `light.*` entities get a dimmer.
 - `sensors` lists doors, windows, locks, presence and alarm sensors for the room. A room with `ha_area` also gets every such sensor in its area automatically, so the list is only needed without areas. Recognised by their device class: `door`, `window`, `opening` and `garage_door` (shown open or closed), `motion`, `occupancy` and `presence` (a faint outline on the room while someone is there), `smoke`, `gas`, `carbon_monoxide`, `moisture` and `safety` (alarms), `battery`; and every `lock.*`. Open doors and windows, unlocked locks and alarms get an icon on the floor plan and a badge on the building in the overview picture; the room panel lists them all. Locks are shown, not controlled.
+- A room without `ha_area` whose name matches an area exactly (ignoring case and accents) is treated as linked to it.
+- Lights, a thermostat and a temperature sensor in a linked room's area that are not in site.json show up in the room by themselves, the lights in a ring around its middle. Placement mode lists them as placed automatically; tapping one onto the plan saves its spot. Nothing is written to site.json until then.
+- Covers (`cover.*`) in a room are blinds and curtains: the room panel has up, stop and down and a position slider, and the room's windows on the overview picture glow less while they are closed. Garage doors and gates (`device_class` `garage`, `gate`, `door`) count as doors instead.
 - A floor plan's `ha_floor` links it to a Home Assistant floor by its floor id: the plan then shows the floor's name, and linked plans are listed in floor order.
 
 ### Warnings
@@ -135,6 +140,22 @@ A row above the picture shows, most serious first: alarms (smoke, gas, carbon mo
 ```
 
 `battery` is the level in percent counted as low (default 15). `"warnings": false` turns the row off.
+
+## Energy flow and weather on the picture
+
+```json
+"overview": {
+  "energy_points": { "house": [800, 405], "grid": [905, 840], "battery": [296, 440], "charger": [1000, 372] },
+  "energy_flow": true,
+  "weather_effects": true
+}
+```
+
+- Dots run between the solar panels, the grid, the battery, the car charger and the house, faster with more power, from `energy.pv_power`, `grid_power`, `battery_power` and `charger_power`.
+- `energy_points` are image pixels, placed in the setup guide. Without `house` the middle of the building under the solar panels is used; without `grid` the bottom edge below the house. The battery and the charger are drawn only once placed.
+- `grid_power` above zero is bought from the grid and `battery_power` above zero is the battery discharging. If your sensors count the other way, set `"grid_invert": true` or `"battery_invert": true` under `energy`.
+- `"energy_flow": false` and `"weather_effects": false` turn them off.
+- With the header set to Auto, the day picture fades into the evening picture from 3° above the horizon to 6° below it (`sun.sun` elevation). The `weather` entity adds a light veil for cloud, fog, rain or snow.
 
 ## energy
 
@@ -155,6 +176,10 @@ A row above the picture shows, most serious first: alarms (smoke, gas, carbon mo
 ```
 
 Power may be in W or kW; the unit is read from the entity. `battery_soc` is shown next to the battery row; `load_power` adds a house usage row. Hourly prices come from an attribute: `today` matches Nordpool from HACS, and `raw_today` and `prices_today` are recognised automatically. Quarter-hour prices are averaged per hour.
+
+### Electricity price
+
+`energy.price.window_hours` (default 3) is the length of the cheapest run of hours the price card points out, from now over today and, once published, tomorrow (`tomorrow` or `raw_tomorrow` attribute; `tomorrow_attribute` if yours differs). The card also says when the price right now is cheap or expensive compared with the rest of the day.
 
 ## Placement mode
 
