@@ -60,7 +60,10 @@ export async function start(opts) {
   window.__shdRun?.abort();
   const run = new AbortController();
   window.__shdRun = run;
-  document.querySelectorAll('.setup').forEach((n) => n.remove());
+  // Leftovers of the previous run: the setup guide, and placement mode's panel and page
+  // state, which otherwise stayed on screen after leaving placement mode in a panel.
+  document.querySelectorAll('.setup, .editor').forEach((n) => n.remove());
+  document.body.classList.remove('is-editing');
   const siteId = opts.siteId ?? (params.get('site') || document.body.dataset.defaultSite || 'example-apartment');
   const editing = opts.editing ?? location.hash === '#edit';
   const site = await loadSite(siteId, { useDraft: editing, loader: opts.loader });
@@ -295,6 +298,7 @@ export async function start(opts) {
     const setup = createSetup({
       site, store, saveSite: opts.saveSite, uploadFile: opts.uploadFile, reload: opts.reload,
       openPlacement: () => opts.navigateEdit(true),
+      onClose: () => storage.set(SETUP_LATER, true),
     });
     document.body.append(setup.el);
   }
@@ -310,7 +314,9 @@ export async function start(opts) {
     hint.hidden = true;
   }
   // New dashboards (and empty ones) open the setup guide for admins on first visit.
-  if (canSetup && !editing && (empty || site.raw.setup_pending)) openSetup();
+  // A new dashboard opens the guide by itself, until it is saved once or closed in this browser.
+  const SETUP_LATER = `shd:${site.id}:setupLater`;
+  if (canSetup && !editing && (empty || (site.raw.setup_pending && !storage.get(SETUP_LATER, false)))) openSetup();
 
   const resume = editor?.initialView;
   if (resume?.startsWith('plan:') && plans.has(resume.slice(5))) { if (overview) showOverview(); await showPlan(resume.slice(5)); }

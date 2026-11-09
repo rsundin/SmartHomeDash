@@ -30,7 +30,7 @@ All lights are OFF: no lit windows, no outdoor lamps, no glow anywhere.
 Photorealistic. No text, no people.`;
 const GUIDE_URL = 'https://github.com/rsundin/SmartHomeDash/blob/main/docs/overview-picture.md';
 
-export function createSetup({ site, store, saveSite, uploadFile, reload, openPlacement }) {
+export function createSetup({ site, store, saveSite, uploadFile, reload, openPlacement, onClose = () => {} }) {
   const cfg = structuredClone(site.raw);
   cfg.floorplans ??= [];
   cfg.energy ??= {};
@@ -68,14 +68,13 @@ export function createSetup({ site, store, saveSite, uploadFile, reload, openPla
       saveBtn.disabled = false;
     }
   }
+  // With unsaved changes, Close asks what to do with clear buttons instead of closing.
   function close() {
-    if (dirty && !root.dataset.confirmClose) {
-      root.dataset.confirmClose = '1';
-      status.textContent = t('setup.closeConfirm');
-      setTimeout(() => { delete root.dataset.confirmClose; if (dirty) status.textContent = t('setup.unsaved'); }, 4000);
-      return;
-    }
-    root.remove();
+    if (!dirty) { root.remove(); onClose(); return; }
+    status.replaceChildren(
+      el('span', {}, t('setup.closeConfirm')), ' ',
+      el('button', { class: 'chip chip-danger', type: 'button', onclick: () => { root.remove(); onClose(); } }, t('setup.discard')), ' ',
+      el('button', { class: 'chip chip-primary', type: 'button', onclick: save }, t('setup.save')));
   }
 
   function render() {

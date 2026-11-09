@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.6.1
+
+- Fixed: leaving placement mode in the Home Assistant panel left its list on screen
+- Closing the setup guide with unsaved changes offers **Close without saving** and **Save** instead of needing a second tap
+- A new dashboard's setup guide no longer opens by itself on every visit once it has been closed in that browser
+
 ## 0.6.0
 
 - Doors, windows, locks, presence and alarms per room: found in the room's Home Assistant area, or listed under `sensors`. Open doors and windows, unlocked locks and alarms get an icon on the floor plan and a badge on the building in the overview picture; rooms with motion or presence get a faint outline; the room panel lists every sensor
