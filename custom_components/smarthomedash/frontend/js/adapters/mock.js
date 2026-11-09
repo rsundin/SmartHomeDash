@@ -46,7 +46,9 @@ export function createMockAdapter(site) {
       list.push(S(id, on ? 'on' : 'off', {
         friendly_name: site.index.names.get(id) ?? id,
         brightness: on ? Math.round(140 + rnd() * 115) : null,
-        supported_color_modes: ['brightness'],
+        ...(site.mock?.colors?.[id]
+          ? { supported_color_modes: ['rgb'], color_mode: 'rgb', rgb_color: site.mock.colors[id] }
+          : { supported_color_modes: ['brightness'] }),
       }));
     }
     for (const room of site.index.rooms.values()) {
@@ -156,7 +158,7 @@ export function createMockAdapter(site) {
           const turnOn = service === 'turn_on' || (service === 'toggle' && s.state !== 'on');
           let b = data.brightness ?? (data.brightness_pct != null ? Math.round(data.brightness_pct * 2.55) : null);
           if (turnOn && b == null) b = s.attributes.brightness || 220;
-          set(id, turnOn ? 'on' : 'off', { brightness: turnOn ? b : null });
+          set(id, turnOn ? 'on' : 'off', { brightness: turnOn ? b : null, ...(data.rgb_color ? { rgb_color: data.rgb_color } : {}) });
         }
       } else if (domain === 'climate') {
         for (const id of ids) {

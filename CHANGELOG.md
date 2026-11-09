@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.5.2
+
+- Lamps glow in their own colour and brightness on the overview picture and the floor plans, windows in the colour of the room's lamps; lamps that report no colour keep the warm glow
+- Online demo on GitHub Pages: the example house and apartment on test data
+- ROADMAP.md with what comes next
+
 ## 0.5.1
 
 - Pinch with two fingers to zoom the overview picture and floor plans on phones and tablets, drag to move around, **Reset zoom** to go back; a trackpad pinch works on computers. Taps on lamps, rooms and buildings still work while zoomed, and a pinch or drag never switches a lamp

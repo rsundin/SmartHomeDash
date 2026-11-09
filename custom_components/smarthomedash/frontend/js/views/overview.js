@@ -11,6 +11,7 @@
 import { el, sv, pts, centroid, bbox, press, clamp, fmt } from '../util.js';
 import { zoneLevel, kw } from '../entities.js';
 import { t } from '../i18n.js';
+import { mixColor, createTints } from '../glow.js';
 
 export function createOverview({ site, store, adapter, onOpenBuilding }) {
   const ov = site.overview;
@@ -54,6 +55,20 @@ export function createOverview({ site, store, adapter, onOpenBuilding }) {
     sv('filter', { id: `${k}-bloom`, x: '-80%', y: '-80%', width: '260%', height: '260%' }, sv('feGaussianBlur', { stdDeviation: '9' })),
   );
 
+  // Gradients in a lamp's own colour, made when a colour is first needed.
+  const tint = createTints((sx, glow, coreC) => defs.append(
+    sv('radialGradient', { id: `${k}-glow${sx}` }, stop('0', coreC, 1), stop('0.22', glow, 0.8), stop('1', glow, 0)),
+    sv('radialGradient', { id: `${k}-wash${sx}`, cy: '0.35', r: '0.6' }, stop('0', coreC, 0.9), stop('0.35', glow, 0.55), stop('1', glow, 0)),
+    sv('radialGradient', { id: `${k}-pool${sx}` }, stop('0', glow, 0.55), stop('1', glow, 0)),
+    sv('linearGradient', { id: `${k}-window${sx}`, x1: '0', y1: '0', x2: '0', y2: '1' }, stop('0', coreC, 0.95), stop('1', glow, 0.85))));
+  // Repaint a group's glows in the colour of its lights.
+  const paint = (g, ids) => {
+    const c = tint(mixColor(ids.map((id) => store.get(id)).filter(Boolean)));
+    for (const n of g.querySelectorAll('[data-paint]')) n.setAttribute('fill', `url(#${k}-${n.dataset.paint}${c.suffix})`);
+    for (const n of g.querySelectorAll('.ov-lamp-core')) n.style.fill = c.core ?? '';
+    for (const n of g.querySelectorAll('.ov-window-bloom')) n.style.fill = c.glow ?? '';
+  };
+
   // ---------- windows: warm when a light in the room behind them is on
   const windowsG = sv('g', { class: 'ov-windows' });
   for (const w of ov.windows ?? []) {
@@ -61,9 +76,9 @@ export function createOverview({ site, store, adapter, onOpenBuilding }) {
     if (!lights.length) continue;
     const g = sv('g', { class: 'ov-window' },
       sv('polygon', { points: pts(w.area), filter: `url(#${k}-bloom)`, class: 'ov-window-bloom' }),
-      sv('polygon', { points: pts(w.area), fill: `url(#${k}-window)`, filter: `url(#${k}-soft)` }));
+      sv('polygon', { points: pts(w.area), fill: `url(#${k}-window)`, 'data-paint': 'window', filter: `url(#${k}-soft)` }));
     windowsG.append(g);
-    store.watch(lights, () => { g.style.opacity = String(zoneLevel(store, lights)); });
+    store.watch(lights, () => { g.style.opacity = String(zoneLevel(store, lights)); paint(g, lights); });
   }
 
   // ---------- lamps per zone
@@ -75,6 +90,7 @@ export function createOverview({ site, store, adapter, onOpenBuilding }) {
       const lv = zoneLevel(store, z.lights);
       g.style.opacity = String(lv);
       g.classList.toggle('is-on', lv > 0);
+      paint(g, z.lights);
     });
   }
 
@@ -205,18 +221,18 @@ function lampShape(l, k) {
   const core = sv('circle', { cx: x, cy: y, r: Math.max(1.6, s * 0.07), class: 'ov-lamp-core' });
   if (l.type === 'wall') {
     return sv('g', { class: 'ov-lamp ov-lamp-wall' },
-      sv('ellipse', { cx: x, cy: y + s * 0.5, rx: s * 1.15, ry: s * 1.7, fill: `url(#${k}-wash)`, filter: `url(#${k}-wide)` }),
-      sv('ellipse', { cx: x, cy: y + s * 2.1, rx: s * 1.7, ry: s * 0.6, fill: `url(#${k}-pool)`, filter: `url(#${k}-soft)` }),
-      sv('circle', { cx: x, cy: y, r: s * 0.5, fill: `url(#${k}-glow)` }),
+      sv('ellipse', { cx: x, cy: y + s * 0.5, rx: s * 1.15, ry: s * 1.7, fill: `url(#${k}-wash)`, 'data-paint': 'wash', filter: `url(#${k}-wide)` }),
+      sv('ellipse', { cx: x, cy: y + s * 2.1, rx: s * 1.7, ry: s * 0.6, fill: `url(#${k}-pool)`, 'data-paint': 'pool', filter: `url(#${k}-soft)` }),
+      sv('circle', { cx: x, cy: y, r: s * 0.5, fill: `url(#${k}-glow)`, 'data-paint': 'glow' }),
       core);
   }
   if (l.type === 'ground') {
     return sv('g', { class: 'ov-lamp ov-lamp-ground' },
-      sv('ellipse', { cx: x, cy: y, rx: s * 1.6, ry: s * 0.75, fill: `url(#${k}-pool)` }),
-      sv('circle', { cx: x, cy: y, r: s * 0.45, fill: `url(#${k}-glow)` }),
+      sv('ellipse', { cx: x, cy: y, rx: s * 1.6, ry: s * 0.75, fill: `url(#${k}-pool)`, 'data-paint': 'pool' }),
+      sv('circle', { cx: x, cy: y, r: s * 0.45, fill: `url(#${k}-glow)`, 'data-paint': 'glow' }),
       core);
   }
-  return sv('g', { class: 'ov-lamp' }, sv('circle', { cx: x, cy: y, r: s * 1.4, fill: `url(#${k}-glow)` }), core);
+  return sv('g', { class: 'ov-lamp' }, sv('circle', { cx: x, cy: y, r: s * 1.4, fill: `url(#${k}-glow)`, 'data-paint': 'glow' }), core);
 }
 
 // A window lights up from its room's lights, or from lights listed on the window itself.
