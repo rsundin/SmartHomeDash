@@ -164,6 +164,7 @@ export function createSetup({ site, store, saveSite, uploadFile, reload, openPla
           if (wasExample) {
             // The example's shapes belong to the example picture.
             Object.assign(cfg.overview, { buildings: [], zones: [], windows: [] });
+            delete cfg.overview.energy_points;
             delete cfg.overview.solar;
             delete cfg.overview.night_image;
           }
@@ -187,15 +188,21 @@ export function createSetup({ site, store, saveSite, uploadFile, reload, openPla
       el('button', { class: 'chip chip-danger', type: 'button', onclick: () => { delete cfg.overview; changed(); step = 'plans'; render(); } }, t('setup.removeOverview'))));
 
     // buildings
-    const bList = el('ul', { class: 'setup-list' }, (ov.buildings ?? []).map((b, i) => el('li', {},
-      input(b.name, (v) => { b.name = v; }, { 'aria-label': t('setup.name') }),
+    const bList = el('ul', { class: 'setup-list setup-rooms' }, (ov.buildings ?? []).map((b, i) => el('li', {},
+      areas.list.length ? select([['', t('setup.noArea')], ...freeAreas(b.ha_area)], b.ha_area, (v) => {
+        if (v) { b.ha_area = v; b.name = areaName(areas, v); } else delete b.ha_area;
+        render();
+      }, { 'aria-label': t('setup.area') }) : null,
+      b.ha_area && areaName(areas, b.ha_area)
+        ? el('span', { class: 'setup-room-name' }, areaName(areas, b.ha_area))
+        : input(b.name, (v) => { b.name = v; }, { 'aria-label': t('setup.name') }),
       select([['', t('setup.noPlan')], ...cfg.floorplans.map((p) => [p.id, p.name])], b.floorplan, (v) => { if (v) b.floorplan = v; else delete b.floorplan; }, { 'aria-label': t('setup.floorPlan') }),
       el('button', { class: 'chip chip-danger', type: 'button', onclick: () => { ov.buildings.splice(i, 1); changed(); render(); } }, t('setup.remove')))));
     out.push(section(t('setup.buildings'), el('p', { class: 'muted small' }, t('setup.buildingsHelp')), bList,
-      drawButton(t('setup.drawBuilding'), { src: picture(ov.image), size: ov.size, shapes: overviewShapes() }, (poly) => {
+      drawButton(t('setup.drawBuilding'), { src: picture(ov.image), size: ov.size, shapes: overviewShapes(), pick: areaPick() }, (poly, areaId) => {
         ov.buildings ??= [];
-        const name = t('setup.building', { n: ov.buildings.length + 1 });
-        ov.buildings.push({ id: uniqueId(slug(name), ov.buildings.map((b) => b.id)), name, area: poly });
+        const name = (areaId && areaName(areas, areaId)) || t('setup.building', { n: ov.buildings.length + 1 });
+        ov.buildings.push({ id: uniqueId(slug(name), ov.buildings.map((b) => b.id)), name, area: poly, ...(areaId ? { ha_area: areaId } : {}) });
       })));
 
     // solar panels
@@ -221,8 +228,23 @@ export function createSetup({ site, store, saveSite, uploadFile, reload, openPla
         ov.windows ??= [];
         ov.windows.push({ room: rooms()[0][0], area: poly });
       }) : null));
+    out.push(energyPoints(ov));
     out.push(el('p', { class: 'muted small' }, t('setup.outdoorLightsHint')));
     return out;
+  }
+
+  // Where the energy flow on the picture starts and ends: tap one spot for each.
+  function energyPoints(ov) {
+    const kinds = [['house', 'setup.pointHouse'], ['grid', 'setup.pointGrid'], ['battery', 'setup.pointBattery'], ['charger', 'setup.pointCharger']];
+    const list = el('ul', { class: 'setup-list' }, kinds.map(([key, label]) => el('li', {},
+      el('span', {}, t(label)),
+      el('span', { class: 'muted small' }, ov.energy_points?.[key] ? t('setup.pointSet') : t('setup.pointAuto')),
+      drawButton(t(ov.energy_points?.[key] ? 'setup.pointMove' : 'setup.pointPlace'), { src: picture(ov.image), size: ov.size, shapes: overviewShapes(), point: true }, ([pt]) => {
+        ov.energy_points ??= {};
+        ov.energy_points[key] = pt;
+      }),
+      ov.energy_points?.[key] ? el('button', { class: 'chip chip-danger', type: 'button', onclick: () => { delete ov.energy_points[key]; changed(); render(); } }, t('setup.remove')) : null)));
+    return section(t('setup.energyFlow'), el('p', { class: 'muted small' }, t('setup.energyFlowHelp')), list);
   }
 
   // No drone: make the pictures from a 3D map screenshot and an image model.
@@ -304,10 +326,12 @@ export function createSetup({ site, store, saveSite, uploadFile, reload, openPla
         el('h4', { class: 'setup-label' }, t('setup.rooms')),
         areas.list.length ? el('p', { class: 'muted small' }, t('setup.areasHelp')) : null,
         roomList,
-        src && size ? drawButton(t('setup.drawRoom'), { src, size, shapes: (plan.rooms ?? []).map((r) => ({ points: r.area, label: r.name, kind: 'room' })) }, (poly) => {
+        src && size ? drawButton(t('setup.drawRoom'), { src, size, pick: areaPick(), shapes: (plan.rooms ?? []).map((r) => ({ points: r.area, label: r.name, kind: 'room' })) }, (poly, areaId) => {
           plan.rooms ??= [];
-          const name = t('setup.room') + ` ${plan.rooms.length + 1}`;
-          plan.rooms.push({ id: uniqueId(slug(name), cfg.floorplans.flatMap((p) => (p.rooms ?? []).map((r) => r.id))), name, area: poly, lights: [] });
+          const name = (areaId && areaName(areas, areaId)) || t('setup.room') + ` ${plan.rooms.length + 1}`;
+          const room = { id: uniqueId(slug(name), cfg.floorplans.flatMap((p) => (p.rooms ?? []).map((r) => r.id))), name, area: poly, lights: [] };
+          plan.rooms.push(room);
+          if (areaId) { room.ha_area = areaId; status.textContent = t('setup.fetched', { n: fillRoomFromArea(cfg, room, areas, store), room: name }); }
         }) : null));
     }
     const unlinked = cfg.floorplans.flatMap((p) => p.rooms ?? []).filter((r) => !r.ha_area);
@@ -315,14 +339,17 @@ export function createSetup({ site, store, saveSite, uploadFile, reload, openPla
     if (areas.list.length && (unlinked.length || unlinkedPlans.length)) {
       out.splice(1, 0, section(t('setup.areas'), el('p', { class: 'muted small' }, t('setup.matchAreasHelp')),
         el('button', { class: 'chip', type: 'button', onclick: () => {
+          const linkedBuildings = () => (cfg.overview?.buildings ?? []).filter((b) => b.ha_area).length;
+          const buildingsBefore = linkedBuildings();
           const plansBefore = cfg.floorplans.filter((p) => p.ha_floor).length;
           const matched = matchRoomsByName(cfg, areas);
           const plans = cfg.floorplans.filter((p) => p.ha_floor).length - plansBefore;
           const n = matched.reduce((sum, r) => sum + fillRoomFromArea(cfg, r, areas, store), 0);
-          if (matched.length || plans) changed();
+          const buildings = linkedBuildings() - buildingsBefore;
+          if (matched.length || plans || buildings) changed();
           render();
-          status.textContent = matched.length || plans
-            ? t('setup.matchedAreas', { rooms: matched.length, n }) + (plans ? ` ${t('setup.matchedFloors', { plans })}` : '')
+          status.textContent = matched.length || plans || buildings
+            ? t('setup.matchedAreas', { rooms: matched.length, n }) + (plans ? ` ${t('setup.matchedFloors', { plans })}` : '') + (buildings ? ` ${t('setup.matchedBuildings', { buildings })}` : '')
             : t('setup.noAreaMatch');
         } }, t('setup.matchAreas'))));
     }
@@ -348,11 +375,19 @@ export function createSetup({ site, store, saveSite, uploadFile, reload, openPla
     return out;
   }
 
+  // Areas still free: not linked to a room or a building yet (plus the one given).
+  function freeAreas(keep) {
+    const used = new Set([
+      ...cfg.floorplans.flatMap((p) => (p.rooms ?? []).map((r) => r.ha_area)),
+      ...(cfg.overview?.buildings ?? []).map((b) => b.ha_area),
+    ].filter((id) => id && id !== keep));
+    return areas.list.filter((a) => !used.has(a.area_id)).map((a) => [a.area_id, a.name]).sort((a, b) => a[1].localeCompare(b[1], site.locale));
+  }
+  const areaPick = () => (areas.list.length ? { label: t('setup.area'), options: [['', t('setup.noArea')], ...freeAreas()] } : null);
+
   // A room linked to a Home Assistant area takes the area's name, lights and thermostat.
   function areaSelect(room) {
-    const options = [['', t('setup.noArea')], ...areas.list
-      .map((a) => [a.area_id, a.name])
-      .sort((a, b) => a[1].localeCompare(b[1], site.locale))];
+    const options = [['', t('setup.noArea')], ...freeAreas(room.ha_area)];
     return select(options, room.ha_area, (v) => {
       if (v) {
         room.ha_area = v;
@@ -472,10 +507,12 @@ export function createSetup({ site, store, saveSite, uploadFile, reload, openPla
 
   // ---------- polygon drawing on a picture
   function drawButton(label, opts, onDone) {
-    return el('button', { class: 'chip', type: 'button', onclick: () => draw({ ...opts, title: label }, (poly) => { onDone(poly); changed(); render(); }) }, label);
+    return el('button', { class: 'chip', type: 'button', onclick: () => draw({ ...opts, title: label }, (poly, picked) => { onDone(poly, picked); changed(); render(); }) }, label);
   }
 
-  function draw({ src, size: [w, h], shapes, title }, onDone) {
+  function draw({ src, size: [w, h], shapes, title, point = false, pick = null }, onDone) {
+    // pick = { label, options: [[value, text]] }: chosen while drawing, handed to onDone.
+    const picker = pick ? select(pick.options, '', () => {}, { 'aria-label': pick.label }) : null;
     let points = [];
     const live = sv('polyline', { class: 'draw-live' });
     const dots = sv('g', { class: 'draw-dots' });
@@ -499,17 +536,18 @@ export function createSetup({ site, store, saveSite, uploadFile, reload, openPla
       const p = svgPoint(svgEl, e);
       if (p.x < 0 || p.y < 0 || p.x > w || p.y > h) return;
       points.push([Math.round(p.x), Math.round(p.y)]);
+      if (point) { overlay.remove(); onDone(points, picker?.value); return; }
       redraw();
     });
     const overlay = el('div', { class: 'draw' },
       el('div', { class: 'draw-bar' },
-        el('div', {}, el('strong', {}, title), el('p', { class: 'muted small' }, t('setup.drawHelp'))),
-        el('div', { class: 'row' }, count,
+        el('div', {}, el('strong', {}, title), el('p', { class: 'muted small' }, t(point ? 'setup.pointHelp' : 'setup.drawHelp'))),
+        el('div', { class: 'row' }, picker ? el('label', { class: 'draw-pick' }, el('span', { class: 'small muted' }, pick.label), picker) : null, count,
           el('button', { class: 'chip', type: 'button', onclick: () => { points.pop(); redraw(); } }, t('editor.undo')),
           el('button', { class: 'chip', type: 'button', onclick: () => overlay.remove() }, t('setup.cancel')),
           doneBtn)),
       el('div', { class: 'draw-stage' }, svgEl));
-    doneBtn.addEventListener('click', () => { overlay.remove(); onDone(points); });
+    doneBtn.addEventListener('click', () => { overlay.remove(); onDone(points, picker?.value); });
     redraw();
     root.append(overlay);
   }

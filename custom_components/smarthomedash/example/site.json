@@ -8,6 +8,7 @@
     "high": 23
   },
   "overview": {
+    "energy_points": { "house": [800, 405], "grid": [905, 840], "battery": [296, 440], "charger": [1000, 372] },
     "image": "example_day.jpg",
     "night_image": "example_night.jpg",
     "size": [1264, 848],
@@ -161,7 +162,7 @@
         },
         {
           "id": "living_room",
-          "sensors": ["binary_sensor.living_room_motion"],
+          "sensors": ["cover.living_room_blinds", "binary_sensor.living_room_motion"],
           "name": "Living room",
           "area": [[78, 370], [430, 370], [430, 440], [455, 440], [455, 945], [78, 945]],
           "climate": "climate.living_room",
@@ -185,7 +186,7 @@
         },
         {
           "id": "bedroom",
-          "sensors": ["binary_sensor.bedroom_window"],
+          "sensors": ["cover.bedroom_curtains", "binary_sensor.bedroom_window"],
           "name": "Bedroom",
           "area": [[435, 80], [692, 80], [692, 345], [435, 345]],
           "climate": "climate.bedroom",
@@ -317,6 +318,7 @@
     "pv_power": "sensor.solar_power",
     "battery_power": "sensor.battery_power",
     "battery_soc": "sensor.battery_level",
+    "charger_power": "sensor.car_charger_power",
     "energy_today": "sensor.energy_today",
     "pv_energy_today": "sensor.solar_energy_today",
     "cost_today": "sensor.energy_cost_today",
@@ -354,7 +356,7 @@
     }
   ],
   "mock": {
-    "sensors": {"binary_sensor.front_door": {"device_class": "door", "state": "off", "name": "Front door"}, "lock.front_door": {"state": "locked", "name": "Front door lock"}, "binary_sensor.bedroom_window": {"device_class": "window", "state": "on", "name": "Bedroom window"}, "binary_sensor.living_room_motion": {"device_class": "motion", "state": "on", "name": "Living room motion"}, "binary_sensor.kitchen_smoke": {"device_class": "smoke", "state": "off", "name": "Smoke detector"}, "sensor.kitchen_smoke_battery": {"device_class": "battery", "state": "9", "unit": "%", "name": "Smoke detector battery"}, "binary_sensor.garage_door": {"device_class": "garage_door", "state": "on", "name": "Garage door"}},
+    "sensors": { "cover.living_room_blinds": {"state": "open", "attributes": {"device_class": "blind", "current_position": 100, "supported_features": 15}, "name": "Blinds"}, "cover.bedroom_curtains": {"state": "closed", "attributes": {"device_class": "curtain", "current_position": 0, "supported_features": 15}, "name": "Curtains"},"binary_sensor.front_door": {"device_class": "door", "state": "off", "name": "Front door"}, "lock.front_door": {"state": "locked", "name": "Front door lock"}, "binary_sensor.bedroom_window": {"device_class": "window", "state": "on", "name": "Bedroom window"}, "binary_sensor.living_room_motion": {"device_class": "motion", "state": "on", "name": "Living room motion"}, "binary_sensor.kitchen_smoke": {"device_class": "smoke", "state": "off", "name": "Smoke detector"}, "sensor.kitchen_smoke_battery": {"device_class": "battery", "state": "9", "unit": "%", "name": "Smoke detector battery"}, "binary_sensor.garage_door": {"device_class": "garage_door", "state": "on", "name": "Garage door"}},
     "colors": { "light.living_room_floor_lamp": [176, 96, 255], "light.garage_outdoor": [210, 225, 255] },
     "sun": {
       "rise": "07:30",

@@ -67,10 +67,34 @@ export function kw(store, id) {
 
 // Hourly prices for today from common price integrations.
 export function pricesToday(store, cfg) {
+  return hourly(store, cfg, cfg?.today_attribute || 'today', ['raw_today', 'prices_today']);
+}
+
+// Tomorrow's hourly prices, once published (Nord Pool: early afternoon). [] before that.
+export function pricesTomorrow(store, cfg) {
+  const vals = hourly(store, cfg, cfg?.tomorrow_attribute || 'tomorrow', ['raw_tomorrow', 'prices_tomorrow']);
+  return vals.some((v) => v != null) ? vals : [];
+}
+
+// The cheapest run of `hours` whole hours from now on, over today and tomorrow:
+// { start: hour index from today's midnight, avg } or null.
+export function cheapestWindow(today, tomorrow, fromHour, hours = 3) {
+  const all = [...today, ...tomorrow];
+  let best = null;
+  for (let h = fromHour; h + hours <= all.length; h++) {
+    const slice = all.slice(h, h + hours);
+    if (slice.some((v) => v == null)) continue;
+    const avg = slice.reduce((a, b) => a + b, 0) / hours;
+    if (!best || avg < best.avg) best = { start: h, avg };
+  }
+  return best;
+}
+
+function hourly(store, cfg, attr, fallbacks) {
   const s = store.get(cfg?.entity);
   if (!s) return [];
   const a = s.attributes || {};
-  const raw = a[cfg.today_attribute || 'today'] ?? a.raw_today ?? a.prices_today ?? [];
+  const raw = a[attr] ?? fallbacks.map((f) => a[f]).find(Boolean) ?? [];
   const vals = raw.map((x) => num(typeof x === 'object' ? x.value ?? x.price ?? x.total : x));
   if (vals.length > 24) {
     // quarter-hour prices: average per hour

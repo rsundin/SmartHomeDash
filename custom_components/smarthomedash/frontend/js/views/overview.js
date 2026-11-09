@@ -12,8 +12,9 @@ import { el, sv, pts, centroid, bbox, press, clamp, fmt } from '../util.js';
 import { zoneLevel, kw } from '../entities.js';
 import { t } from '../i18n.js';
 import { mixColor, createTints } from '../glow.js';
-import { roomStatus, statusIds } from '../status.js';
+import { roomStatus, statusIds, isClosedCover } from '../status.js';
 import { ICONS } from './floorplan.js';
+import { createFlow } from './flow.js';
 
 export function createOverview({ site, store, adapter, onOpenBuilding }) {
   const ov = site.overview;
@@ -80,7 +81,13 @@ export function createOverview({ site, store, adapter, onOpenBuilding }) {
       sv('polygon', { points: pts(w.area), filter: `url(#${k}-bloom)`, class: 'ov-window-bloom' }),
       sv('polygon', { points: pts(w.area), fill: `url(#${k}-window)`, 'data-paint': 'window', filter: `url(#${k}-soft)` }));
     windowsG.append(g);
-    store.watch(lights, () => { g.style.opacity = String(zoneLevel(store, lights)); paint(g, lights); });
+    // Closed blinds or curtains in the room let only a little light out.
+    const covers = site.index.rooms.get(w.room)?.status?.cover ?? [];
+    store.watch([...lights, ...covers], () => {
+      const shut = covers.length && covers.every((id) => isClosedCover(store.get(id)));
+      g.style.opacity = String(zoneLevel(store, lights) * (shut ? 0.25 : 1));
+      paint(g, lights);
+    });
   }
 
   // ---------- lamps per zone
@@ -130,16 +137,17 @@ export function createOverview({ site, store, adapter, onOpenBuilding }) {
   const hits = sv('g', { class: 'ov-hits' });
   for (const b of ov.buildings) {
     const [cx, cy] = centroid(b.area);
+    const tappable = b.floorplan || site.index.rooms.has(`building:${b.id}`);
     const label = b.floorplan ? t('overview.openPlan', { name: b.name }) : b.name;
     const poly = sv('polygon', {
-      class: 'ov-bld', points: pts(b.area), tabindex: b.floorplan ? 0 : null,
-      role: b.floorplan ? 'button' : null, 'aria-label': label,
+      class: 'ov-bld', points: pts(b.area), tabindex: tappable ? 0 : null,
+      role: tappable ? 'button' : null, 'aria-label': label,
     });
     const tag = sv('g', { class: 'ov-tag', transform: `translate(${cx} ${cy})` },
       sv('rect', { x: -label.length * 4.3 - 14, y: -15, width: label.length * 8.6 + 28, height: 30, rx: 15 }),
       sv('text', { 'text-anchor': 'middle', y: 5 }, label));
     const grp = sv('g', { class: 'ov-bgroup' }, poly, tag);
-    if (b.floorplan) {
+    if (tappable) {
       grp.addEventListener('click', () => onOpenBuilding(b));
       poly.addEventListener('keydown', (e) => { if (e.key === 'Enter') onOpenBuilding(b); });
     }
@@ -159,7 +167,7 @@ export function createOverview({ site, store, adapter, onOpenBuilding }) {
   // ---------- a badge on each building with an alarm, or doors, windows or locks open
   const badgesG = sv('g', { class: 'ov-badges' });
   for (const b of ov.buildings) {
-    const rooms = [...site.index.rooms.values()].filter((r) => b.floorplan && r.plan === b.floorplan);
+    const rooms = [...site.index.rooms.values()].filter((r) => (b.floorplan && r.plan === b.floorplan) || r.building === b.id);
     const ids = rooms.flatMap(statusIds);
     if (!ids.length) continue;
     const [cx] = centroid(b.area);
@@ -183,9 +191,10 @@ export function createOverview({ site, store, adapter, onOpenBuilding }) {
   }
 
   const upper = sv('svg', { viewBox: vb, class: 'ov-upper' },
-    defs, windowsG, solarG, lampsG, chip, badgesG, hits, zoneHits);
+    defs, windowsG, solarG, createFlow({ site, store, ov, size: [W, H] }), lampsG, chip, badgesG, hits, zoneHits);
 
-  const root = el('div', { class: `view ov${nightImg ? ' has-night-image' : ''}`, style: { aspectRatio: `${W} / ${H}` } }, lower, upper);
+  const weather = el('div', { class: 'ov-wx', 'aria-hidden': 'true' });
+  const root = el('div', { class: `view ov${nightImg ? ' has-night-image' : ''}`, style: { aspectRatio: `${W} / ${H}` } }, lower, weather, upper);
 
   function toggleZone(z) {
     const on = zoneLevel(store, z.lights) > 0;
@@ -226,7 +235,17 @@ export function createOverview({ site, store, adapter, onOpenBuilding }) {
   return {
     el: root,
     svg: upper,
-    setNight(night) { root.classList.toggle('is-night', night); },
+    setNight(night) { this.setDusk(night ? 1 : 0); },
+    // 0 = day, 1 = evening; in between while the sun sets.
+    setDusk(level) {
+      root.style.setProperty('--dusk', String(clamp(level, 0, 1).toFixed(3)));
+      root.classList.toggle('is-night', level >= 0.5);
+    },
+    // Home Assistant weather state → a light veil of cloud, fog, rain or snow.
+    setWeather(state) {
+      const wx = { rainy: 'rain', pouring: 'rain', 'lightning-rainy': 'rain', snowy: 'snow', 'snowy-rainy': 'snow', cloudy: 'cloudy', fog: 'fog' }[state];
+      if (wx && ov.weather_effects !== false) weather.dataset.wx = wx; else delete weather.dataset.wx;
+    },
     setFit(mode) { fit = mode; frame(); },
     lift(buildingId) {
       root.querySelectorAll(`[data-b="${buildingId}"]`).forEach((n) => n.classList.add('is-lifted'));

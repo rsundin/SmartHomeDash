@@ -25,8 +25,11 @@ export function createMockAdapter(site) {
     const nextRise = t < rise ? rise : new Date(rise.getTime() + 864e5);
     const nextSet = t < setT ? setT : new Date(setT.getTime() + 864e5);
     const up = t >= rise && t < setT;
+    // A rough elevation: an arc up to 25° by day, down to -30° at midnight.
+    const day = (t - rise) / (setT - rise);
+    const elevation = up ? 25 * Math.sin(Math.PI * day) : -30 * Math.sin(Math.PI * Math.min(1, ((t - setT + (t < rise ? 864e5 : 0)) / (864e5 - (setT - rise)))));
     return S('sun.sun', up ? 'above_horizon' : 'below_horizon',
-      { next_rising: nextRise.toISOString(), next_setting: nextSet.toISOString(), friendly_name: 'Sun' });
+      { next_rising: nextRise.toISOString(), next_setting: nextSet.toISOString(), elevation: +elevation.toFixed(1), friendly_name: 'Sun' });
   }
 
   function prices() {
@@ -58,6 +61,7 @@ export function createMockAdapter(site) {
         friendly_name: m.name ?? id,
         ...(m.device_class ? { device_class: m.device_class } : {}),
         ...(m.unit ? { unit_of_measurement: m.unit } : {}),
+        ...(m.attributes ?? {}),
       }));
     }
     for (const room of site.index.rooms.values()) {
@@ -104,14 +108,36 @@ export function createMockAdapter(site) {
     return list;
   }
 
+  // A plausible power balance for the energy flow: the house uses 1-3 kW, solar covers
+  // what it can, surplus charges the battery and the rest is sold; in the evening the
+  // battery helps out. The car charges around midday when there is a charger.
+  function balance() {
+    const kW = (id) => { const s = store.get(id); const v = num(s?.state) ?? 0; return (s?.attributes?.unit_of_measurement || 'W').toLowerCase() === 'kw' ? v : v / 1000; };
+    const prev = kW(E.load_power) || 2;
+    const load = Math.min(3.4, Math.max(0.9, prev + (rnd() - 0.5) * 0.3));
+    const pv = E.pv_power ? kW(E.pv_power) : 0;
+    const h = demoMode === 'day' ? 12 : new Date().getHours();
+    const car = E.charger_power && h >= 10 && h < 15 ? 3.7 : 0;
+    let soc = num(store.get(E.battery_soc)?.state) ?? 64;
+    let bat = 0; // above zero: discharging into the house
+    const surplus = pv - load - car;
+    if (E.battery_power) {
+      if (surplus > 0 && soc < 96) bat = -Math.min(surplus, 3);
+      else if (surplus < 0 && soc > 20 && (h >= 16 || h < 7)) bat = Math.min(-surplus, 2.5);
+    }
+    const grid = load + car - pv - bat;
+    soc = Math.min(100, Math.max(5, soc - (bat * (4 / 3600) / 10) * 100));
+    if (E.load_power) set(E.load_power, load.toFixed(2));
+    if (E.grid_power) set(E.grid_power, Math.round(grid * 1000));
+    if (E.battery_power) set(E.battery_power, Math.round(bat * 1000));
+    if (E.battery_soc) set(E.battery_soc, soc.toFixed(1));
+    if (E.charger_power) set(E.charger_power, Math.round(car * 1000));
+  }
+
   function tick() {
     const sun = sunState();
     store.update(sun);
     const up = sun.state === 'above_horizon';
-    if (E.grid_power) {
-      const v = num(store.get(E.grid_power)?.state) ?? 1500;
-      set(E.grid_power, Math.round(Math.min(6500, Math.max(250, v + (rnd() - 0.5) * 500))));
-    }
     if (E.pv_power) {
       // Follows the sun; when the dashboard is forced to "Dag" it shows midday production.
       const demoDay = demoMode === 'day';
@@ -120,6 +146,7 @@ export function createMockAdapter(site) {
       const peak = Math.max(0, Math.sin(((h - 7.5) / 8.3) * Math.PI)) * peakW;
       set(E.pv_power, demoMode !== 'night' && (up || demoDay) ? Math.round(peak * (0.75 + rnd() * 0.25)) : 0);
     }
+    balance();
     if (E.energy_today) {
       const kwh = num(store.get(E.energy_today)?.state) ?? 0;
       const w = num(store.get(E.grid_power)?.state) ?? 1500;
@@ -168,6 +195,13 @@ export function createMockAdapter(site) {
           let b = data.brightness ?? (data.brightness_pct != null ? Math.round(data.brightness_pct * 2.55) : null);
           if (turnOn && b == null) b = s.attributes.brightness || 220;
           set(id, turnOn ? 'on' : 'off', { brightness: turnOn ? b : null, ...(data.rgb_color ? { rgb_color: data.rgb_color } : {}) });
+        }
+      } else if (domain === 'cover') {
+        for (const id of ids) {
+          const pos = service === 'open_cover' ? 100 : service === 'close_cover' ? 0
+            : service === 'set_cover_position' ? data.position : num(store.get(id)?.attributes?.current_position);
+          if (pos == null) continue;
+          set(id, pos > 0 ? 'open' : 'closed', { current_position: pos });
         }
       } else if (domain === 'climate') {
         for (const id of ids) {

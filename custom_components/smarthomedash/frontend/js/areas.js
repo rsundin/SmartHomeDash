@@ -58,6 +58,10 @@ export function applyAreaNames(site, areas) {
       return lx - ly || order.get(x) - order.get(y);
     });
   }
+  for (const b of site.overview?.buildings ?? []) {
+    const name = b.ha_area && areaName(areas, b.ha_area);
+    if (name) b.name = name;
+  }
   for (const room of site.index.rooms.values()) {
     const name = room.ha_area && areaName(areas, room.ha_area);
     if (!name || name === room.name) continue;
@@ -141,5 +145,72 @@ export function matchRoomsByName(cfg, areas) {
       if (a) { room.ha_area = a.area_id; room.name = a.name; matched.push(room); }
     }
   }
+  // Buildings on the overview picture too (a shed named like its area).
+  for (const b of cfg.overview?.buildings ?? []) {
+    if (b.ha_area) continue;
+    const a = byName.get(key(b.name));
+    if (a && !matched.some((r) => r.ha_area === a.area_id)) { b.ha_area = a.area_id; b.name = a.name; }
+  }
   return matched;
+}
+
+// ---------- automatic placement at runtime
+// Nothing here is saved: it fills in what site.json leaves out, from Home Assistant,
+// every time the dashboard starts. Placing an entity in placement mode saves its spot.
+
+const nameKey = (s) => (s ?? '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+
+// A room without an area, named exactly like one, is treated as linked to it.
+export function linkByName(site, areas) {
+  const byName = new Map(areas.list.map((x) => [nameKey(x.name), x]));
+  const taken = new Set([...site.index.rooms.values()].map((r) => r.ha_area).filter(Boolean));
+  for (const room of site.index.rooms.values()) {
+    if (room.ha_area || room.device) continue;
+    const match = byName.get(nameKey(room.name));
+    if (match && !taken.has(match.area_id)) { room.ha_area = match.area_id; room.areaByName = true; taken.add(match.area_id); }
+  }
+}
+
+// Lights, a thermostat and a temperature sensor that are in a room's area in Home
+// Assistant but not in site.json show up in that room: lights in a ring around the
+// middle of the room (marked auto), to be moved to their real spot in placement mode.
+export function autoPlace(site, areas, store) {
+  if (!areas.entityArea.size) return [];
+  const used = usedEntities(site);
+  const added = [];
+  for (const room of site.index.rooms.values()) {
+    if (!room.ha_area || !(room.plan && room.area) && !room.building) continue;
+    const found = entitiesInArea(areas, room.ha_area, store);
+    const lights = found.lights.filter((s) => !used.has(s.entity_id));
+    if (lights.length && room.building) {
+      // No floor plan to draw them on: listed in the building's panel.
+      for (const s of lights) {
+        const name = s.attributes?.friendly_name ?? s.entity_id;
+        room.lights.push({ entity: s.entity_id, name, auto: true });
+        site.index.lights.push(s.entity_id);
+        site.index.names.set(s.entity_id, name);
+        used.add(s.entity_id);
+        added.push(s.entity_id);
+      }
+    } else if (lights.length) {
+      const [cx, cy] = centroid(room.area);
+      const box = bbox([room.area]);
+      const r = lights.length > 1 ? Math.min(box.w, box.h) * 0.22 : 0;
+      lights.forEach((s, i) => {
+        const a = (i / lights.length) * Math.PI * 2 - Math.PI / 2;
+        const name = s.attributes?.friendly_name ?? s.entity_id;
+        room.lights.push({ entity: s.entity_id, name, at: [cx + Math.cos(a) * r, cy + Math.sin(a) * r], auto: true });
+        site.index.lights.push(s.entity_id);
+        site.index.names.set(s.entity_id, name);
+        used.add(s.entity_id);
+        added.push(s.entity_id);
+      });
+    }
+    const climate = found.climates.find((s) => !used.has(s.entity_id));
+    if (!room.climate && climate) { room.climate = climate.entity_id; room.autoClimate = true; site.index.climates.push(climate.entity_id); used.add(climate.entity_id); added.push(climate.entity_id); }
+    const temp = found.temps.find((s) => !used.has(s.entity_id));
+    if (!room.temperature && temp) { room.temperature = temp.entity_id; site.index.temps.push(temp.entity_id); used.add(temp.entity_id); added.push(temp.entity_id); }
+  }
+  site.index.climateRooms = [...site.index.rooms.values()].filter((r) => r.climate || r.temperature);
+  return added;
 }

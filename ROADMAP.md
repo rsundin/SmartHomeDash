@@ -2,13 +2,6 @@
 
 What is planned next, roughly in order. Plans change; ideas and votes are welcome in [issues](https://github.com/rsundin/SmartHomeDash/issues).
 
-## 0.7: light and energy on the picture
-
-- **Energy flow**: animated flow from the solar panels to the house, to and from the grid, into the battery and to the car charger, moving faster with more power.
-- **Dusk instead of a switch**: fade the day picture into the evening picture as the sun sets (`sun.sun` elevation); a darker tone when it is overcast and subtle rain or snow from the weather entity.
-- **Covers**: blinds and curtains (`cover.*`) on the windows, shown open or closed, tap to open or close.
-- **Electricity price in everyday use**: mark the cheap hours and suggest the best time to run the dishwasher or charge the car.
-
 ## 0.8: wall screens
 
 - **Doorbell camera**: when the doorbell rings, the wall screen shows the camera in a window that closes by itself.
@@ -24,6 +17,7 @@ What is planned next, roughly in order. Plans change; ideas and votes are welcom
 
 ## Done
 
+- 0.7.0: energy flow, dusk and weather on the picture, blinds and curtains, cheapest electricity hours; rooms pick up their area's entities by themselves
 - 0.6.0: doors, windows, locks, presence and alarms per room; warnings; floors from Home Assistant
 - 0.5.2: online demo; lamps glow in their own colour and brightness
 - 0.5.1: pinch zoom on phones

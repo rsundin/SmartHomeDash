@@ -14,13 +14,16 @@ const PRESENCE = new Set(['motion', 'occupancy', 'presence']);
 const ALARM = new Set(['smoke', 'gas', 'carbon_monoxide', 'moisture', 'safety']);
 const UNLOCKED = new Set(['unlocked', 'open', 'opening', 'unlocking', 'jammed']);
 const DEAD = new Set(['unavailable']);
+// Covers that are a way in (shown like doors) rather than something over a window.
+const COVER_OPENING = new Set(['garage', 'gate', 'door']);
 
-// opening | presence | alarm | lock | battery | null
+// opening | presence | alarm | lock | battery | cover | null
 export function kindOf(s) {
   if (!s) return null;
   const domain = s.entity_id.split('.')[0];
   const dc = s.attributes?.device_class;
   if (domain === 'lock') return 'lock';
+  if (domain === 'cover') return COVER_OPENING.has(dc) ? 'opening' : 'cover';
   if (domain === 'binary_sensor') {
     if (OPENING.has(dc)) return 'opening';
     if (PRESENCE.has(dc)) return 'presence';
@@ -31,7 +34,13 @@ export function kindOf(s) {
   return null;
 }
 
-export const isOpen = (s) => s?.state === 'on';
+export const isOpen = (s) => s?.state === 'on' || s?.state === 'open' || s?.state === 'opening';
+// Blinds and curtains: closed when fully down, or under 10 % open.
+export function isClosedCover(s) {
+  if (!s) return false;
+  const pos = num(s.attributes?.current_position);
+  return pos != null ? pos < 10 : s.state === 'closed';
+}
 export const isUnlocked = (s) => UNLOCKED.has(s?.state);
 export const isAlarm = (s) => s?.state === 'on';
 export const isDead = (s) => !s || DEAD.has(s.state);
@@ -59,7 +68,7 @@ export function assignSensors(site, store) {
   }
   for (const room of site.index.rooms.values()) {
     const ids = new Set([...(room.sensors ?? []), ...(room.ha_area ? byArea.get(room.ha_area) ?? [] : [])]);
-    const status = { opening: [], presence: [], alarm: [], lock: [], battery: [] };
+    const status = { opening: [], presence: [], alarm: [], lock: [], battery: [], cover: [] };
     for (const id of ids) {
       const kind = kindOf(store.get(id)) ?? guessKind(id);
       if (kind) status[kind].push(id);
@@ -71,6 +80,7 @@ export function assignSensors(site, store) {
 // A sensor listed in site.json that has not reported yet: judge by its id.
 function guessKind(id) {
   if (id.startsWith('lock.')) return 'lock';
+  if (id.startsWith('cover.')) return /garage|gate|port|grind/.test(id) ? 'opening' : 'cover';
   if (!id.startsWith('binary_sensor.')) return null;
   if (/door|window|fonster|dorr|opening/.test(id)) return 'opening';
   if (/motion|occupancy|presence|rorelse|narvaro/.test(id)) return 'presence';

@@ -2,7 +2,7 @@
 // Every card is skipped when the site config has no entity for it.
 
 import { el, sv, fmt, hhmm, num } from '../util.js';
-import { isOn, zoneLevel, kw, pricesToday, roomTemp, climate, heating, comfort } from '../entities.js';
+import { isOn, zoneLevel, kw, pricesToday, pricesTomorrow, cheapestWindow, roomTemp, climate, heating, comfort } from '../entities.js';
 import { areaOf, areaName } from '../areas.js';
 import { t } from '../i18n.js';
 
@@ -73,22 +73,43 @@ function priceCard({ site, store }) {
   const now = el('div', { class: 'kpi' });
   const range = el('p', { class: 'muted small' });
   const chart = el('div', { class: 'price-chart' });
-  store.watch([cfg.entity], () => {
+  const level = el('span', { class: 'price-level' });
+  const best = el('p', { class: 'price-best' });
+  const hours = Math.max(1, Math.min(8, num(cfg.window_hours) ?? 3));
+  const hh = (h) => `${String(h % 24).padStart(2, '0')}`;
+  const render = () => {
     const vals = pricesToday(store, cfg);
     const h = new Date().getHours();
     const cur = vals[h] ?? num(store.get(cfg.entity)?.state);
-    now.replaceChildren(fmt(cur, 2, site.locale), el('span', { class: 'unit' }, `${site.currency}/kWh`));
+    now.replaceChildren(fmt(cur, 2, site.locale), el('span', { class: 'unit' }, `${site.currency}/kWh`), level);
     const ok = vals.filter((v) => v != null);
-    if (!ok.length) { range.textContent = t('cards.noPrices'); chart.replaceChildren(); return; }
+    if (!ok.length) { range.textContent = t('cards.noPrices'); chart.replaceChildren(); best.textContent = ''; level.textContent = ''; return; }
     const lo = Math.min(...ok), hi = Math.max(...ok);
     const loH = vals.indexOf(lo), hiH = vals.indexOf(hi);
     range.textContent = t('cards.priceRange', { lo: fmt(lo, 2, site.locale), loH: `${String(loH).padStart(2, '0')}:00`, hi: fmt(hi, 2, site.locale), hiH: `${String(hiH).padStart(2, '0')}:00` });
-    chart.replaceChildren(priceBars(vals, h, lo, hi));
-  });
-  return card(t('cards.priceToday'), now, chart, range);
+    // Cheap or dear right now, compared with the rest of the day.
+    const avg = ok.reduce((a, b) => a + b, 0) / ok.length;
+    const rel = cur == null ? null : (cur - avg) / (avg || 1);
+    level.textContent = rel == null ? '' : rel < -0.15 ? t('cards.priceCheap') : rel > 0.15 ? t('cards.priceDear') : '';
+    level.dataset.level = rel == null ? '' : rel < -0.15 ? 'cheap' : rel > 0.15 ? 'dear' : '';
+    // The cheapest few hours from now, today or tomorrow: when to run the dishwasher or charge the car.
+    const win = cheapestWindow(vals, pricesTomorrow(store, cfg), h, hours);
+    best.textContent = win
+      ? t(win.start >= 24 ? 'cards.priceBestTomorrow' : win.start === h ? 'cards.priceBestNow' : 'cards.priceBest',
+        { from: hh(win.start), to: hh(win.start + hours), avg: fmt(win.avg, 2, site.locale), n: hours })
+      : '';
+    chart.replaceChildren(priceBars(vals, h, lo, hi, win && win.start < 24 ? [win.start, Math.min(24, win.start + hours)] : null));
+  };
+  store.watch([cfg.entity], render);
+  // The hour changes without the price entity changing: redraw on the hour.
+  const timer = setInterval(() => {
+    if (!now.isConnected) { clearInterval(timer); return; } // the dashboard was rebuilt
+    if (new Date().getMinutes() === 0) render();
+  }, 60000);
+  return card(t('cards.priceToday'), now, best, chart, range);
 }
 
-function priceBars(vals, nowH, lo, hi) {
+function priceBars(vals, nowH, lo, hi, window = null) {
   const W = 288, H = 74, B = 16, gap = 2;
   const bw = (W - gap * 23) / 24;
   const Y = (v) => (H - B) * (1 - v / (hi * 1.05));
@@ -98,7 +119,8 @@ function priceBars(vals, nowH, lo, hi) {
       const rel = hi === lo ? 0.5 : (v - lo) / (hi - lo);
       const cls = h === nowH ? 'now' : rel < 0.33 ? 'cheap' : rel > 0.66 ? 'dear' : 'mid';
       const y = Y(v);
-      return sv('rect', { x: h * (bw + gap), y, width: bw, height: H - B - y, rx: 1.5, class: cls },
+      const inBest = window && h >= window[0] && h < window[1];
+      return sv('rect', { x: h * (bw + gap), y, width: bw, height: H - B - y, rx: 1.5, class: `${cls}${inBest ? ' best' : ''}` },
         sv('title', {}, `${String(h).padStart(2, '0')}:00 · ${v.toFixed(2)}`));
     }),
     [0, 6, 12, 18].map((h) => sv('text', { x: h * (bw + gap), y: H - 3, class: 'axis' }, String(h).padStart(2, '0'))),

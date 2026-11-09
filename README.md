@@ -38,10 +38,12 @@ Then **Settings → Devices & services → Add integration → SmartHomeDash**, 
 | Overview picture | Day and evening picture of the property; lights, lit windows and solar panels drawn live on it |
 | Lift the roof | Tap a building to open its floor plan |
 | Floor plan | Rooms tinted by temperature, every lamp switchable in place, a flame where a room is heating |
-| Room panel | Thermostat with target, mode and presets (Comfort, Eco, Frost …), 24-hour temperature graph, dimmers, doors, windows and sensors |
+| Room panel | Thermostat with target, mode and presets (Comfort, Eco, Frost …), 24-hour temperature graph, dimmers, blinds and curtains, doors, windows and sensors |
 | Doors, windows, presence | Open doors and windows, unlocked locks and alarms marked on the floor plan and the building; rooms with someone in them outlined |
 | Warnings | Smoke, water leaks, a window open while heating, low batteries, devices not responding |
-| Cards | Weather, power now, energy today, hourly electricity price, outdoor and indoor lights, scenes and scripts, heating per room |
+| Energy flow | Dots running from the solar panels, grid and battery to the house and on to the car charger, faster with more power |
+| Dusk and weather | The day picture fades into the evening one as the sun sets; cloud, fog, rain and snow on the picture |
+| Cards | Weather, power now, energy today, hourly electricity price with the cheapest hours ahead, outdoor and indoor lights, scenes and scripts, heating per room |
 
 ## Wall screens and tablets
 
