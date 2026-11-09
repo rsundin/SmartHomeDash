@@ -83,8 +83,9 @@ export function hhmm(iso, locale = 'sv-SE') {
 
 export const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 
+// Also true in light mode (body.is-lite, see ui/wall.js), which drops animation altogether.
 export const reducedMotion = () =>
-  window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
+  document.body?.classList.contains('is-lite') || (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false);
 
 export const storage = {
   get(key, fallback = null) {

@@ -88,6 +88,14 @@ Pick the sensors you have; leave the rest empty and their rows or cards are hidd
 
 Tick the scenes and scripts to show as buttons, and give them short names.
 
+### Wall screen
+
+All optional, for tablets and screens on the wall (see [configuration.md](configuration.md#wall-screens) for the details):
+
+- **Doorbell**: the doorbell entity (a binary sensor, or an event or button entity) and its camera. When it rings, the dashboard shows the camera in a window that closes by itself.
+- **Idle mode**: how long without touch before a screen in kiosk mode goes back to the start, night hours when it dims, and the motion sensors that wake it.
+- **Light mode** for every screen; for one screen only, add `?lite` to its address.
+
 ### Lights and heating
 
 Opens placement mode (also available as **Placera** / **Place** in the header):
@@ -145,6 +153,12 @@ Hold the clock for two seconds to leave kiosk mode; the sidebar comes back. A de
 3. Make the dashboard the start page: in the companion app under *Settings → Companion app*, or in the browser as its home page.
 4. Lock the tablet to the app: **iPad** with *Guided Access* (Settings → Accessibility); **Android** with *screen pinning*, or a kiosk browser such as Fully Kiosk Browser pointed at the `?kiosk` address.
 5. Keep it powered and set auto-lock to *Never*. The dashboard keeps the screen awake while it is visible, where the browser allows it.
+
+**Idle mode.** In kiosk mode the dashboard goes back to the overview after two minutes without touch, closing open panels. With night hours set in the setup guide's **Wall screen** step it also dims at night; a touch or a motion sensor wakes it.
+
+**Doorbell.** With a doorbell and a camera set in the **Wall screen** step, the camera opens in a window when the doorbell rings, and closes by itself.
+
+**Older tablets.** If the picture stutters, add `?lite` to the address (`http://homeassistant.local:8123/home?kiosk&lite`): light mode drops blur, blending and animation. The tablet remembers it; `?lite=0` turns it off.
 
 In landscape at 1024 pixels or wider the dashboard fills the screen without scrolling. On a phone, pinch with two fingers to zoom into the picture or a floor plan, and drag to move around; **Reset zoom** goes back. iPad Safari has no full screen for web pages; use the companion app, or *Add to Home Screen*, for the most screen space.
 

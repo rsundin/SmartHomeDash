@@ -21,6 +21,7 @@ Everything except `name` and at least one floor plan is optional. A card whose e
 | `weather` | entity | A `weather.*` entity |
 | `climates` | list | Climate devices that are not a room, such as a heat pump: `{ "entity": "climate.heat_pump", "name": "Heat pump" }`. Shown in the heating card |
 | `scenes` | list | Buttons for scenes or scripts: `{ "entity": "script.we_are_here", "name": "We're here" }` |
+| `wall_screen` | object | Doorbell camera, idle mode and light mode for wall screens, see [Wall screens](#wall-screens) |
 | `mock` | object | Test data only, for example sunrise and sunset times |
 
 ## overview
@@ -156,6 +157,35 @@ A row above the picture shows, most serious first: alarms (smoke, gas, carbon mo
 - `grid_power` above zero is bought from the grid and `battery_power` above zero is the battery discharging. If your sensors count the other way, set `"grid_invert": true` or `"battery_invert": true` under `energy`.
 - `"energy_flow": false` and `"weather_effects": false` turn them off.
 - With the header set to Auto, the day picture fades into the evening picture from 3° above the horizon to 6° below it (`sun.sun` elevation). The `weather` entity adds a light veil for cloud, fog, rain or snow.
+
+## Wall screens
+
+```json
+"wall_screen": {
+  "doorbell": { "entity": "binary_sensor.doorbell", "camera": "camera.front_door", "name": "Front door", "seconds": 60 },
+  "idle": { "back_after": 120, "dim_from": "22:00", "dim_to": "06:30", "dim": 0.85, "wake": ["binary_sensor.hallway_motion"] },
+  "lite": false
+}
+```
+
+**doorbell**: when `entity` rings, every open dashboard shows `camera` in a window that closes by itself after `seconds` (default 60), or when tapped outside or on ×.
+
+- A `binary_sensor`, `input_boolean` or `switch` rings when it turns on. An `event`, `button` or `input_button` entity rings when it fires (its state, a time stamp, changes).
+- The camera is shown live where Home Assistant can stream it as MJPEG, otherwise as a still picture renewed every two seconds. It goes through Home Assistant's own camera proxy; no camera address or password is needed in site.json.
+- Several doorbells: a list of these objects.
+
+**idle**: only on a device in kiosk mode.
+
+| Field | Description |
+| --- | --- |
+| `back_after` | Seconds without touch before the dashboard goes back to the overview (or the first floor plan) and closes open panels. Default 120; `0` never goes back |
+| `dim_from`, `dim_to` | Night hours, `"HH:MM"`. Between them the screen dims when nobody has touched it for `back_after` seconds (two minutes when `back_after` is 0). Leave out for no dimming |
+| `dim` | How dark, from 0.2 to 0.97. Default 0.85. A faint clock stays on the dimmed screen |
+| `wake` | Motion or presence sensors that wake the dimmed screen when they turn on |
+
+A touch on the dimmed screen only wakes it; it does not switch what is under the finger. A doorbell ring also wakes it. A browser cannot turn the backlight off, so the screen is dimmed with a dark layer; for a fully dark screen at night use the tablet's own schedule or a kiosk browser such as Fully Kiosk Browser.
+
+**lite**: `true` turns light mode on for every screen showing this dashboard: no blur, blending or animation, for older tablets that stutter. Lamp light is drawn without the soft wash on the facade. For a single screen add `?lite` to its address instead; the device remembers it, and `?lite=0` turns it off again.
 
 ## energy
 

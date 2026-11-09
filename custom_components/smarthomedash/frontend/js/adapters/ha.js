@@ -76,6 +76,11 @@ export function createHaAdapter({ url, token }) {
       return send({ type: 'call_service', domain, service, service_data: data });
     },
 
+    // Address of a Home Assistant path, such as a camera picture.
+    url(path) {
+      return (url || location.origin).replace(/\/$/, '') + path;
+    },
+
     async areas() {
       const [areas, entities, devices, floors] = await Promise.all([
         send({ type: 'config/area_registry/list' }),

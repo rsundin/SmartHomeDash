@@ -66,6 +66,11 @@ export function createMockAdapter(site) {
         ...(m.attributes ?? {}),
       }));
     }
+    // Doorbells and their cameras; the camera shows a drawn test picture of a front door.
+    for (const b of [].concat(site.wall_screen?.doorbell ?? [])) {
+      if (b?.entity && !list.some((s) => s.entity_id === b.entity)) list.push(S(b.entity, b.entity.startsWith('binary_sensor.') ? 'off' : now(), { friendly_name: b.name ?? b.entity }));
+      if (b?.camera && !list.some((s) => s.entity_id === b.camera)) list.push(S(b.camera, 'idle', { friendly_name: b.name ?? b.camera, entity_picture: TEST_CAMERA }));
+    }
     for (const room of site.index.rooms.values()) {
       if (room.climate) {
         const target = room.mock?.target ?? 21;
@@ -268,3 +273,12 @@ function seeded(seed) {
     return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
   };
 }
+
+// A drawn test picture for doorbell cameras: a front door at dusk with its porch lamp on.
+const TEST_CAMERA = `data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 360">
+<defs><radialGradient id="l" cx="0.5" cy="0.2" r="0.7"><stop offset="0" stop-color="#ffd9a0" stop-opacity="0.55"/><stop offset="1" stop-color="#ffd9a0" stop-opacity="0"/></radialGradient></defs>
+<rect width="640" height="360" fill="#1b2430"/><rect y="290" width="640" height="70" fill="#2a2f33"/>
+<rect x="250" y="90" width="140" height="200" fill="#3b2a20" stroke="#5a4334" stroke-width="6"/>
+<circle cx="370" cy="195" r="6" fill="#c9a86a"/><rect x="420" y="70" width="14" height="24" rx="4" fill="#ffe7b8"/>
+<rect width="640" height="360" fill="url(#l)"/>
+<text x="20" y="34" fill="#e5eee9" font-family="monospace" font-size="20">TEST</text></svg>`)}`;

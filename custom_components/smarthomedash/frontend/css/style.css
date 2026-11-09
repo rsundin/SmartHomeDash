@@ -598,3 +598,21 @@ details.alert ul { margin: 6px 0 2px; padding-left: 18px; color: var(--muted); f
 .is-editing [data-drag] { cursor: grab; touch-action: none; }
 .is-editing [data-drag].is-dragging { cursor: grabbing; opacity: 0.5; }
 .drag-ghost { fill: rgba(255, 178, 74, 0.35); stroke: var(--glow); stroke-width: 2; vector-effect: non-scaling-stroke; pointer-events: none; }
+
+/* ---------- doorbell camera */
+.bell { position: fixed; inset: 0; z-index: 70; background: rgba(4, 9, 7, 0.72); display: grid; place-items: center; padding: 16px; }
+.bell-card { width: min(960px, 100%); max-height: 100%; background: var(--surface-solid); border: 1px solid var(--glow); border-radius: 12px; padding: 16px; display: grid; gap: 10px; grid-template-rows: auto minmax(0, 1fr) auto; }
+.bell-cam { display: block; width: 100%; height: 100%; max-height: calc(100vh - 180px); object-fit: contain; background: #000; border-radius: var(--r); min-height: 180px; }
+
+/* ---------- idle mode: a dimmed screen at night, woken by a touch or a motion sensor */
+.idle-dim { position: fixed; inset: 0; z-index: 75; background: rgba(0, 0, 0, var(--dim, 0.85)); display: grid; place-items: center; cursor: none; touch-action: none; }
+.idle-clock { font: 500 clamp(48px, 12vw, 160px) var(--f-mono); font-variant-numeric: tabular-nums; color: var(--ink); opacity: 0.22; user-select: none; -webkit-user-select: none; }
+
+/* ---------- light mode for older tablets: no blur, blending or animation */
+.is-lite *, .is-lite *::before, .is-lite *::after { animation: none !important; transition: none !important; }
+.is-lite .ov-glows, .is-lite .ov-windows, .is-lite .ov-solar, .is-lite .fp-glows, .is-lite .ov-tint { mix-blend-mode: normal; }
+.is-lite .ov [filter], .is-lite .ov-flow-dots, .is-lite .stage.is-night .fp-glows { filter: none; }
+.is-lite .ov:not(.is-active) { filter: none; opacity: 0; }
+.is-lite .ov-window-bloom, .is-lite .ov-wash, .is-lite .ov-solar-sweep, .is-lite .ov-wx::after { display: none; }
+.is-lite .stage.is-night .fp-halo { transform: none; }
+.is-lite .sheet, .is-lite .bell { background: rgba(4, 9, 7, 0.9); }

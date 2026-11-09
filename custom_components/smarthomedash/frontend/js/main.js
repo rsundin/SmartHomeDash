@@ -19,6 +19,7 @@ import { createSettings, connKey } from './ui/settings.js';
 import { createEditor } from './ui/editor.js';
 import { createSetup } from './ui/setup.js';
 import { createZoom } from './ui/zoom.js';
+import { createWall, liteMode } from './ui/wall.js';
 import { loadAreas, applyAreaNames, noAreas, linkByName, autoPlace } from './areas.js';
 import { assignSensors, warnings, warningIds } from './status.js';
 
@@ -68,6 +69,8 @@ export async function start(opts) {
   const editing = opts.editing ?? location.hash === '#edit';
   const site = await loadSite(siteId, { useDraft: editing, loader: opts.loader });
   setLanguage(site.language);
+  // Light mode for older tablets: no blur, blending or animation (see ui/wall.js).
+  document.body.classList.toggle('is-lite', liteMode(site));
   document.title = `${site.name} · SmartHomeDash`;
 
   // Connection, in order: a token saved under Anslutning, the Home Assistant login of
@@ -336,6 +339,20 @@ export async function start(opts) {
   if (resume?.startsWith('plan:') && plans.has(resume.slice(5))) { if (overview) showOverview(); await showPlan(resume.slice(5)); }
   else if (overview) showOverview();
   else showPlan(site.floorplans[0]?.id);
+
+  // Wall screens: the doorbell camera, and back to the start view (dimmed at night) when idle.
+  const home = () => {
+    settings.el.hidden = true;
+    panel.close();
+    if (overview) showOverview(); else if (site.floorplans[0]) showPlan(site.floorplans[0].id);
+    zoom.reset();
+  };
+  const wall = editing ? null : createWall({ site, store, adapter, goHome: home, kiosk: () => document.body.classList.contains('is-kiosk'), signal: run.signal });
+  // Test data: ?ring rings the first doorbell a moment after start.
+  const bell = [].concat(site.wall_screen?.doorbell ?? [])[0];
+  if (wall && adapter.kind === 'mock' && params.has('ring') && bell?.entity) {
+    setTimeout(() => { const s = store.get(bell.entity); if (s) store.update({ ...s, state: bell.entity.startsWith('binary_sensor.') ? 'on' : new Date().toISOString() }); }, 1500);
+  }
 
   // Start in kiosk mode from ?kiosk or when this device was left in it. Full screen
   // needs a tap, so it follows on the first touch.

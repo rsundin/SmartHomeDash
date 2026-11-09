@@ -2,12 +2,6 @@
 
 What is planned next, roughly in order. Plans change; ideas and votes are welcome in [issues](https://github.com/rsundin/SmartHomeDash/issues).
 
-## 0.8: wall screens
-
-- **Doorbell camera**: when the doorbell rings, the wall screen shows the camera in a window that closes by itself.
-- **Idle mode**: back to the overview after a while without touch, a dimmed screen at night, woken by a motion sensor.
-- **Light mode for older tablets**: no blur, blending or animation.
-
 ## Later
 
 - **A card for any dashboard** (`custom:smarthomedash-card`), besides the sidebar panel, to put the overview picture in an existing dashboard.
@@ -17,6 +11,7 @@ What is planned next, roughly in order. Plans change; ideas and votes are welcom
 
 ## Done
 
+- 0.8.0: wall screens: doorbell camera, idle mode with night dimming and motion wake, light mode for older tablets
 - 0.7.0: energy flow, dusk and weather on the picture, blinds and curtains, cheapest electricity hours; rooms pick up their area's entities by themselves
 - 0.6.0: doors, windows, locks, presence and alarms per room; warnings; floors from Home Assistant
 - 0.5.2: online demo; lamps glow in their own colour and brightness

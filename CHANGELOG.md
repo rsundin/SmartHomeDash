@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.8.0
+
+Wall screens.
+
+- Doorbell camera: when the doorbell rings, every open dashboard shows the camera in a window that closes by itself after a minute, or at a tap. Live where Home Assistant can stream the camera, otherwise a new still every two seconds. A doorbell can be a binary sensor or an event or button entity
+- Idle mode in kiosk mode: back to the overview after two minutes without touch, open panels closed. At night, between hours you choose, the screen dims with a faint clock; a touch or a motion sensor wakes it, and a touch on the dimmed screen never switches anything
+- Light mode for older tablets: no blur, blending or animation. Add `?lite` to one screen's address (`?lite=0` turns it off), or turn it on for every screen in the setup guide
+- The setup guide has a new **Wall screen** step for all of this; see `wall_screen` in docs/configuration.md
+- The examples ring their doorbell with `?ring` on test data
+
 ## 0.7.1
 
 - Placement mode: drag a lamp to move it, with the mouse or a finger, also while zoomed in. On a floor plan a lamp can be dropped in another room; on the overview picture each fixture of an outdoor lamp moves on its own
