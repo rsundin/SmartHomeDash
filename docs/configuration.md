@@ -108,7 +108,8 @@ Each panel outline glows green while the panels produce, stronger as production 
       "label": [11650, 6600],
       "climate": "climate.living_room",
       "temperature": "sensor.living_room_temperature",
-      "lights": [{ "entity": "light.living_room_ceiling", "name": "Ceiling light", "at": [11650, 8600] }]
+      "lights": [{ "entity": "light.living_room_ceiling", "name": "Ceiling light", "at": [11650, 8600] }],
+      "sensors": ["binary_sensor.living_room_window", "binary_sensor.living_room_motion"]
     }
   ]
 }
@@ -122,6 +123,18 @@ Each panel outline glows green while the panels produce, stronger as production 
 - `temperature` is a temperature sensor; `climate` is the thermostat that gets controlled. With both, the sensor value is shown.
 - `lights[].at` is where the lamp is. Tap to switch, hold to open the room.
 - A light can be a `light.*` or a `switch.*` entity. Only `light.*` entities get a dimmer.
+- `sensors` lists doors, windows, locks, presence and alarm sensors for the room. A room with `ha_area` also gets every such sensor in its area automatically, so the list is only needed without areas. Recognised by their device class: `door`, `window`, `opening` and `garage_door` (shown open or closed), `motion`, `occupancy` and `presence` (a faint outline on the room while someone is there), `smoke`, `gas`, `carbon_monoxide`, `moisture` and `safety` (alarms), `battery`; and every `lock.*`. Open doors and windows, unlocked locks and alarms get an icon on the floor plan and a badge on the building in the overview picture; the room panel lists them all. Locks are shown, not controlled.
+- A floor plan's `ha_floor` links it to a Home Assistant floor by its floor id: the plan then shows the floor's name, and linked plans are listed in floor order.
+
+### Warnings
+
+A row above the picture shows, most serious first: alarms (smoke, gas, carbon monoxide, water leak), a door or window open in a room while it is heating, low batteries and devices that stopped responding. An alarm or open window opens its room when tapped; the others unfold a list.
+
+```json
+"warnings": { "battery": 20 }
+```
+
+`battery` is the level in percent counted as low (default 15). `"warnings": false` turns the row off.
 
 ## energy
 

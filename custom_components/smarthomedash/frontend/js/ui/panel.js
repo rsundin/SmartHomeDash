@@ -3,6 +3,7 @@
 import { el, sv, fmt, clamp } from '../util.js';
 import { isOn, level, roomTemp, climate } from '../entities.js';
 import { t, has } from '../i18n.js';
+import { kindOf, isOpen, isUnlocked, isAlarm, isDead, statusIds } from '../status.js';
 
 export function createPanel({ site, store, adapter }) {
   const body = el('div', { class: 'panel-body' });
@@ -31,7 +32,8 @@ export function createPanel({ site, store, adapter }) {
     if (room.photo) body.append(el('img', { class: 'room-photo', src: site.asset(room.photo), alt: room.name, loading: 'lazy' }));
     if (room.climate || room.temperature) body.append(climateSection(room));
     if (room.lights.length) body.append(lightsSection(room));
-    if (!room.climate && !room.temperature && !room.lights.length) {
+    if (statusIds(room).length) body.append(statusSection(room));
+    if (!room.climate && !room.temperature && !room.lights.length && !statusIds(room).length) {
       body.append(el('p', { class: 'muted' }, t('panel.empty')));
     }
     root.classList.add('is-open');
@@ -102,6 +104,38 @@ export function createPanel({ site, store, adapter }) {
       }, presetLabel(p))));
     }));
     return sec;
+  }
+
+  // Doors, windows, locks, presence, alarms and batteries in the room. Read only:
+  // a wall screen is no place to unlock the front door.
+  function statusSection(room) {
+    const list = el('ul', { class: 'status-list' });
+    const ids = statusIds(room);
+    unwatch.push(store.watch(ids, () => {
+      list.replaceChildren(...ids.map((id) => {
+        const s = store.get(id);
+        const [text, warn] = statusText(s);
+        return el('li', { class: warn ? 'is-warn' : '' },
+          el('span', {}, s?.attributes?.friendly_name ?? id),
+          el('span', { class: 'status-val' }, text));
+      }));
+    }));
+    return el('section', { class: 'psec' }, el('h3', { class: 'eyebrow' }, t('panel.status')), list);
+  }
+
+  function statusText(s) {
+    if (isDead(s)) return [t('status.unavailable'), true];
+    const dc = s.attributes?.device_class;
+    switch (kindOf(s)) {
+      case 'opening': return [t(isOpen(s) ? 'status.open' : 'status.closed'), isOpen(s)];
+      case 'lock': return [t(isUnlocked(s) ? 'status.unlocked' : 'status.locked'), isUnlocked(s)];
+      case 'presence': return [t(isOpen(s) ? (dc === 'motion' ? 'status.motion' : 'status.present') : 'status.clear'), false];
+      case 'alarm': return [t(isAlarm(s) ? 'status.alarm' : 'status.ok'), isAlarm(s)];
+      case 'battery': return s.entity_id.startsWith('binary_sensor.')
+        ? [t(s.state === 'on' ? 'status.batteryLow' : 'status.ok'), s.state === 'on']
+        : [`${s.state} %`, Number(s.state) <= 15];
+      default: return [s.state, false];
+    }
   }
 
   function lightsSection(room) {

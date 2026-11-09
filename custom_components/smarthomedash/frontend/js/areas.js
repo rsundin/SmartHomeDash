@@ -12,7 +12,7 @@
 
 import { centroid, bbox } from './util.js';
 
-export const noAreas = () => ({ list: [], byId: new Map(), entityArea: new Map() });
+export const noAreas = () => ({ list: [], byId: new Map(), entityArea: new Map(), floors: [], floorById: new Map() });
 
 export async function loadAreas(adapter) {
   if (!adapter.areas) return noAreas();
@@ -24,7 +24,7 @@ export async function loadAreas(adapter) {
   }
 }
 
-export function resolve({ areas = [], entities = [], devices = [] } = {}) {
+export function resolve({ areas = [], entities = [], devices = [], floors = [] } = {}) {
   const byId = new Map(areas.map((a) => [a.area_id, a]));
   const deviceArea = new Map(devices.map((d) => [d.id, d.area_id]));
   const entityArea = new Map();
@@ -33,14 +33,31 @@ export function resolve({ areas = [], entities = [], devices = [] } = {}) {
     if (area && byId.has(area)) entityArea.set(e.entity_id, area);
   }
   const list = [...byId.values()];
-  return { list, byId, entityArea };
+  const floorList = [...floors].sort((x, y) => (x.level ?? 0) - (y.level ?? 0));
+  return { list, byId, entityArea, floors: floorList, floorById: new Map(floorList.map((f) => [f.floor_id, f])) };
 }
 
 export const areaName = (areas, id) => areas.byId.get(id)?.name ?? null;
 export const areaOf = (areas, entityId) => areas.entityArea.get(entityId) ?? null;
 
-// Rooms linked to an area show the area's name as it is now in Home Assistant.
+export const floorName = (areas, id) => areas.floorById?.get(id)?.name ?? null;
+
+// Rooms linked to an area show the area's name as it is now in Home Assistant, and
+// floor plans linked to a floor show the floor's name and come in floor order.
 export function applyAreaNames(site, areas) {
+  for (const plan of site.floorplans) {
+    const name = plan.ha_floor && floorName(areas, plan.ha_floor);
+    if (name) plan.name = name;
+  }
+  const level = (p) => areas.floorById?.get(p.ha_floor)?.level;
+  if (site.floorplans.some((p) => level(p) != null)) {
+    const order = new Map(site.floorplans.map((p, i) => [p, i]));
+    site.floorplans.sort((x, y) => {
+      const lx = level(x), ly = level(y);
+      if (lx == null || ly == null) return lx == null && ly == null ? order.get(x) - order.get(y) : lx == null ? 1 : -1;
+      return lx - ly || order.get(x) - order.get(y);
+    });
+  }
   for (const room of site.index.rooms.values()) {
     const name = room.ha_area && areaName(areas, room.ha_area);
     if (!name || name === room.name) continue;
@@ -112,6 +129,11 @@ export function matchRoomsByName(cfg, areas) {
   const key = (s) => (s ?? '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim();
   const byName = new Map(areas.list.map((a) => [key(a.name), a]));
   const matched = [];
+  const floors = new Map((areas.floors ?? []).map((f) => [key(f.name), f]));
+  for (const plan of cfg.floorplans ?? []) {
+    const f = !plan.ha_floor && floors.get(key(plan.name));
+    if (f) { plan.ha_floor = f.floor_id; plan.name = f.name; }
+  }
   for (const plan of cfg.floorplans ?? []) {
     for (const room of plan.rooms ?? []) {
       if (room.ha_area) continue;

@@ -12,7 +12,7 @@
 
 import { el, sv, pts, svgPoint, centroid } from '../util.js';
 import { t } from '../i18n.js';
-import { noAreas, areaName, fillRoomFromArea, matchRoomsByName } from '../areas.js';
+import { noAreas, areaName, floorName, fillRoomFromArea, matchRoomsByName } from '../areas.js';
 
 const STEPS = ['basics', 'overview', 'plans', 'energy', 'buttons', 'lights'];
 
@@ -288,7 +288,14 @@ export function createSetup({ site, store, saveSite, uploadFile, reload, openPla
         el('button', { class: 'chip chip-danger', type: 'button', onclick: () => { plan.rooms.splice(i, 1); changed(); render(); } }, t('setup.remove')))));
       out.push(section(plan.name,
         el('div', { class: 'setup-row' },
-          field(t('setup.name'), input(plan.name, (v) => { plan.name = v; })),
+          plan.ha_floor && floorName(areas, plan.ha_floor)
+            ? field(t('setup.name'), el('span', { class: 'setup-room-name' }, floorName(areas, plan.ha_floor)))
+            : field(t('setup.name'), input(plan.name, (v) => { plan.name = v; })),
+          areas.floors?.length ? field(t('setup.floor'), select(
+            [['', t('setup.noFloor')], ...areas.floors.map((f) => [f.floor_id, f.name])],
+            plan.ha_floor,
+            (v) => { if (v) { plan.ha_floor = v; plan.name = floorName(areas, v); } else delete plan.ha_floor; render(); },
+            { 'aria-label': t('setup.floor') })) : null,
           el('button', { class: 'chip chip-danger', type: 'button', onclick: () => {
             cfg.floorplans.splice(pi, 1);
             for (const b of cfg.overview?.buildings ?? []) if (b.floorplan === plan.id) delete b.floorplan;
@@ -305,14 +312,19 @@ export function createSetup({ site, store, saveSite, uploadFile, reload, openPla
         }) : null));
     }
     const unlinked = cfg.floorplans.flatMap((p) => p.rooms ?? []).filter((r) => !r.ha_area);
-    if (areas.list.length && unlinked.length) {
+    const unlinkedPlans = areas.floors?.length ? cfg.floorplans.filter((p) => !p.ha_floor) : [];
+    if (areas.list.length && (unlinked.length || unlinkedPlans.length)) {
       out.splice(1, 0, section(t('setup.areas'), el('p', { class: 'muted small' }, t('setup.matchAreasHelp')),
         el('button', { class: 'chip', type: 'button', onclick: () => {
+          const plansBefore = cfg.floorplans.filter((p) => p.ha_floor).length;
           const matched = matchRoomsByName(cfg, areas);
+          const plans = cfg.floorplans.filter((p) => p.ha_floor).length - plansBefore;
           const n = matched.reduce((sum, r) => sum + fillRoomFromArea(cfg, r, areas, store), 0);
-          if (matched.length) changed();
+          if (matched.length || plans) changed();
           render();
-          status.textContent = matched.length ? t('setup.matchedAreas', { rooms: matched.length, n }) : t('setup.noAreaMatch');
+          status.textContent = matched.length || plans
+            ? t('setup.matchedAreas', { rooms: matched.length, n }) + (plans ? ` ${t('setup.matchedFloors', { plans })}` : '')
+            : t('setup.noAreaMatch');
         } }, t('setup.matchAreas'))));
     }
     out.push(section(t('setup.addPlan'), el('p', { class: 'muted small' }, t('setup.addPlanHelp')),

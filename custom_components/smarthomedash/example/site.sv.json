@@ -143,6 +143,7 @@
       "rooms": [
         {
           "id": "kitchen",
+          "sensors": ["binary_sensor.kitchen_smoke", "sensor.kitchen_smoke_battery"],
           "name": "Kök",
           "area": [[78, 80], [430, 80], [430, 370], [78, 370]],
           "lights": [
@@ -160,6 +161,7 @@
         },
         {
           "id": "living_room",
+          "sensors": ["binary_sensor.living_room_motion"],
           "name": "Vardagsrum",
           "area": [[78, 370], [430, 370], [430, 440], [455, 440], [455, 945], [78, 945]],
           "climate": "climate.living_room",
@@ -183,6 +185,7 @@
         },
         {
           "id": "bedroom",
+          "sensors": ["binary_sensor.bedroom_window"],
           "name": "Sovrum",
           "area": [[435, 80], [692, 80], [692, 345], [435, 345]],
           "climate": "climate.bedroom",
@@ -220,6 +223,7 @@
         },
         {
           "id": "hall",
+          "sensors": ["binary_sensor.front_door", "lock.front_door"],
           "name": "Hall",
           "area": [[430, 345], [695, 345], [695, 290], [945, 290], [945, 440], [455, 440], [455, 370], [430, 370]],
           "lights": [
@@ -287,6 +291,7 @@
         },
         {
           "id": "garage_room",
+          "sensors": ["binary_sensor.garage_door"],
           "name": "Garage",
           "area": [[430, 85], [950, 85], [950, 945], [430, 945]],
           "lights": [
@@ -349,6 +354,7 @@
     }
   ],
   "mock": {
+    "sensors": {"binary_sensor.front_door": {"device_class": "door", "state": "off", "name": "Ytterdörr"}, "lock.front_door": {"state": "locked", "name": "Ytterdörrens lås"}, "binary_sensor.bedroom_window": {"device_class": "window", "state": "on", "name": "Sovrumsfönster"}, "binary_sensor.living_room_motion": {"device_class": "motion", "state": "on", "name": "Rörelse vardagsrum"}, "binary_sensor.kitchen_smoke": {"device_class": "smoke", "state": "off", "name": "Brandvarnare"}, "sensor.kitchen_smoke_battery": {"device_class": "battery", "state": "9", "unit": "%", "name": "Brandvarnarens batteri"}, "binary_sensor.garage_door": {"device_class": "garage_door", "state": "on", "name": "Garageport"}},
     "colors": { "light.living_room_floor_lamp": [176, 96, 255], "light.garage_outdoor": [210, 225, 255] },
     "sun": {
       "rise": "07:30",

@@ -25,6 +25,7 @@
       "rooms": [
         {
           "id": "hall",
+          "sensors": ["binary_sensor.front_door", "lock.front_door"],
           "name": "Hall",
           "area": [[110, 115], [420, 115], [420, 350], [760, 350], [760, 470], [160, 470], [160, 375], [110, 375]],
           "lights": [
@@ -42,6 +43,7 @@
         },
         {
           "id": "living_room",
+          "sensors": ["binary_sensor.living_room_motion"],
           "name": "Vardagsrum",
           "area": [[110, 375], [160, 375], [160, 470], [440, 470], [440, 775], [110, 775]],
           "climate": "climate.living_room",
@@ -90,6 +92,7 @@
         },
         {
           "id": "bathroom",
+          "sensors": ["binary_sensor.bathroom_leak", "sensor.bathroom_leak_battery"],
           "name": "Badrum",
           "area": [[675, 115], [915, 115], [915, 465], [770, 465], [770, 350], [675, 350]],
           "climate": "climate.bathroom_floor",
@@ -108,6 +111,7 @@
         },
         {
           "id": "bedroom",
+          "sensors": ["binary_sensor.bedroom_window"],
           "name": "Sovrum",
           "area": [[675, 475], [915, 475], [915, 800], [675, 800]],
           "climate": "climate.bedroom",
@@ -176,6 +180,7 @@
     }
   ],
   "mock": {
+    "sensors": {"binary_sensor.front_door": {"device_class": "door", "state": "off", "name": "Ytterdörr"}, "lock.front_door": {"state": "unlocked", "name": "Ytterdörrens lås"}, "binary_sensor.living_room_motion": {"device_class": "motion", "state": "on", "name": "Rörelse vardagsrum"}, "binary_sensor.bathroom_leak": {"device_class": "moisture", "state": "off", "name": "Läckagegivare"}, "sensor.bathroom_leak_battery": {"device_class": "battery", "state": "12", "unit": "%", "name": "Läckagegivarens batteri"}, "binary_sensor.bedroom_window": {"device_class": "window", "state": "off", "name": "Sovrumsfönster"}},
     "colors": { "light.living_room_floor_lamp": [176, 96, 255], "light.balcony_string": [255, 120, 190], "light.bedside": [255, 150, 80] },
     "sun": {
       "rise": "07:30",

@@ -12,6 +12,8 @@ import { el, sv, pts, centroid, bbox, press, clamp, fmt } from '../util.js';
 import { zoneLevel, kw } from '../entities.js';
 import { t } from '../i18n.js';
 import { mixColor, createTints } from '../glow.js';
+import { roomStatus, statusIds } from '../status.js';
+import { ICONS } from './floorplan.js';
 
 export function createOverview({ site, store, adapter, onOpenBuilding }) {
   const ov = site.overview;
@@ -154,8 +156,34 @@ export function createOverview({ site, store, adapter, onOpenBuilding }) {
     }
   }
 
+  // ---------- a badge on each building with an alarm, or doors, windows or locks open
+  const badgesG = sv('g', { class: 'ov-badges' });
+  for (const b of ov.buildings) {
+    const rooms = [...site.index.rooms.values()].filter((r) => b.floorplan && r.plan === b.floorplan);
+    const ids = rooms.flatMap(statusIds);
+    if (!ids.length) continue;
+    const [cx] = centroid(b.area);
+    const box = bbox([b.area]);
+    const r = Math.max(14, Math.min(24, box.w / 12));
+    const badge = sv('g', { class: 'ov-badge', transform: `translate(${cx} ${box.y + r * 0.2})` });
+    badgesG.append(badge);
+    store.watch(ids, () => {
+      const st = rooms.map((room) => roomStatus(store, room));
+      const alarms = st.reduce((n, s) => n + s.alarms.length, 0);
+      const open = st.reduce((n, s) => n + s.open.length + s.unlocked.length, 0);
+      if (!alarms && !open) { badge.replaceChildren(); return; }
+      badge.setAttribute('class', `ov-badge ${alarms ? 'is-alarm' : 'is-open'}`);
+      const onlyWindows = st.every((s) => s.open.every((id) => store.get(id)?.attributes?.device_class === 'window') && !s.unlocked.length);
+      const glyph = alarms ? ICONS.alarm : onlyWindows ? ICONS.window : ICONS.door;
+      const icon = sv('g', { transform: `translate(${-r * 0.62} ${-r * 0.62}) scale(${(r * 1.24) / 24})` }, sv('path', { d: glyph }));
+      const n = alarms || open;
+      badge.replaceChildren(sv('circle', { r }), icon,
+        n > 1 ? sv('g', { transform: `translate(${r * 0.85} ${-r * 0.75})` }, sv('circle', { r: r * 0.55, class: 'ov-badge-count' }), sv('text', { 'text-anchor': 'middle', y: r * 0.22, 'font-size': r * 0.7 }, String(n))) : null);
+    });
+  }
+
   const upper = sv('svg', { viewBox: vb, class: 'ov-upper' },
-    defs, windowsG, solarG, lampsG, chip, hits, zoneHits);
+    defs, windowsG, solarG, lampsG, chip, badgesG, hits, zoneHits);
 
   const root = el('div', { class: `view ov${nightImg ? ' has-night-image' : ''}`, style: { aspectRatio: `${W} / ${H}` } }, lower, upper);
 

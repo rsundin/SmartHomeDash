@@ -5,6 +5,15 @@ import { el, sv, pts, centroid, bbox, press, fmt } from '../util.js';
 import { level, roomTemp, comfort, heating, climate } from '../entities.js';
 import { t } from '../i18n.js';
 import { lightColor, createTints } from '../glow.js';
+import { roomStatus, statusIds } from '../status.js';
+
+// Status icons, drawn in a 24-unit box.
+export const ICONS = {
+  window: 'M5 4h14v16H5zM12 4v16M5 12h14',
+  door: 'M7 3h10v18H7zM14 12.5v.01',
+  unlocked: 'M6 11h12v9H6zM9 11V7.5a3 3 0 0 1 5.8-1.1',
+  alarm: 'M12 3.5 21.5 20h-19zM12 10v4.5M12 17v.01',
+};
 
 const FLAME = 'M12 2c1 3.5-1.5 5-1.5 7.5A2.5 2.5 0 0 0 13 12c0-1 .5-2 1.5-2.5C16 12 18 13.5 18 16a6 6 0 0 1-12 0c0-4 3-6 6-14z';
 
@@ -55,6 +64,28 @@ export function createFloorplan({ site, plan, store, adapter, onRoom }) {
     const flame = sv('path', { class: 'fp-flame', d: FLAME, transform: `translate(${cx - unit * 2.6} ${cy + unit * 0.05}) scale(${unit / 18})` });
     const g = sv('g', { class: 'fp-label' }, name, tempText, flame);
     labels.append(g);
+
+    // Open doors and windows, unlocked locks and alarms: small icons above the name.
+    // A room with motion or presence right now gets a faint outline.
+    if (statusIds(room).length) {
+      const badges = sv('g', { class: 'fp-badges' });
+      badges.style.pointerEvents = 'none';
+      labels.append(badges);
+      const size = unit * 1.5;
+      store.watch(statusIds(room), () => {
+        const st = roomStatus(store, room);
+        fill.classList.toggle('is-occupied', st.present);
+        const icons = [
+          ...st.alarms.map(() => ['alarm', 'is-alarm']),
+          ...st.open.map((id) => [store.get(id)?.attributes?.device_class === 'window' ? 'window' : 'door', 'is-open']),
+          ...st.unlocked.map(() => ['unlocked', 'is-open']),
+        ].slice(0, 4);
+        const x0 = cx - ((icons.length - 1) * size * 1.15) / 2;
+        badges.replaceChildren(...icons.map(([icon, cls], i) => sv('g', {
+          class: `fp-badge ${cls}`, transform: `translate(${x0 + i * size * 1.15 - size / 2} ${cy - unit * 2.9}) scale(${size / 24})`,
+        }, sv('circle', { cx: 12, cy: 12, r: 12 }), sv('path', { d: ICONS[icon], transform: 'translate(3.6 3.6) scale(0.7)' }))));
+      });
+    }
 
     const ids = [room.climate, room.temperature];
     store.watch(ids, () => {

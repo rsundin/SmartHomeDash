@@ -20,6 +20,7 @@ import { createEditor } from './ui/editor.js';
 import { createSetup } from './ui/setup.js';
 import { createZoom } from './ui/zoom.js';
 import { loadAreas, applyAreaNames, noAreas } from './areas.js';
+import { assignSensors, warnings, warningIds } from './status.js';
 
 // The online demo sets data-demo on <body> (see .github/workflows/pages.yml).
 const DEMO = document.body?.dataset.demo === 'true';
@@ -141,7 +142,8 @@ export async function start(opts) {
   const panel = createPanel({ site, store, adapter });
   const side = el('div');
   const main = el('main', { class: 'layout' }, stageWrap, side);
-  app.replaceChildren(header, main, panel.el, settings.el);
+  const alerts = el('div', { class: 'alerts', hidden: true, role: 'status', 'aria-live': 'polite' });
+  app.replaceChildren(header, alerts, main, panel.el, settings.el);
 
   // The online demo (GitHub Pages): say what it is and where to get it.
   if (DEMO) {
@@ -169,6 +171,8 @@ export async function start(opts) {
   // Home Assistant areas: room names follow the area they are linked to.
   site.areas = store.all().length ? await loadAreas(adapter) : noAreas();
   applyAreaNames(site, site.areas);
+  // Doors, windows, locks, presence and alarms per room, from the room's area and site.json.
+  assignSensors(site, store);
 
   // ---- views
   let view = null;
@@ -196,6 +200,19 @@ export async function start(opts) {
   }
   panel.el.addEventListener('close', () => plans.forEach((p) => p.select(null)));
   side.replaceWith(createSide({ site, store, adapter, openRoom }));
+
+  // ---- warnings: alarms and open windows open their room; the rest unfold a list
+  const nameOf = (id) => store.get(id)?.attributes?.friendly_name ?? site.index.names.get(id) ?? id;
+  store.watch(warningIds(site), () => {
+    const list = warnings(site, store, nameOf);
+    const unfolded = new Set([...alerts.querySelectorAll('details[open]')].map((d) => d.dataset.key));
+    alerts.hidden = !list.length;
+    alerts.replaceChildren(...list.map((w) => (w.items
+      ? el('details', { class: 'alert', 'data-level': w.level, 'data-key': w.key, open: unfolded.has(w.key) },
+        el('summary', {}, w.text),
+        el('ul', {}, w.items.map((i) => el('li', {}, i))))
+      : el('button', { class: 'alert', type: 'button', 'data-level': w.level, onclick: () => w.room && openRoom(w.room) }, w.text))));
+  });
   if (editor) {
     document.querySelectorAll('.editor').forEach((n) => n.remove());
     document.body.append(editor.el);

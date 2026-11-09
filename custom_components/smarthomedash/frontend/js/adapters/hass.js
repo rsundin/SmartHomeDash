@@ -41,14 +41,15 @@ export function createHassAdapter(initialHass) {
     // the frontend on the hass object; older ones are asked over the websocket.
     async areas() {
       if (hass.areas && hass.entities && hass.devices) {
-        return { areas: Object.values(hass.areas), entities: Object.values(hass.entities), devices: Object.values(hass.devices) };
+        return { areas: Object.values(hass.areas), entities: Object.values(hass.entities), devices: Object.values(hass.devices), floors: Object.values(hass.floors ?? {}) };
       }
-      const [areas, entities, devices] = await Promise.all([
+      const [areas, entities, devices, floors] = await Promise.all([
         hass.callWS({ type: 'config/area_registry/list' }),
         hass.callWS({ type: 'config/entity_registry/list' }),
         hass.callWS({ type: 'config/device_registry/list' }),
+        hass.callWS({ type: 'config/floor_registry/list' }).catch(() => []),
       ]);
-      return { areas, entities, devices };
+      return { areas, entities, devices, floors };
     },
 
     async history(entityId, hours = 24) {
