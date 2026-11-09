@@ -28,7 +28,7 @@ Copy `custom_components/smarthomedash` from this repository to `<config>/custom_
 ## 2. Add a dashboard
 
 1. **Settings → Devices & services → Add integration → SmartHomeDash.**
-2. Give it a name (shown in the sidebar), choose **House** or **Apartment**, an icon and optionally an address.
+2. Give it a name (shown in the sidebar; renaming it later in the setup guide or under the integration's **Configure** renames the sidebar entry too), choose **House** or **Apartment**, an icon and optionally an address.
 3. The dashboard appears in the sidebar. Add the integration again for another home.
 
 Each dashboard has its own folder, `<config>/smarthomedash/sites/<name>/`, holding its config and pictures. These files are only served to logged-in users. Removing the integration entry removes the panel but keeps the folder.

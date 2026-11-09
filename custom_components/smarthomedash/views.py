@@ -126,6 +126,10 @@ class SitesView(HomeAssistantView):
         text = json.dumps(data, ensure_ascii=False, indent=2) + "\n"
         await self._hass.async_add_executor_job(write_atomic, path, text.encode("utf-8"), True)
         _LOGGER.info("Saved site.json for site %s", site)
+        if isinstance(data.get("name"), str):
+            # The sidebar title follows the name set in the setup guide.
+            from . import async_site_renamed
+            async_site_renamed(self._hass, site, data["name"])
         return self.json({"saved": True})
 
     async def _put_picture(self, request: web.Request, site: str, path: Path) -> web.Response:
