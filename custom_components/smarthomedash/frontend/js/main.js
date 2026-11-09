@@ -114,7 +114,9 @@ export async function start(opts) {
   // buttons (and, in the panel, Home Assistant's sidebar) and goes full screen.
   // Hold the clock for two seconds to leave it.
   const kiosk = opts.kiosk ?? standaloneKiosk();
-  const kioskBtn = el('button', { class: 'chip', type: 'button', onclick: () => setKiosk(true, true) }, t('app.kiosk'));
+  let wall = null; // set up further down, once the views exist
+  // The kiosk button opens the wall screen sheet: kiosk mode, light mode, test the doorbell.
+  const kioskBtn = el('button', { class: 'chip', type: 'button', onclick: () => (wall ? wall.open() : setKiosk(true, true)) }, t('app.kiosk'));
   function setKiosk(on, gesture) {
     document.body.classList.toggle('is-kiosk', on);
     if (on) {
@@ -347,7 +349,7 @@ export async function start(opts) {
     if (overview) showOverview(); else if (site.floorplans[0]) showPlan(site.floorplans[0].id);
     zoom.reset();
   };
-  const wall = editing ? null : createWall({ site, store, adapter, goHome: home, kiosk: () => document.body.classList.contains('is-kiosk'), signal: run.signal });
+  wall = editing ? null : createWall({ site, store, adapter, goHome: home, kiosk: () => document.body.classList.contains('is-kiosk'), enterKiosk: () => setKiosk(true, true), signal: run.signal });
   // Test data: ?ring rings the first doorbell a moment after start.
   const bell = [].concat(site.wall_screen?.doorbell ?? [])[0];
   if (wall && adapter.kind === 'mock' && params.has('ring') && bell?.entity) {

@@ -10,8 +10,10 @@
 // Doorbell: when the entity rings, the camera opens in a window that closes by itself.
 // Idle (kiosk mode only): back to the start view after a while without touch, and between
 // dim_from and dim_to a dimmed screen that a touch or a motion sensor wakes.
-// Light mode: no blur, blending or animation, for older tablets. Per device with ?lite
-// (and ?lite=0 to turn it off again), or for every screen with "lite": true.
+// Light mode: no blur, blending or animation, for older tablets. Per device On, Off or
+// Auto on the wall screen sheet (the Kiosk mode button), or with ?lite and ?lite=0 on the
+// address. Auto follows "lite": true for every screen, and otherwise turns it on for
+// devices with two cores or 2 GB of memory or less.
 
 import { el, storage } from '../util.js';
 import { t } from '../i18n.js';
@@ -24,11 +26,26 @@ function pageParams() {
   try { return new URLSearchParams(window.top.location.search); } catch { return new URLSearchParams(location.search); }
 }
 
-export function liteMode(site) {
+// This device's setting: 'auto', 'on' or 'off'. ?lite on the address sets it.
+// (0.8.0 stored true or false.)
+export function liteSetting() {
   const p = pageParams();
-  if (p.has('lite')) storage.set(LITE_KEY, !['0', 'false', 'off'].includes(p.get('lite')));
-  const device = storage.get(LITE_KEY);
-  return device ?? site.wall_screen?.lite === true;
+  if (p.has('lite')) storage.set(LITE_KEY, ['0', 'false', 'off', 'no'].includes(p.get('lite').toLowerCase()) ? 'off' : 'on');
+  const v = storage.get(LITE_KEY);
+  if (v === true) return 'on';
+  if (v === false) return 'off';
+  return v === 'on' || v === 'off' ? v : 'auto';
+}
+
+// Older tablets: two cores or 2 GB of memory or less, where the browser tells.
+export function liteAuto(site) {
+  if (site?.wall_screen?.lite === true) return true;
+  const mem = navigator.deviceMemory, cores = navigator.hardwareConcurrency;
+  return (mem > 0 && mem <= 2) || (cores > 0 && cores <= 2);
+}
+
+export function liteMode(site, setting = liteSetting()) {
+  return setting === 'on' || (setting === 'auto' && liteAuto(site));
 }
 
 const isOn = (s) => s?.state === 'on';
@@ -62,14 +79,15 @@ export function inWindow(now, from, to) {
  * @param {object} o.adapter   adapter.url(path) turns a Home Assistant path into an address
  * @param {Function} o.goHome  back to the start view, panels closed
  * @param {Function} o.kiosk   () => is this device in kiosk mode
+ * @param {Function} o.enterKiosk  starts kiosk mode (from a tap)
  * @param {AbortSignal} o.signal
  */
-export function createWall({ site, store, adapter, goHome, kiosk, signal }) {
+export function createWall({ site, store, adapter, goHome, kiosk, enterKiosk, signal }) {
   const cfg = site.wall_screen ?? {};
   const idle = cfg.idle ?? {};
   const bells = [].concat(cfg.doorbell ?? []).filter((b) => b?.entity && b?.camera);
   const timers = [];
-  signal.addEventListener('abort', () => { timers.forEach(clearInterval); closeBell(); dimmer.remove(); });
+  signal.addEventListener('abort', () => { timers.forEach(clearInterval); closeBell(); dimmer.remove(); sheet.remove(); });
 
   // ---------- idle
   let last = Date.now();
@@ -85,7 +103,7 @@ export function createWall({ site, store, adapter, goHome, kiosk, signal }) {
   dimmer.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); });
 
   const touched = () => { last = Date.now(); away = false; if (!dimmer.hidden) wake(); };
-  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeBell(); }, { signal });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { closeBell(); closeSheet(); } }, { signal });
   for (const type of ['pointerdown', 'keydown', 'wheel']) document.addEventListener(type, touched, { capture: true, passive: true, signal });
 
   function wake() {
@@ -181,5 +199,41 @@ export function createWall({ site, store, adapter, goHome, kiosk, signal }) {
     last = Date.now();
   }
 
-  return { ring: (i = 0) => bells[i] && ring(bells[i]), wake };
+  // ---------- the wall screen sheet (the Kiosk mode button): kiosk mode, light mode on
+  // this device, test the doorbell
+  const seg = el('div', { class: 'seg', role: 'group', 'aria-label': t('wall.lite') });
+  const renderSeg = () => {
+    const current = liteSetting();
+    seg.replaceChildren(...['auto', 'on', 'off'].map((v) => el('button', {
+      type: 'button', class: v === current ? 'is-active' : null, 'aria-pressed': String(v === current),
+      onclick: () => {
+        storage.set(LITE_KEY, v);
+        document.body.classList.toggle('is-lite', liteMode(site, v));
+        renderSeg();
+      },
+    }, v === 'auto' ? t('wall.liteAuto', { state: t(liteAuto(site) ? 'wall.on' : 'wall.off') }) : t(v === 'on' ? 'wall.liteOn' : 'wall.liteOff'))));
+  };
+  const sheet = el('div', { class: 'sheet', hidden: true },
+    el('div', { class: 'sheet-card', role: 'dialog', 'aria-label': t('wall.title') },
+      el('header', { class: 'panel-head' },
+        el('div', {}, el('p', { class: 'eyebrow' }, t('wall.eyebrow')), el('h2', { class: 'panel-title' }, t('wall.title'))),
+        el('button', { class: 'icon-btn', type: 'button', 'aria-label': t('settings.close'), onclick: closeSheet }, '×')),
+      el('p', { class: 'small' }, t('wall.kioskHelp')),
+      el('div', { class: 'row' }, el('button', { class: 'chip chip-primary', type: 'button', onclick: () => { closeSheet(); enterKiosk(); } }, t('wall.startKiosk'))),
+      el('h3', { class: 'eyebrow wall-h' }, t('wall.lite')),
+      seg,
+      el('p', { class: 'muted small' }, t('wall.liteHelp')),
+      el('h3', { class: 'eyebrow wall-h' }, t('wall.doorbell')),
+      el('p', { class: 'muted small' }, bells.length ? t('wall.doorbellOn') : t('wall.doorbellOff')),
+      // Shows the window on this screen only; nothing is rung in Home Assistant.
+      bells.length ? el('div', { class: 'row' }, el('button', { class: 'chip', type: 'button', onclick: () => { closeSheet(); ring(bells[0]); } }, t('wall.testDoorbell'))) : null));
+  sheet.addEventListener('click', (e) => { if (e.target === sheet) closeSheet(); });
+  document.body.append(sheet);
+  function closeSheet() { sheet.hidden = true; }
+
+  return {
+    ring: (i = 0) => bells[i] && ring(bells[i]),
+    wake,
+    open() { renderSeg(); sheet.hidden = false; },
+  };
 }
