@@ -18,6 +18,7 @@ import { createSide } from './ui/cards.js';
 import { createSettings, connKey } from './ui/settings.js';
 import { createEditor } from './ui/editor.js';
 import { createSetup } from './ui/setup.js';
+import { loadAreas, applyAreaNames, noAreas } from './areas.js';
 import { t, setLanguage } from './i18n.js';
 
 const params = new URLSearchParams(location.search);
@@ -150,6 +151,9 @@ export async function start(opts) {
       t('app.connectFailed', { msg: e.message }),
       el('a', { href: '?mock' + (params.get('site') ? `&site=${site.id}` : '') }, t('app.showTestData'))));
   }
+  // Home Assistant areas: room names follow the area they are linked to.
+  site.areas = store.all().length ? await loadAreas(adapter) : noAreas();
+  applyAreaNames(site, site.areas);
 
   // ---- views
   let view = null;

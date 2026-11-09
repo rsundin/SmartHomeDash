@@ -3,6 +3,7 @@
 
 import { el, sv, fmt, hhmm, num } from '../util.js';
 import { isOn, zoneLevel, kw, pricesToday, roomTemp, climate, heating, comfort } from '../entities.js';
+import { areaOf, areaName } from '../areas.js';
 import { t } from '../i18n.js';
 
 
@@ -107,8 +108,16 @@ function priceBars(vals, nowH, lo, hi) {
 function lightsCard({ site, store, adapter }) {
   const zones = site.overview?.zones ?? [];
   const roomsWithLights = [...site.index.rooms.values()].filter((r) => r.lights.length);
+  // Outdoor lamps in the same Home Assistant area share one switch, named after the area.
+  const outdoor = [];
+  for (const z of zones) {
+    const area = site.areas && z.lights.map((id) => areaOf(site.areas, id)).find(Boolean);
+    const group = area && outdoor.find((g) => g.area === area);
+    if (group) group.lights.push(...z.lights.filter((id) => !group.lights.includes(id)));
+    else outdoor.push({ area, name: (area && areaName(site.areas, area)) || z.name, lights: [...z.lights], kind: t('cards.outdoor') });
+  }
   const groups = [
-    ...zones.map((z) => ({ name: z.name, lights: z.lights, kind: t('cards.outdoor') })),
+    ...outdoor,
     ...roomsWithLights.map((r) => ({ name: r.name, lights: r.lights.map((l) => l.entity), kind: t('cards.indoor') })),
   ];
   if (!groups.length && !site.scenes.length) return null;

@@ -12,8 +12,23 @@
 
 import { el, sv, pts, svgPoint, centroid } from '../util.js';
 import { t } from '../i18n.js';
+import { noAreas, areaName, fillRoomFromArea, matchRoomsByName } from '../areas.js';
 
 const STEPS = ['basics', 'overview', 'plans', 'energy', 'buttons', 'lights'];
+
+// Prompts for making the overview pictures from a map screenshot with an image model.
+// English on purpose: image models follow it most consistently. Kept in step with
+// docs/overview-picture.md.
+const PROMPT_DAY = `Turn this screenshot from a 3D map into a photorealistic drone photograph of the same property. Keep the exact camera angle, framing and aspect ratio. Keep every building, roof shape, window, door, solar panel, driveway, tree and fence where it is and in its real proportions; do not add or remove buildings.
+Clean up map artefacts: melted or blurry geometry, smeared trees, flat textures, labels, icons, cars and people.
+Light: bright overcast midday, soft even daylight, gentle shadows, natural colours.
+Make building outlines, roof edges, windows and solar panels crisp and clearly visible.
+All lights are OFF: no lit windows, no outdoor lamps.
+No text, no watermark, no people, no vehicles.`;
+const PROMPT_NIGHT = `Edit this exact image. Keep the camera angle, framing, image size and every building, roof, window, solar panel, tree and path exactly where they are; change nothing but the light. Change the time of day to blue hour shortly after sunset: deep blue sky glow, cool ambient light, soft shadows, buildings still clearly readable.
+All lights are OFF: no lit windows, no outdoor lamps, no glow anywhere.
+Photorealistic. No text, no people.`;
+const GUIDE_URL = 'https://github.com/rsundin/SmartHomeDash/blob/main/docs/overview-picture.md';
 
 export function createSetup({ site, store, saveSite, uploadFile, reload, openPlacement }) {
   const cfg = structuredClone(site.raw);
@@ -22,6 +37,7 @@ export function createSetup({ site, store, saveSite, uploadFile, reload, openPla
   cfg.scenes ??= [];
   const previews = new Map(); // path -> object URL for pictures uploaded in this session
   const picture = (path) => previews.get(path) ?? site.asset(path);
+  const areas = site.areas ?? noAreas();
   let step = STEPS[0];
   let dirty = false;
 
@@ -89,7 +105,7 @@ export function createSetup({ site, store, saveSite, uploadFile, reload, openPla
   const select = (options, value, onChange, attrs = {}) => {
     const n = el('select', { class: 'setup-input', ...attrs },
       options.map(([v, label]) => el('option', { value: v, selected: v === (value ?? '') }, label)));
-    n.addEventListener('change', () => { onChange(n.value); changed(); });
+    n.addEventListener('change', () => { changed(); onChange(n.value); });
     return n;
   };
   const fileButton = (label, onFile) => {
@@ -166,6 +182,7 @@ export function createSetup({ site, store, saveSite, uploadFile, reload, openPla
           ov.night_image = name;
           render();
         }, ov.night_image ? () => { delete ov.night_image; changed(); render(); } : null, t('setup.nightHelp')) : null)));
+    out.push(noDroneGuide(!ov?.image || isExample(ov.image)));
     if (!ov?.image) return out;
     out.push(section(t('setup.removeOverview'), el('p', { class: 'muted small' }, t('setup.removeOverviewHelp')),
       el('button', { class: 'chip chip-danger', type: 'button', onclick: () => { delete cfg.overview; changed(); step = 'plans'; render(); } }, t('setup.removeOverview'))));
@@ -209,6 +226,32 @@ export function createSetup({ site, store, saveSite, uploadFile, reload, openPla
     return out;
   }
 
+  // No drone: make the pictures from a 3D map screenshot and an image model.
+  function noDroneGuide(open) {
+    const prompt = (title, text) => {
+      const copy = el('button', { class: 'chip', type: 'button' }, t('editor.copy'));
+      copy.addEventListener('click', () => navigator.clipboard?.writeText(text)
+        .then(() => { status.textContent = t('editor.copied'); })
+        .catch(() => { status.textContent = t('setup.copyManual'); }));
+      return el('div', { class: 'setup-prompt' },
+        el('div', { class: 'row-between' }, el('strong', {}, title), copy),
+        el('pre', {}, text));
+    };
+    return el('details', { class: 'setup-section setup-guide', open },
+      el('summary', { class: 'eyebrow' }, t('setup.noDrone')),
+      el('p', { class: 'muted small' }, t('setup.noDroneIntro')),
+      el('ol', { class: 'setup-steps' },
+        el('li', {}, t('setup.noDrone1')),
+        el('li', {}, t('setup.noDrone2')),
+        el('li', {}, t('setup.noDrone3')),
+        el('li', {}, t('setup.noDrone4')),
+        el('li', {}, t('setup.noDrone5'))),
+      prompt(t('setup.promptDay'), PROMPT_DAY),
+      prompt(t('setup.promptNight'), PROMPT_NIGHT),
+      el('p', { class: 'muted small' }, t('setup.noDroneNote'), ' ',
+        el('a', { href: GUIDE_URL, target: '_blank', rel: 'noopener' }, t('setup.noDroneMore'))));
+  }
+
   function overviewShapes() {
     const ov = cfg.overview;
     return [
@@ -235,9 +278,13 @@ export function createSetup({ site, store, saveSite, uploadFile, reload, openPla
     for (const [pi, plan] of cfg.floorplans.entries()) {
       const src = plan.image ? picture(typeof plan.image === 'string' ? plan.image : plan.image.src) : null;
       const size = plan.image?.bounds ? [plan.image.bounds[2], plan.image.bounds[3]] : null;
-      const roomList = el('ul', { class: 'setup-list' }, (plan.rooms ?? []).map((r, i) => el('li', {},
-        input(r.name, (v) => { r.name = v; }, { 'aria-label': t('setup.name') }),
-        el('span', { class: 'muted small' }, [r.climate ? t('setup.thermostatShort') : '', r.lights?.length ? `${r.lights.length} ${t('setup.lightsShort')}` : ''].filter(Boolean).join(' ')),
+      const roomList = el('ul', { class: 'setup-list setup-rooms' }, (plan.rooms ?? []).map((r, i) => el('li', {},
+        areas.list.length ? areaSelect(r) : null,
+        r.ha_area && areaName(areas, r.ha_area)
+          ? el('span', { class: 'setup-room-name' }, areaName(areas, r.ha_area))
+          : input(r.name, (v) => { r.name = v; }, { 'aria-label': t('setup.name') }),
+        el('span', { class: 'muted small' }, roomSummary(r)),
+        r.ha_area ? el('button', { class: 'chip', type: 'button', onclick: () => fill(r) }, t('setup.fetchFromArea')) : null,
         el('button', { class: 'chip chip-danger', type: 'button', onclick: () => { plan.rooms.splice(i, 1); changed(); render(); } }, t('setup.remove')))));
       out.push(section(plan.name,
         el('div', { class: 'setup-row' },
@@ -248,12 +295,25 @@ export function createSetup({ site, store, saveSite, uploadFile, reload, openPla
             changed(); render();
           } }, t('setup.removePlan'))),
         src ? el('img', { class: 'setup-plan-thumb', src, alt: plan.name }) : el('p', { class: 'muted small' }, t('setup.planNoPicture')),
-        el('h4', { class: 'setup-label' }, t('setup.rooms')), roomList,
+        el('h4', { class: 'setup-label' }, t('setup.rooms')),
+        areas.list.length ? el('p', { class: 'muted small' }, t('setup.areasHelp')) : null,
+        roomList,
         src && size ? drawButton(t('setup.drawRoom'), { src, size, shapes: (plan.rooms ?? []).map((r) => ({ points: r.area, label: r.name, kind: 'room' })) }, (poly) => {
           plan.rooms ??= [];
           const name = t('setup.room') + ` ${plan.rooms.length + 1}`;
           plan.rooms.push({ id: uniqueId(slug(name), cfg.floorplans.flatMap((p) => (p.rooms ?? []).map((r) => r.id))), name, area: poly, lights: [] });
         }) : null));
+    }
+    const unlinked = cfg.floorplans.flatMap((p) => p.rooms ?? []).filter((r) => !r.ha_area);
+    if (areas.list.length && unlinked.length) {
+      out.splice(1, 0, section(t('setup.areas'), el('p', { class: 'muted small' }, t('setup.matchAreasHelp')),
+        el('button', { class: 'chip', type: 'button', onclick: () => {
+          const matched = matchRoomsByName(cfg, areas);
+          const n = matched.reduce((sum, r) => sum + fillRoomFromArea(cfg, r, areas, store), 0);
+          if (matched.length) changed();
+          render();
+          status.textContent = matched.length ? t('setup.matchedAreas', { rooms: matched.length, n }) : t('setup.noAreaMatch');
+        } }, t('setup.matchAreas'))));
     }
     out.push(section(t('setup.addPlan'), el('p', { class: 'muted small' }, t('setup.addPlanHelp')),
       fileButton(t('setup.uploadPlan'), async (file) => {
@@ -276,6 +336,35 @@ export function createSetup({ site, store, saveSite, uploadFile, reload, openPla
       })));
     return out;
   }
+
+  // A room linked to a Home Assistant area takes the area's name, lights and thermostat.
+  function areaSelect(room) {
+    const options = [['', t('setup.noArea')], ...areas.list
+      .map((a) => [a.area_id, a.name])
+      .sort((a, b) => a[1].localeCompare(b[1], site.locale))];
+    return select(options, room.ha_area, (v) => {
+      if (v) {
+        room.ha_area = v;
+        room.name = areaName(areas, v);
+        const n = fillRoomFromArea(cfg, room, areas, store);
+        status.textContent = t('setup.fetched', { n, room: room.name });
+      } else {
+        delete room.ha_area;
+      }
+      render();
+    }, { 'aria-label': t('setup.area') });
+  }
+  function fill(room) {
+    const n = fillRoomFromArea(cfg, room, areas, store);
+    if (n) changed();
+    render();
+    status.textContent = t('setup.fetched', { n, room: room.name });
+  }
+  const roomSummary = (r) => [
+    r.lights?.length ? `${r.lights.length} ${t('setup.lightsShort')}` : '',
+    r.climate ? t('setup.thermostatShort') : '',
+    r.temperature ? t('setup.sensorShort') : '',
+  ].filter(Boolean).join(' · ');
 
   // ---------- 4. energy
   function energy() {

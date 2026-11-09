@@ -450,6 +450,14 @@ input[type='range'] { width: 100%; accent-color: var(--glow); }
 .setup-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
 .setup-list li { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto; gap: 8px; align-items: center; }
 @media (max-width: 560px) { .setup-list li { grid-template-columns: minmax(0, 1fr) auto; } }
+.setup-rooms li { display: flex; flex-wrap: wrap; }
+.setup-rooms li > select, .setup-rooms li > input { flex: 1 1 160px; min-width: 0; }
+.setup-rooms li > .muted { flex: 1 1 auto; }
+.setup-room-name { flex: 1 1 160px; font-weight: 500; }
+.setup-guide summary { cursor: pointer; }
+.setup-guide[open] summary { margin-bottom: 8px; }
+.setup-prompt { display: grid; gap: 6px; margin-top: 10px; }
+.setup-prompt pre { margin: 0; padding: 10px 12px; border-radius: var(--r); background: rgba(0, 0, 0, 0.3); font-family: var(--f-mono, monospace); font-size: 12px; line-height: 1.5; white-space: pre-wrap; overflow-wrap: anywhere; max-height: 18em; overflow: auto; }
 .setup-checks { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
 .setup-check-row { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 10px; align-items: center; }
 .setup-check-row .muted { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 220px; }

@@ -8,7 +8,7 @@ Plan for about an hour, most of it spent on the pictures.
 
 - Home Assistant 2024.8 or newer, with an administrator account.
 - [HACS](https://hacs.xyz), or SSH or Samba access to copy files.
-- **An overview picture** of the property from above. A drone photo taken at an angle works best. Any size is fine; about 1200 to 2500 pixels wide keeps it sharp without being slow.
+- **An overview picture** of the property from above. A drone photo taken at an angle works best; without a drone, [make one from a 3D map](overview-picture.md). Any size is fine; about 1200 to 2500 pixels wide keeps it sharp without being slow.
 - **A floor plan picture** per building or storey: a scanned drawing, an estate agent's plan or a realistic render seen from above, cropped to the outer walls.
 - Optional: an **evening picture**, the same view at dusk with every light off.
 
@@ -61,8 +61,9 @@ Optional for an apartment: without it the dashboard opens on the floor plan. **R
 ### Floor plans
 
 1. **Upload floor plan picture.** One per building or storey.
-2. **Draw a room** for every room: click the corners, **Done**, then type its name.
-3. Back under **Overview picture**, link each building to its floor plan.
+2. **Draw a room** for every room: click the corners, **Done**.
+3. **Pick the room's Home Assistant area.** The room takes the area's name and its lights, thermostat and temperature sensor. The lights are set out in the middle of the room; move them to their real spots in placement mode. Rooms already named like an area can be linked all at once with **Link rooms to areas with the same name**. Without areas, type the room's name instead and place everything by hand.
+4. Back under **Overview picture**, link each building to its floor plan.
 
 Rooms do not need to be exact. A room is used to find which room you tap in, to tint it by temperature and to light up windows.
 
@@ -89,8 +90,8 @@ Tick the scenes and scripts to show as buttons, and give them short names.
 
 Opens placement mode (also available as **Placera** / **Place** in the header):
 
-1. Pick a light, switch, thermostat or temperature sensor in the list. Unplaced ones are listed first.
-2. Tap where it is. On a floor plan the room is found from the tap: a light is placed at that spot, a thermostat or sensor is linked to the room. On the overview picture a light becomes an outdoor lamp; tap again to add more fixtures switched by the same entity.
+1. Pick a light, switch, thermostat or temperature sensor in the list. Unplaced ones are listed first, with their Home Assistant area; the search also finds entities by area.
+2. Tap where it is. On a floor plan the room is found from the tap: a light is placed at that spot, a thermostat or sensor is linked to the room. On the overview picture a light becomes an outdoor lamp; tap again to add more fixtures switched by the same entity. Outdoor lamps in the same Home Assistant area share one switch in the lights card.
 3. **Save to Home Assistant.**
 
 New outdoor lamps are drawn as wall lamps. To make one a flood or deck light, change its `type` to `ground` in `site.json` (see [configuration.md](configuration.md)).
@@ -98,6 +99,8 @@ New outdoor lamps are drawn as wall lamps. To make one a flood or deck light, ch
 ## Tips for the pictures
 
 **Overview from a drone photo.** Fly high enough to have the whole property in view, camera tilted down about 45°. Daylight with soft shadows works best.
+
+**No drone?** Make the day and evening pictures from a 3D map and an AI image model: see [An overview picture without a drone](overview-picture.md). The setup guide has the same steps and prompts under **Overview picture**.
 
 **Evening picture with an image model.** Give the day picture to an image model with a prompt like:
 
