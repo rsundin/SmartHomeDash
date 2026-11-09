@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.8.4
+
+- Setup guide, Energy: a new **Direction** section shows how the dashboard reads the battery and the grid right now ("Battery charging 1.2 kW"), with a box to turn each one around. Inverters disagree on which way is positive, and since 0.8.2 the labels on the picture make a wrong sign easy to see. The boxes set `battery_invert` and `grid_invert`
+
 ## 0.8.3
 
 - The **Kiosk mode** button opens a small wall screen sheet: start kiosk mode, light mode on this device, and **Test the doorbell**, which shows the camera window on that screen without ringing anything
