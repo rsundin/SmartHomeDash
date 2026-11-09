@@ -41,7 +41,7 @@ Then **Settings → Devices & services → Add integration → SmartHomeDash**, 
 | Room panel | Thermostat with target, mode and presets (Comfort, Eco, Frost …), 24-hour temperature graph, dimmers, blinds and curtains, doors, windows and sensors |
 | Doors, windows, presence | Open doors and windows, unlocked locks and alarms marked on the floor plan and the building; rooms with someone in them outlined |
 | Warnings | Smoke, water leaks, a window open while heating, low batteries, devices not responding |
-| Energy flow | Dots running from the solar panels, grid and battery to the house and on to the car charger, faster with more power |
+| Energy flow | One line per flow, from the sun, battery or grid to the house, car, battery or grid, in the colour of the source, with the kilowatts on it, plus a plain sentence in the energy card |
 | Dusk and weather | The day picture fades into the evening one as the sun sets; cloud, fog, rain and snow on the picture |
 | Cards | Weather, power now, energy today, hourly electricity price with the cheapest hours ahead, outdoor and indoor lights, scenes and scripts, heating per room |
 

@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.8.2
+
+- Clearer energy flow on the overview picture: one line for each real flow, from where the power comes from to where it goes, in the colour of the source (yellow sun, blue grid, green battery). Lines are wider with more power and carry their kilowatts, and solar charging the battery runs straight from the roof to the battery instead of through the house
+- Labels at the battery, the grid, the car charger and the house say what each one is doing, such as "Selling 2.4 kW" or "Battery charging 2.0 kW · 64 %"
+- The energy card says the same in one sentence: "The sun gives 6.2 kW: 1.8 kW to the house, 2.0 kW to the battery and 2.4 kW sold to the grid."
+
 ## 0.8.1
 
 - Placement mode: tap a lamp on a floor plan or the overview picture to select it. A tag over the lamp shows its name and entity id, also while you drag it and after the page reloads with the lamp in its new spot, so lamps with the same name are easy to tell apart
