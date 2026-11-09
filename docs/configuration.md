@@ -152,7 +152,8 @@ A row above the picture shows, most serious first: alarms (smoke, gas, carbon mo
 }
 ```
 
-- Dots run between the solar panels, the grid, the battery, the car charger and the house, faster with more power, from `energy.pv_power`, `grid_power`, `battery_power` and `charger_power`.
+- One line for each real flow, from where the power comes from (solar panels, battery, grid) to where it goes (house, car charger, battery, grid), in the colour of the source. Wider and faster with more power, with the kilowatts on the line. Labels at the battery, the grid, the charger and the house say what each one does. Read from `energy.pv_power`, `grid_power`, `battery_power` and `charger_power`; the energy card says the same in one sentence.
+- The split follows the balance: solar is used first, then the battery, then the grid; the house is served first, then the car, the battery and export. The house's own use is worked out from that balance when `grid_power` is set, so it always adds up.
 - `energy_points` are image pixels, placed in the setup guide. Without `house` the middle of the building under the solar panels is used; without `grid` the bottom edge below the house. The battery and the charger are drawn only once placed.
 - `grid_power` above zero is bought from the grid and `battery_power` above zero is the battery discharging. If your sensors count the other way, set `"grid_invert": true` or `"battery_invert": true` under `energy`.
 - `"energy_flow": false` and `"weather_effects": false` turn them off.

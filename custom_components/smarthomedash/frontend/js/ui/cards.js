@@ -5,6 +5,7 @@ import { el, sv, fmt, hhmm, num } from '../util.js';
 import { isOn, zoneLevel, kw, pricesToday, pricesTomorrow, cheapestWindow, roomTemp, climate, heating, comfort } from '../entities.js';
 import { areaOf, areaName } from '../areas.js';
 import { t } from '../i18n.js';
+import { readPower, splitPower, powerSentence } from '../power.js';
 
 
 export function createSide({ site, store, adapter, openRoom }) {
@@ -45,10 +46,15 @@ function energyCard({ site, store }) {
     [t('cards.load'), E.load_power], [t('cards.grid'), E.grid_power], [t('cards.solar'), E.pv_power], [t('cards.battery'), E.battery_power], [t('cards.charger'), E.charger_power],
   ].filter(([, id]) => id);
   if (!rows.length) return null;
+  const says = el('p', { class: 'energy-says' });
   const list = el('ul', { class: 'meters' });
   const today = el('dl', { class: 'facts' });
   const ids = rows.map(([, id]) => id).concat(E.energy_today, E.pv_energy_today, E.cost_today, E.savings_today, E.battery_soc);
   store.watch(ids, () => {
+    // Where the power comes from and goes, in one sentence. Needs at least solar or the
+    // battery next to the grid to say more than the rows below.
+    says.textContent = E.grid_power && (E.pv_power || E.battery_power) ? powerSentence(splitPower(readPower(store, E)), site.locale) : '';
+    says.hidden = !says.textContent;
     list.replaceChildren(...rows.map(([name, id]) => {
       const v = kw(store, id);
       const soc = id === E.battery_power ? num(store.get(E.battery_soc)?.state) : null;
@@ -64,7 +70,7 @@ function energyCard({ site, store }) {
     if (E.cost_today) facts.push(fact(t('cards.costToday'), `${fmt(num(store.get(E.cost_today)?.state), 2, site.locale)} ${site.currency}`));
     today.replaceChildren(...facts);
   });
-  return card(t('cards.energyNow'), list, today);
+  return card(t('cards.energyNow'), says, list, today);
 }
 
 function priceCard({ site, store }) {

@@ -27,6 +27,10 @@
   --danger: #ff7a6b;
   --solar: #3dff8a;        /* panels producing */
   --solar-core: #c8ffdc;
+  --flow-solar: #ffcf4a;   /* energy flow lines, by source */
+  --flow-grid: #8cc4ff;
+  --flow-battery: #6fe3a5;
+  --flow-car: #c9a2ff;
   --wall: #c9d7cf;
   --wall-inner: #6f8b80;
 
@@ -244,6 +248,7 @@ button { font: inherit; color: inherit; }
 
 .meters { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
 .meters li { display: grid; grid-template-columns: 10px 1fr auto; gap: 10px; align-items: center; }
+.energy-says { margin: 0; font-size: 15px; line-height: 1.45; }
 .meters .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted-2); }
 .meters li.is-active .dot { background: var(--glow); box-shadow: 0 0 8px var(--glow); }
 
@@ -557,20 +562,25 @@ details.alert summary { cursor: pointer; }
 details.alert ul { margin: 6px 0 2px; padding-left: 18px; color: var(--muted); font-size: 13px; }
 @media (prefers-reduced-motion: reduce) { .alert, .fp-badge, .ov-badge { animation: none !important; } }
 
-/* ---------- energy flow */
+/* ---------- energy flow: one line per flow, in the colour of its source */
 .ov-flow { pointer-events: none; }
-.ov-flow-line { opacity: 0; transition: opacity 0.8s ease; }
-.ov-flow-line.is-on { opacity: 1; }
+.ov-flow-line, .ov-flow-tag, .ov-flow-end { opacity: 0; transition: opacity 0.8s ease; }
+.ov-flow-line.is-on, .ov-flow-tag.is-on, .ov-flow-end.is-on { opacity: 1; }
 .ov.is-lifting .ov-flow { opacity: 0; transition: opacity 0.2s; }
-.ov-flow-track { fill: none; stroke: rgba(255, 255, 255, 0.16); stroke-width: 2; stroke-dasharray: 2 6; }
-.ov-flow-dots { fill: none; stroke-width: 7; stroke-linecap: round; stroke-dasharray: 0 22; animation: flow-run 1.5s linear infinite; filter: drop-shadow(0 0 4px currentColor); }
-.ov-flow-end { fill: var(--surface-solid); stroke-width: 2.5; }
-.ov-flow .is-solar { color: var(--solar); stroke: var(--solar); }
-.ov-flow .is-grid { color: #8cc4ff; stroke: #8cc4ff; }
-.ov-flow .is-battery { color: var(--accent); stroke: var(--accent); }
-.ov-flow .is-charger { color: #c9a2ff; stroke: #c9a2ff; }
-@keyframes flow-run { to { stroke-dashoffset: -22; } }
-@media (prefers-reduced-motion: reduce) { .ov-flow-dots { animation: none; stroke-dasharray: 0 22; } }
+.ov-flow-track { fill: none; stroke: currentColor; stroke-opacity: 0.35; stroke-linecap: round; stroke-width: 3px; transition: stroke-width 0.8s ease; }
+.ov-flow-dots { fill: none; stroke: currentColor; stroke-width: 7px; stroke-linecap: round; stroke-dasharray: 0 26; animation: flow-run 1.5s linear infinite; filter: drop-shadow(0 0 4px currentColor); transition: stroke-width 0.8s ease; }
+.ov-flow-end { fill: var(--surface-solid); stroke: currentColor; stroke-width: 3; }
+.ov-flow-tag rect { fill: var(--surface-solid); fill-opacity: 0.88; stroke: currentColor; stroke-opacity: 0.5; stroke-width: 1.5; }
+.ov-flow-word, .ov-flow-extra { fill: var(--ink); font: 500 16px var(--f-body); }
+.ov-flow-extra { fill: var(--muted); }
+.ov-flow-kw { fill: currentColor; font: 600 17px var(--f-mono); }
+.ov-flow .is-solar { color: var(--flow-solar); }
+.ov-flow .is-grid { color: var(--flow-grid); }
+.ov-flow .is-battery { color: var(--flow-battery); }
+.ov-flow .is-car { color: var(--flow-car); }
+.ov-flow .is-house { color: var(--ink); }
+@keyframes flow-run { to { stroke-dashoffset: -26; } }
+@media (prefers-reduced-motion: reduce) { .ov-flow-dots { animation: none; } }
 
 /* ---------- weather on the overview picture */
 .ov-wx { position: absolute; inset: 0; pointer-events: none; opacity: 0; transition: opacity 2s ease; overflow: hidden; }
