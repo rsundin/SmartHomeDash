@@ -37,6 +37,11 @@ export function createHassAdapter(initialHass) {
       return hass.callService(domain, service, data);
     },
 
+    // Address of a Home Assistant path, such as a camera picture.
+    url(path) {
+      return typeof hass.hassUrl === 'function' ? hass.hassUrl(path) : path;
+    },
+
     // Area, entity and device registries. Recent Home Assistant versions hand them to
     // the frontend on the hass object; older ones are asked over the websocket.
     async areas() {

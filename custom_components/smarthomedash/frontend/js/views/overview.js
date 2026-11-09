@@ -268,7 +268,7 @@ function lampShape(l, k) {
   const core = sv('circle', { cx: x, cy: y, r: Math.max(1.6, s * 0.07), class: 'ov-lamp-core' });
   if (l.type === 'wall') {
     return sv('g', { class: 'ov-lamp ov-lamp-wall' },
-      sv('ellipse', { cx: x, cy: y + s * 0.5, rx: s * 1.15, ry: s * 1.7, fill: `url(#${k}-wash)`, 'data-paint': 'wash', filter: `url(#${k}-wide)` }),
+      sv('ellipse', { class: 'ov-wash', cx: x, cy: y + s * 0.5, rx: s * 1.15, ry: s * 1.7, fill: `url(#${k}-wash)`, 'data-paint': 'wash', filter: `url(#${k}-wide)` }),
       sv('ellipse', { cx: x, cy: y + s * 2.1, rx: s * 1.7, ry: s * 0.6, fill: `url(#${k}-pool)`, 'data-paint': 'pool', filter: `url(#${k}-soft)` }),
       sv('circle', { cx: x, cy: y, r: s * 0.5, fill: `url(#${k}-glow)`, 'data-paint': 'glow' }),
       core);

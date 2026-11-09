@@ -49,6 +49,8 @@ Then **Settings → Devices & services → Add integration → SmartHomeDash**, 
 
 Open the dashboard with `?kiosk` at the end of its address, for example `http://homeassistant.local:8123/home?kiosk`, or tap **Kiosk mode** in the header. Kiosk mode hides Home Assistant's sidebar on that device, hides the dashboard's own buttons and goes full screen on the first touch. Hold the clock for two seconds to leave it.
 
+On a wall screen the dashboard can show the doorbell camera when someone rings, go back to the overview when nobody touches it, dim at night until a motion sensor wakes it, and run in a light mode without blur or animation on older tablets (`?lite`).
+
 For a dedicated tablet, also see [docs/setup.md](docs/setup.md#wall-screens-and-tablets).
 
 ## Setup and placement
@@ -117,7 +119,7 @@ See [SECURITY.md](SECURITY.md) for how access is handled and how to report a pro
 
 ## Roadmap
 
-What comes next: doors, windows and warnings, energy flow on the picture, dusk, a doorbell camera on wall screens and more. See [ROADMAP.md](ROADMAP.md).
+What comes next: a card for any dashboard, more languages, export and import, and more. See [ROADMAP.md](ROADMAP.md).
 
 ## Support
 
