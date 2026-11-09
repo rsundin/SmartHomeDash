@@ -51,6 +51,15 @@ export function createMockAdapter(site) {
           : { supported_color_modes: ['brightness'] }),
       }));
     }
+    // Doors, windows, locks, presence and alarms: site.mock.sensors =
+    // { entity_id: { state, device_class?, unit?, name? } }
+    for (const [id, m] of Object.entries(site.mock?.sensors ?? {})) {
+      list.push(S(id, String(m.state ?? 'off'), {
+        friendly_name: m.name ?? id,
+        ...(m.device_class ? { device_class: m.device_class } : {}),
+        ...(m.unit ? { unit_of_measurement: m.unit } : {}),
+      }));
+    }
     for (const room of site.index.rooms.values()) {
       if (room.climate) {
         const target = room.mock?.target ?? 21;
@@ -191,11 +200,13 @@ export function createMockAdapter(site) {
       } else {
         for (const room of site.index.rooms.values()) {
           if (room.device) continue;
-          add(room.ha_area ?? room.id, room.name, [...room.lights.map((l) => l.entity), room.climate, room.temperature]);
+          add(room.ha_area ?? room.id, room.name, [...room.lights.map((l) => l.entity), room.climate, room.temperature, ...(room.sensors ?? [])]);
         }
         for (const z of site.overview?.zones ?? []) add(`outdoor_${z.id}`, z.name, z.lights);
       }
-      return { areas, entities, devices: [] };
+      // One test floor per floor plan, or site.mock.floors: [{ floor_id, name, level }].
+      const floors = site.mock?.floors ?? site.floorplans.map((p, i) => ({ floor_id: `floor_${p.id}`, name: p.name, level: i }));
+      return { areas, entities, devices: [], floors };
     },
 
     async history(entityId, hours = 24) {

@@ -67,6 +67,8 @@ Optional for an apartment: without it the dashboard opens on the floor plan. **R
 
 Rooms do not need to be exact. A room is used to find which room you tap in, to tint it by temperature and to light up windows.
 
+A room linked to an area also shows the area's door, window, lock, presence and alarm sensors on its own: an icon on the floor plan when a door or window is open, a faint outline while someone is there, and a warning above the picture when a smoke or leak sensor goes off or a window is open while the room is heating. Each floor plan can be linked to a Home Assistant floor too; the plans are then named after the floors and listed in floor order.
+
 ### Energy and weather
 
 Pick the sensors you have; leave the rest empty and their rows or cards are hidden.

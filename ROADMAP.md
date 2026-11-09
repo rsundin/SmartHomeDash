@@ -2,13 +2,6 @@
 
 What is planned next, roughly in order. Plans change; ideas and votes are welcome in [issues](https://github.com/rsundin/SmartHomeDash/issues).
 
-## 0.6: what is going on in the home
-
-- **Doors, windows and locks** on the floor plans and the overview picture: open windows and doors, unlocked locks (`binary_sensor` door/window/lock, `lock.*`). Found per room through its Home Assistant area.
-- **Warnings** in a row at the top: smoke, water leaks, a window open while the room is heating, low batteries, devices that stopped responding.
-- **Presence per room**: a faint highlight on rooms with motion or occupancy right now.
-- **Floors from Home Assistant**: link floor plans to Home Assistant floors, as rooms link to areas, and order the views floor by floor.
-
 ## 0.7: light and energy on the picture
 
 - **Energy flow**: animated flow from the solar panels to the house, to and from the grid, into the battery and to the car charger, moving faster with more power.
@@ -31,6 +24,7 @@ What is planned next, roughly in order. Plans change; ideas and votes are welcom
 
 ## Done
 
+- 0.6.0: doors, windows, locks, presence and alarms per room; warnings; floors from Home Assistant
 - 0.5.2: online demo; lamps glow in their own colour and brightness
 - 0.5.1: pinch zoom on phones
 - 0.5.0: rooms linked to Home Assistant areas; an overview picture without a drone

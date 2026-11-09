@@ -316,6 +316,10 @@ button { font: inherit; color: inherit; }
 .tchart .dot { fill: var(--accent); }
 .tchart .target-line { stroke: var(--warm); stroke-dasharray: 4 4; stroke-width: 1.25; }
 
+.status-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.status-list li { display: flex; justify-content: space-between; gap: 12px; }
+.status-val { font: 13px var(--f-mono); color: var(--muted); white-space: nowrap; }
+.status-list li.is-warn .status-val { color: var(--glow); }
 .light-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
 .light-list li { display: grid; gap: 6px; }
 .light-top { display: grid; grid-template-columns: 1fr auto auto; gap: 10px; align-items: center; }
@@ -517,3 +521,32 @@ input[type='range'] { width: 100%; accent-color: var(--glow); }
   padding: 10px 18px; font-size: 14px; max-width: calc(100vw - 32px); transition: opacity 0.6s ease;
 }
 .toast.is-gone { opacity: 0; }
+
+/* ---------- status: doors, windows, locks, presence, alarms */
+.fp-room.is-occupied { stroke: var(--accent); stroke-opacity: 0.55; stroke-dasharray: 6 5; }
+.fp-room.is-selected, .fp-room:hover { stroke-opacity: 1; stroke-dasharray: none; }
+.fp-badge circle { fill: var(--surface-solid); stroke-width: 1.5; }
+.fp-badge path { fill: none; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+.fp-badge.is-open circle, .ov-badge.is-open > circle { stroke: var(--glow); }
+.fp-badge.is-open path, .ov-badge.is-open path { stroke: var(--glow); }
+.fp-badge.is-alarm circle, .ov-badge.is-alarm > circle { stroke: var(--danger); }
+.fp-badge.is-alarm path, .ov-badge.is-alarm path { stroke: var(--danger); }
+.fp-badge.is-alarm, .ov-badge.is-alarm { animation: alarm-pulse 1.2s ease-in-out infinite; }
+.ov-badges { pointer-events: none; }
+.ov-badge > circle { fill: var(--surface-solid); fill-opacity: 0.92; stroke-width: 2.5; }
+.ov-badge path { fill: none; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+.ov-badge-count { fill: var(--glow); stroke: none; }
+.ov-badge.is-alarm .ov-badge-count { fill: var(--danger); }
+.ov-badge text { fill: var(--bg); font-family: var(--f-mono); font-weight: 600; }
+@keyframes alarm-pulse { 50% { opacity: 0.45; } }
+
+.alerts { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 auto 12px; width: 100%; max-width: 1600px; flex: none; }
+@media (min-width: 1024px) and (orientation: landscape) and (min-height: 560px) { .alerts { max-width: none; margin-bottom: 10px; } }
+.alerts[hidden] { display: none; }
+.alert { font: 500 14px var(--f-body); color: var(--ink); background: var(--surface-solid); border: 1px solid var(--line); border-radius: 999px; padding: 7px 14px; cursor: pointer; text-align: left; }
+.alert[data-level='alert'] { border-color: var(--danger); background: rgba(255, 122, 107, 0.14); animation: alarm-pulse 1.6s ease-in-out infinite; }
+.alert[data-level='warn'] { border-color: var(--glow); background: rgba(255, 178, 74, 0.1); }
+details.alert { border-radius: 14px; }
+details.alert summary { cursor: pointer; }
+details.alert ul { margin: 6px 0 2px; padding-left: 18px; color: var(--muted); font-size: 13px; }
+@media (prefers-reduced-motion: reduce) { .alert, .fp-badge, .ov-badge { animation: none !important; } }

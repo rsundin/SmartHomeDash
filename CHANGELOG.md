@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.6.0
+
+- Doors, windows, locks, presence and alarms per room: found in the room's Home Assistant area, or listed under `sensors`. Open doors and windows, unlocked locks and alarms get an icon on the floor plan and a badge on the building in the overview picture; rooms with motion or presence get a faint outline; the room panel lists every sensor
+- Warnings above the picture: smoke, gas, carbon monoxide and water leaks, a door or window open while the room is heating, low batteries and devices not responding. Configurable with `warnings` in site.json
+- Floor plans can be linked to Home Assistant floors: named after the floor and listed in floor order. **Link rooms and floors with the same name** in the setup guide links both at once
+- The examples show a few sensors in their test data
+
 ## 0.5.2
 
 - Lamps glow in their own colour and brightness on the overview picture and the floor plans, windows in the colour of the room's lamps; lamps that report no colour keep the warm glow

@@ -231,6 +231,7 @@ def _strip_entities(site: dict) -> None:
             room["lights"] = []
             room.pop("climate", None)
             room.pop("temperature", None)
+            room.pop("sensors", None)
     for key in ("climates", "weather", "mock"):
         site.pop(key, None)
     site["energy"] = {}
