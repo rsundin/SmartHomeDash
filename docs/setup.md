@@ -143,7 +143,7 @@ Hold the clock for two seconds to leave kiosk mode; the sidebar comes back. A de
 4. Lock the tablet to the app: **iPad** with *Guided Access* (Settings → Accessibility); **Android** with *screen pinning*, or a kiosk browser such as Fully Kiosk Browser pointed at the `?kiosk` address.
 5. Keep it powered and set auto-lock to *Never*. The dashboard keeps the screen awake while it is visible, where the browser allows it.
 
-In landscape at 1024 pixels or wider the dashboard fills the screen without scrolling. iPad Safari has no full screen for web pages; use the companion app, or *Add to Home Screen*, for the most screen space.
+In landscape at 1024 pixels or wider the dashboard fills the screen without scrolling. On a phone, pinch with two fingers to zoom into the picture or a floor plan, and drag to move around; **Reset zoom** goes back. iPad Safari has no full screen for web pages; use the companion app, or *Add to Home Screen*, for the most screen space.
 
 ## Troubleshooting
 

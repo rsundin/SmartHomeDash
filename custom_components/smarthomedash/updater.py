@@ -30,6 +30,8 @@ from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
+from .views import read_limited
+
 _LOGGER = logging.getLogger(__name__)
 
 MAX_DOWNLOAD = 100 * 1024 * 1024
@@ -59,10 +61,10 @@ async def async_download(hass: HomeAssistant, repository: str, ref: str, token: 
                     "Check github_token (read access to Contents) and the repository name."
                 )
             resp.raise_for_status()
-            data = await resp.content.read(MAX_DOWNLOAD + 1)
+            data = await read_limited(resp.content, MAX_DOWNLOAD)
     except ClientError as err:
         raise HomeAssistantError(f"Could not download {repository}: {err}") from err
-    if len(data) > MAX_DOWNLOAD:
+    if data is None:
         raise HomeAssistantError("The download is larger than expected; refusing to install it")
     return data
 

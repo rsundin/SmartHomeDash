@@ -12,7 +12,7 @@ A picture-based Home Assistant dashboard, shipped as a custom integration (HACS 
 ## Layout
 - `custom_components/smarthomedash/`: `__init__.py` (setup, panels, starter site, optional `smarthomedash.update`), `config_flow.py`, `views.py` (FrontendView public/no-cache, SitesView auth), `updater.py`, `const.py`.
 - `frontend/panel.js`: panel element in HA's iframe; gets `hass`, kiosk via `hass-dock-sidebar`.
-- `frontend/js/`: `main.js` startup, `site.js` config loading, `areas.js` Home Assistant areas, `views/` overview + floor plan, `ui/setup.js` setup guide, `ui/editor.js` placement, `adapters/` (hass, ha token, mock test data).
+- `frontend/js/`: `main.js` startup, `site.js` config loading, `areas.js` Home Assistant areas, `views/` overview + floor plan, `ui/setup.js` setup guide, `ui/editor.js` placement, `ui/zoom.js` pinch zoom, `adapters/` (hass, ha token, mock test data).
 - `index.html` + `sites/`: standalone dev page on test data (`python3 -m http.server`, `?site=example-apartment`, `#edit`, `?kiosk`). New JS files must be added to MODULES in `index.html`.
 - Config format: `docs/configuration.md`. User guide: `docs/setup.md`.
 

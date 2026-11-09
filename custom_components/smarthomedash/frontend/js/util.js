@@ -98,16 +98,24 @@ export const storage = {
 };
 
 // Short press / long press on one element. Long press also fires on right-click.
+// Set while a pinch or drag on the pictures is going on (see ui/zoom.js), so a finger
+// lifting at the end of it does not also switch the lamp under it.
+export const gesture = { busy: false };
+
 export function press(node, onShort, onLong, ms = 450) {
-  let timer = null, fired = false;
+  let timer = null, fired = false, from = null;
   node.addEventListener('pointerdown', (e) => {
     if (e.button !== 0) return;
     fired = false;
-    timer = setTimeout(() => { fired = true; onLong?.(e); }, ms);
+    from = [e.clientX, e.clientY];
+    timer = setTimeout(() => { if (gesture.busy) return; fired = true; onLong?.(e); }, ms);
   });
   const cancel = () => { clearTimeout(timer); timer = null; };
+  node.addEventListener('pointermove', (e) => {
+    if (timer && from && Math.hypot(e.clientX - from[0], e.clientY - from[1]) > 8) cancel();
+  });
   node.addEventListener('pointerup', (e) => {
-    if (timer && !fired) { cancel(); onShort?.(e); }
+    if (timer && !fired && !gesture.busy) { cancel(); onShort?.(e); }
     cancel();
   });
   node.addEventListener('pointerleave', cancel);
