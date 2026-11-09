@@ -4,7 +4,7 @@ A Home Assistant dashboard that shows your home as a picture. Lights glow where 
 
 - Runs as a panel in the Home Assistant sidebar, behind Home Assistant's own login. No access tokens.
 - Set up entirely in the UI: upload a picture of your home and your floor plans, draw rooms, tap where each light and thermostat is.
-- Built for wall screens and tablets, with a kiosk mode that shows only the dashboard; works in the companion app.
+- Built for wall screens and tablets, with a kiosk mode that shows only the dashboard; on phones, pinch to zoom into the picture. Works in the companion app.
 - Houses with a picture from outside, or apartments with just a floor plan. Several homes, each with its own panel.
 - Dashboard text in Swedish or English.
 

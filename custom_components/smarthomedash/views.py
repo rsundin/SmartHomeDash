@@ -31,6 +31,19 @@ def _is_picture(data: bytes) -> bool:
     )
 
 
+async def read_limited(stream, limit: int) -> bytes | None:
+    """The whole body of a request or response, or None if it is larger than limit.
+
+    aiohttp's read(n) returns what has arrived so far, up to n bytes, so a large body
+    has to be read chunk by chunk until the end."""
+    data = bytearray()
+    async for chunk in stream.iter_chunked(64 * 1024):
+        data += chunk
+        if len(data) > limit:
+            return None
+    return bytes(data)
+
+
 def safe_path(base: Path, *parts: str) -> Path | None:
     """Resolve parts under base, refusing anything that escapes it."""
     base = base.resolve()
@@ -101,8 +114,8 @@ class SitesView(HomeAssistantView):
         return self.json_message("Only site.json and jpg, png or webp pictures can be saved", HTTPStatus.METHOD_NOT_ALLOWED)
 
     async def _put_config(self, request: web.Request, site: str, path: Path) -> web.Response:
-        body = await request.content.read(MAX_SITE_JSON + 1)
-        if len(body) > MAX_SITE_JSON:
+        body = await read_limited(request.content, MAX_SITE_JSON)
+        if body is None:
             return self.json_message("site.json is too large", HTTPStatus.REQUEST_ENTITY_TOO_LARGE)
         try:
             data = json.loads(body)
@@ -118,8 +131,8 @@ class SitesView(HomeAssistantView):
     async def _put_picture(self, request: web.Request, site: str, path: Path) -> web.Response:
         if request.content_length and request.content_length > MAX_UPLOAD:
             return self.json_message("The picture is too large (max 25 MB)", HTTPStatus.REQUEST_ENTITY_TOO_LARGE)
-        data = await request.content.read(MAX_UPLOAD + 1)
-        if len(data) > MAX_UPLOAD:
+        data = await read_limited(request.content, MAX_UPLOAD)
+        if data is None:
             return self.json_message("The picture is too large (max 25 MB)", HTTPStatus.REQUEST_ENTITY_TOO_LARGE)
         if not _is_picture(data):
             return self.json_message("Not a jpg, png or webp picture", HTTPStatus.BAD_REQUEST)

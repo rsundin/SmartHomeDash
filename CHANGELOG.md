@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.5.1
+
+- Pinch with two fingers to zoom the overview picture and floor plans on phones and tablets, drag to move around, **Reset zoom** to go back; a trackpad pinch works on computers. Taps on lamps, rooms and buildings still work while zoomed, and a pinch or drag never switches a lamp
+- Fixed: pictures larger than about 64 kB were saved cut off when uploaded in the setup guide, and a large `site.json` could not be saved; `smarthomedash.update` downloads were affected the same way
+- Placement mode on phones: the list is a sheet at the bottom instead of covering the picture
+- Setup guide on phones: the steps are one row that scrolls sideways, so each step's content starts at the top
+
 ## 0.5.0
 
 - Rooms link to Home Assistant areas: pick an area for a room in the setup guide and it takes the area's name, lights, thermostat and temperature sensor; rooms named like an area can be linked in one go

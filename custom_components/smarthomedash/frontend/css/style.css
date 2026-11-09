@@ -133,6 +133,12 @@ button { font: inherit; color: inherit; }
   background: #08100d; border: 1px solid var(--line);
 }
 .stage.no-ov { aspect-ratio: 4 / 3; }
+/* Pinch zoom: one finger still scrolls the page until the picture is zoomed in. */
+.stage { touch-action: pan-y; }
+.stage.is-zoomed { touch-action: none; }
+.zoom-layer { position: relative; height: 100%; transform-origin: 0 0; will-change: transform; }
+.zoom-layer.is-animating { transition: transform 0.25s ease; }
+.zoom-reset { position: absolute; right: 12px; top: 12px; z-index: 6; }
 .stage-hint { margin: 8px 2px 0; font-size: 13px; color: var(--muted); }
 .back { position: absolute; left: 12px; top: 12px; z-index: 5; }
 
@@ -367,6 +373,12 @@ input[type='range'] { width: 100%; accent-color: var(--glow); }
   box-shadow: -12px 0 40px rgba(0, 0, 0, 0.4);
 }
 .editor-pane { display: flex; flex-direction: column; gap: 8px; min-height: 0; flex: 1; }
+/* Phones: the list is a sheet over the lower part of the screen, leaving the picture
+   above it free to tap; the page gets room to scroll the picture clear of the sheet. */
+@media (max-width: 760px) {
+  .editor { top: auto; left: 8px; right: 8px; bottom: calc(8px + env(safe-area-inset-bottom, 0px)); width: auto; height: 42vh; box-shadow: 0 -12px 40px rgba(0, 0, 0, 0.45); }
+  body.is-editing { padding-bottom: 44vh; }
+}
 .editor-pane[hidden] { display: none !important; }
 .editor-search { background: var(--bg); color: var(--ink); border: 1px solid var(--line); border-radius: 6px; padding: 8px 10px; font: 14px var(--f-body); width: 100%; }
 .editor-list { overflow-y: auto; flex: 1; min-height: 0; display: grid; gap: 12px; align-content: start; overscroll-behavior: contain; }
@@ -422,7 +434,6 @@ input[type='range'] { width: 100%; accent-color: var(--glow); }
 .setup-head { display: flex; flex-wrap: wrap; gap: 10px 16px; justify-content: space-between; align-items: center; padding-bottom: 12px; border-bottom: 1px solid var(--line); }
 .setup-status { margin: 0; color: var(--glow-core); }
 .setup-main { flex: 1; min-height: 0; display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 20px; padding-top: 14px; }
-@media (max-width: 760px) { .setup-main { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); } .setup-nav { flex-direction: row; overflow-x: auto; } }
 .setup-nav { display: flex; flex-direction: column; gap: 4px; }
 .setup-step {
   display: flex; gap: 10px; align-items: center; text-align: left; white-space: nowrap;
@@ -433,6 +444,12 @@ input[type='range'] { width: 100%; accent-color: var(--glow); }
 .setup-step.is-active { color: var(--ink); background: var(--surface-solid); border-color: var(--line); }
 .setup-num { width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; font: 600 12px var(--f-mono); border: 1px solid var(--line); flex: none; }
 .setup-step.is-active .setup-num { background: var(--accent); color: var(--bg); border-color: var(--accent); }
+/* Phones: the steps become one row that scrolls sideways, so the step's content starts at once. */
+@media (max-width: 760px) {
+  .setup-main { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); }
+  .setup-nav { flex-direction: row; overflow-x: auto; scrollbar-width: none; }
+  .setup-step { flex: none; white-space: nowrap; }
+}
 .setup-body { overflow-y: auto; min-height: 0; display: grid; gap: 18px; align-content: start; max-width: 860px; padding-right: 4px; }
 .setup-intro { margin: 0; max-width: 65ch; color: var(--muted); }
 .setup-section { background: var(--surface-solid); border: 1px solid var(--line); border-radius: var(--r); padding: 14px 16px; display: grid; gap: 12px; }

@@ -18,6 +18,7 @@ import { createSide } from './ui/cards.js';
 import { createSettings, connKey } from './ui/settings.js';
 import { createEditor } from './ui/editor.js';
 import { createSetup } from './ui/setup.js';
+import { createZoom } from './ui/zoom.js';
 import { loadAreas, applyAreaNames, noAreas } from './areas.js';
 import { t, setLanguage } from './i18n.js';
 
@@ -124,10 +125,13 @@ export async function start(opts) {
 
   // ---- stage
   const stage = el('div', { class: 'stage' });
+  const zoom = createZoom(stage);
+  const touch = window.matchMedia('(pointer: coarse)').matches;
+  const withZoomHint = (text) => (touch ? `${text} ${t('app.hintZoom')}` : text);
   const backBtn = el('button', { class: 'back chip', type: 'button', hidden: true, onclick: () => showOverview() }, t('app.backRoof'));
-  const hint = el('p', { class: 'stage-hint' }, site.overview
+  const hint = el('p', { class: 'stage-hint' }, withZoomHint(site.overview
     ? t('app.hintOverview')
-    : t('app.hintPlan'));
+    : t('app.hintPlan')));
   const stageWrap = el('div', { class: 'stage-wrap' }, stage, backBtn, hint);
   if (!site.overview) stage.classList.add('no-ov');
   const panel = createPanel({ site, store, adapter });
@@ -165,7 +169,7 @@ export async function start(opts) {
   const overview = site.overview
     ? createOverview({ site, store, adapter, onOpenBuilding: (b) => showPlan(b.floorplan) })
     : null;
-  if (overview) { stage.append(overview.el); editor?.attach(overview.svg, { label: t('app.editorOverview') }); }
+  if (overview) { zoom.layer.append(overview.el); editor?.attach(overview.svg, { label: t('app.editorOverview') }); }
 
   // Wall screen / tablet in landscape: the image fills the stage instead of letterboxing.
   const wallScreen = window.matchMedia('(min-width: 1024px) and (orientation: landscape) and (min-height: 560px)');
@@ -176,7 +180,7 @@ export async function start(opts) {
   for (const plan of site.floorplans) {
     const fp = createFloorplan({ site, plan, store, adapter, onRoom: (room) => { panel.open(room); fp.select(room.id); } });
     plans.set(plan.id, fp);
-    stage.append(fp.el);
+    zoom.layer.append(fp.el);
     editor?.attach(fp.svg, { label: t('app.editorPlan', { name: plan.name, unit: plan.unit || 'mm' }), round: plan.unit === 'px' ? 1 : 10, plan });
   }
   panel.el.addEventListener('close', () => plans.forEach((p) => p.select(null)));
@@ -198,6 +202,7 @@ export async function start(opts) {
 
   function mark(id) {
     view = id;
+    zoom.reset();
     viewNav.querySelectorAll('.tab').forEach((b) => b.setAttribute('aria-current', String(b.dataset.view === id)));
     stage.dataset.view = id;
   }
@@ -209,7 +214,7 @@ export async function start(opts) {
     overview.el.classList.add('is-active');
     overview.drop();
     backBtn.hidden = true;
-    hint.textContent = t('app.hintOverview');
+    hint.textContent = withZoomHint(t('app.hintOverview'));
     mark('overview');
   }
 
@@ -225,7 +230,7 @@ export async function start(opts) {
       plans.forEach((p) => p.el.classList.toggle('is-active', p === fp));
       overview?.el.classList.remove('is-active');
       backBtn.hidden = !overview;
-      hint.textContent = t('app.hintPlan');
+      hint.textContent = withZoomHint(t('app.hintPlan'));
       mark(`plan:${planId}`);
     }
     if (roomId) { const room = site.index.rooms.get(roomId); panel.open(room); fp.select(roomId); }
