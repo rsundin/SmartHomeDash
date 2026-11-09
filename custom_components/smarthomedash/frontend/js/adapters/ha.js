@@ -76,6 +76,15 @@ export function createHaAdapter({ url, token }) {
       return send({ type: 'call_service', domain, service, service_data: data });
     },
 
+    async areas() {
+      const [areas, entities, devices] = await Promise.all([
+        send({ type: 'config/area_registry/list' }),
+        send({ type: 'config/entity_registry/list' }),
+        send({ type: 'config/device_registry/list' }),
+      ]);
+      return { areas, entities, devices };
+    },
+
     // [{t: ms, v: number}] for the last `hours`. Climate entities use current_temperature.
     async history(entityId, hours = 24) {
       const isClimate = entityId.startsWith('climate.');

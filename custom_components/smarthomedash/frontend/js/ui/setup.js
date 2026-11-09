@@ -12,6 +12,7 @@
 
 import { el, sv, pts, svgPoint, centroid } from '../util.js';
 import { t } from '../i18n.js';
+import { noAreas, areaName, fillRoomFromArea, matchRoomsByName } from '../areas.js';
 
 const STEPS = ['basics', 'overview', 'plans', 'energy', 'buttons', 'lights'];
 
@@ -22,6 +23,7 @@ export function createSetup({ site, store, saveSite, uploadFile, reload, openPla
   cfg.scenes ??= [];
   const previews = new Map(); // path -> object URL for pictures uploaded in this session
   const picture = (path) => previews.get(path) ?? site.asset(path);
+  const areas = site.areas ?? noAreas();
   let step = STEPS[0];
   let dirty = false;
 
@@ -89,7 +91,7 @@ export function createSetup({ site, store, saveSite, uploadFile, reload, openPla
   const select = (options, value, onChange, attrs = {}) => {
     const n = el('select', { class: 'setup-input', ...attrs },
       options.map(([v, label]) => el('option', { value: v, selected: v === (value ?? '') }, label)));
-    n.addEventListener('change', () => { onChange(n.value); changed(); });
+    n.addEventListener('change', () => { changed(); onChange(n.value); });
     return n;
   };
   const fileButton = (label, onFile) => {
@@ -235,9 +237,13 @@ export function createSetup({ site, store, saveSite, uploadFile, reload, openPla
     for (const [pi, plan] of cfg.floorplans.entries()) {
       const src = plan.image ? picture(typeof plan.image === 'string' ? plan.image : plan.image.src) : null;
       const size = plan.image?.bounds ? [plan.image.bounds[2], plan.image.bounds[3]] : null;
-      const roomList = el('ul', { class: 'setup-list' }, (plan.rooms ?? []).map((r, i) => el('li', {},
-        input(r.name, (v) => { r.name = v; }, { 'aria-label': t('setup.name') }),
-        el('span', { class: 'muted small' }, [r.climate ? t('setup.thermostatShort') : '', r.lights?.length ? `${r.lights.length} ${t('setup.lightsShort')}` : ''].filter(Boolean).join(' ')),
+      const roomList = el('ul', { class: 'setup-list setup-rooms' }, (plan.rooms ?? []).map((r, i) => el('li', {},
+        areas.list.length ? areaSelect(r) : null,
+        r.ha_area && areaName(areas, r.ha_area)
+          ? el('span', { class: 'setup-room-name' }, areaName(areas, r.ha_area))
+          : input(r.name, (v) => { r.name = v; }, { 'aria-label': t('setup.name') }),
+        el('span', { class: 'muted small' }, roomSummary(r)),
+        r.ha_area ? el('button', { class: 'chip', type: 'button', onclick: () => fill(r) }, t('setup.fetchFromArea')) : null,
         el('button', { class: 'chip chip-danger', type: 'button', onclick: () => { plan.rooms.splice(i, 1); changed(); render(); } }, t('setup.remove')))));
       out.push(section(plan.name,
         el('div', { class: 'setup-row' },
@@ -248,12 +254,25 @@ export function createSetup({ site, store, saveSite, uploadFile, reload, openPla
             changed(); render();
           } }, t('setup.removePlan'))),
         src ? el('img', { class: 'setup-plan-thumb', src, alt: plan.name }) : el('p', { class: 'muted small' }, t('setup.planNoPicture')),
-        el('h4', { class: 'setup-label' }, t('setup.rooms')), roomList,
+        el('h4', { class: 'setup-label' }, t('setup.rooms')),
+        areas.list.length ? el('p', { class: 'muted small' }, t('setup.areasHelp')) : null,
+        roomList,
         src && size ? drawButton(t('setup.drawRoom'), { src, size, shapes: (plan.rooms ?? []).map((r) => ({ points: r.area, label: r.name, kind: 'room' })) }, (poly) => {
           plan.rooms ??= [];
           const name = t('setup.room') + ` ${plan.rooms.length + 1}`;
           plan.rooms.push({ id: uniqueId(slug(name), cfg.floorplans.flatMap((p) => (p.rooms ?? []).map((r) => r.id))), name, area: poly, lights: [] });
         }) : null));
+    }
+    const unlinked = cfg.floorplans.flatMap((p) => p.rooms ?? []).filter((r) => !r.ha_area);
+    if (areas.list.length && unlinked.length) {
+      out.splice(1, 0, section(t('setup.areas'), el('p', { class: 'muted small' }, t('setup.matchAreasHelp')),
+        el('button', { class: 'chip', type: 'button', onclick: () => {
+          const matched = matchRoomsByName(cfg, areas);
+          const n = matched.reduce((sum, r) => sum + fillRoomFromArea(cfg, r, areas, store), 0);
+          if (matched.length) changed();
+          render();
+          status.textContent = matched.length ? t('setup.matchedAreas', { rooms: matched.length, n }) : t('setup.noAreaMatch');
+        } }, t('setup.matchAreas'))));
     }
     out.push(section(t('setup.addPlan'), el('p', { class: 'muted small' }, t('setup.addPlanHelp')),
       fileButton(t('setup.uploadPlan'), async (file) => {
@@ -276,6 +295,35 @@ export function createSetup({ site, store, saveSite, uploadFile, reload, openPla
       })));
     return out;
   }
+
+  // A room linked to a Home Assistant area takes the area's name, lights and thermostat.
+  function areaSelect(room) {
+    const options = [['', t('setup.noArea')], ...areas.list
+      .map((a) => [a.area_id, a.name])
+      .sort((a, b) => a[1].localeCompare(b[1], site.locale))];
+    return select(options, room.ha_area, (v) => {
+      if (v) {
+        room.ha_area = v;
+        room.name = areaName(areas, v);
+        const n = fillRoomFromArea(cfg, room, areas, store);
+        status.textContent = t('setup.fetched', { n, room: room.name });
+      } else {
+        delete room.ha_area;
+      }
+      render();
+    }, { 'aria-label': t('setup.area') });
+  }
+  function fill(room) {
+    const n = fillRoomFromArea(cfg, room, areas, store);
+    if (n) changed();
+    render();
+    status.textContent = t('setup.fetched', { n, room: room.name });
+  }
+  const roomSummary = (r) => [
+    r.lights?.length ? `${r.lights.length} ${t('setup.lightsShort')}` : '',
+    r.climate ? t('setup.thermostatShort') : '',
+    r.temperature ? t('setup.sensorShort') : '',
+  ].filter(Boolean).join(' · ');
 
   // ---------- 4. energy
   function energy() {

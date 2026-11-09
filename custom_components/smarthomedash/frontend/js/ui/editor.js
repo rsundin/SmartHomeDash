@@ -11,6 +11,7 @@
 import { el, svgPoint, inside, storage } from '../util.js';
 import { draftKey } from '../site.js';
 import { t } from '../i18n.js';
+import { areaOf, areaName } from '../areas.js';
 
 const KINDS = [
   { id: 'lights', label: 'editor.kindLights', match: (s) => /^(light|switch)\./.test(s.entity_id) },
@@ -183,8 +184,9 @@ export function createEditor({ site, store, saveSite = null, reload = () => loca
       const g = groups.find((x) => x.k.match(s));
       if (!g) continue;
       const name = nameOf(s.entity_id);
-      if (filter && !`${name} ${s.entity_id}`.toLowerCase().includes(filter)) continue;
-      g.rows.push({ id: s.entity_id, name, where: placementOf(s.entity_id) });
+      const area = site.areas ? areaName(site.areas, areaOf(site.areas, s.entity_id)) : null;
+      if (filter && !`${name} ${s.entity_id} ${area ?? ''}`.toLowerCase().includes(filter)) continue;
+      g.rows.push({ id: s.entity_id, name, area, where: placementOf(s.entity_id) });
     }
     list.replaceChildren(...groups.filter((g) => g.rows.length).map(({ k, rows }) => {
       rows.sort((a, b) => (!!a.where - !!b.where) || a.name.localeCompare(b.name, site.locale));
@@ -196,7 +198,7 @@ export function createEditor({ site, store, saveSite = null, reload = () => loca
             onclick: () => select(r.id),
           },
           el('span', { class: 'editor-ent-name' }, r.name),
-          el('span', { class: 'editor-ent-where' }, r.where ?? t('editor.unplaced')),
+          el('span', { class: 'editor-ent-where' }, r.where ?? (r.area ? t('editor.unplacedIn', { area: r.area }) : t('editor.unplaced'))),
           el('span', { class: 'editor-ent-id' }, r.id))))));
     }));
     if (!list.children.length) list.append(el('p', { class: 'muted small' }, t('editor.noEntities')));

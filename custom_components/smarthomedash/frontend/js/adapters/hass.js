@@ -37,6 +37,20 @@ export function createHassAdapter(initialHass) {
       return hass.callService(domain, service, data);
     },
 
+    // Area, entity and device registries. Recent Home Assistant versions hand them to
+    // the frontend on the hass object; older ones are asked over the websocket.
+    async areas() {
+      if (hass.areas && hass.entities && hass.devices) {
+        return { areas: Object.values(hass.areas), entities: Object.values(hass.entities), devices: Object.values(hass.devices) };
+      }
+      const [areas, entities, devices] = await Promise.all([
+        hass.callWS({ type: 'config/area_registry/list' }),
+        hass.callWS({ type: 'config/entity_registry/list' }),
+        hass.callWS({ type: 'config/device_registry/list' }),
+      ]);
+      return { areas, entities, devices };
+    },
+
     async history(entityId, hours = 24) {
       const isClimate = entityId.startsWith('climate.');
       const res = await hass.callWS({

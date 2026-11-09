@@ -61,8 +61,9 @@ Optional for an apartment: without it the dashboard opens on the floor plan. **R
 ### Floor plans
 
 1. **Upload floor plan picture.** One per building or storey.
-2. **Draw a room** for every room: click the corners, **Done**, then type its name.
-3. Back under **Overview picture**, link each building to its floor plan.
+2. **Draw a room** for every room: click the corners, **Done**.
+3. **Pick the room's Home Assistant area.** The room takes the area's name and its lights, thermostat and temperature sensor. The lights are set out in the middle of the room; move them to their real spots in placement mode. Rooms already named like an area can be linked all at once with **Link rooms to areas with the same name**. Without areas, type the room's name instead and place everything by hand.
+4. Back under **Overview picture**, link each building to its floor plan.
 
 Rooms do not need to be exact. A room is used to find which room you tap in, to tint it by temperature and to light up windows.
 
@@ -89,8 +90,8 @@ Tick the scenes and scripts to show as buttons, and give them short names.
 
 Opens placement mode (also available as **Placera** / **Place** in the header):
 
-1. Pick a light, switch, thermostat or temperature sensor in the list. Unplaced ones are listed first.
-2. Tap where it is. On a floor plan the room is found from the tap: a light is placed at that spot, a thermostat or sensor is linked to the room. On the overview picture a light becomes an outdoor lamp; tap again to add more fixtures switched by the same entity.
+1. Pick a light, switch, thermostat or temperature sensor in the list. Unplaced ones are listed first, with their Home Assistant area; the search also finds entities by area.
+2. Tap where it is. On a floor plan the room is found from the tap: a light is placed at that spot, a thermostat or sensor is linked to the room. On the overview picture a light becomes an outdoor lamp; tap again to add more fixtures switched by the same entity. Outdoor lamps in the same Home Assistant area share one switch in the lights card.
 3. **Save to Home Assistant.**
 
 New outdoor lamps are drawn as wall lamps. To make one a flood or deck light, change its `type` to `ground` in `site.json` (see [configuration.md](configuration.md)).

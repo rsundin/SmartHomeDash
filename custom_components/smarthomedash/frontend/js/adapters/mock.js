@@ -86,7 +86,7 @@ export function createMockAdapter(site) {
     for (const x of site.mock?.entities ?? []) {
       const id = typeof x === 'string' ? x : x.entity;
       if (list.some((s) => s.entity_id === id)) continue;
-      list.push(S(id, 'off', { friendly_name: (typeof x === 'object' && x.name) || id }));
+      list.push(S(id, 'off', { friendly_name: (typeof x === 'object' && x.name) || id, ...((typeof x === 'object' && x.attributes) || {}) }));
     }
     list.push(sunState());
     for (const sc of site.scenes) list.push(S(sc.entity, sc.entity.startsWith('script.') ? 'off' : 'scening', { friendly_name: sc.name }));
@@ -174,6 +174,26 @@ export function createMockAdapter(site) {
           for (const l of on) set(l, 'on', { brightness: 200 });
         }
       }
+    },
+
+    // Test areas: one per room and one per outdoor lamp group, named like them,
+    // or the list in site.mock.areas: [{ area_id, name, entities: [...] }].
+    async areas() {
+      const areas = [], entities = [];
+      const add = (area_id, name, ids) => {
+        if (!areas.some((a) => a.area_id === area_id)) areas.push({ area_id, name });
+        for (const id of ids) if (id) entities.push({ entity_id: id, area_id, device_id: null });
+      };
+      if (site.mock?.areas) {
+        for (const a of site.mock.areas) add(a.area_id, a.name, a.entities ?? []);
+      } else {
+        for (const room of site.index.rooms.values()) {
+          if (room.device) continue;
+          add(room.ha_area ?? room.id, room.name, [...room.lights.map((l) => l.entity), room.climate, room.temperature]);
+        }
+        for (const z of site.overview?.zones ?? []) add(`outdoor_${z.id}`, z.name, z.lights);
+      }
+      return { areas, entities, devices: [] };
     },
 
     async history(entityId, hours = 24) {
