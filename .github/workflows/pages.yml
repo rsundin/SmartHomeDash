@@ -1,0 +1,56 @@
+# Publishes the standalone page with test data as an online demo on GitHub Pages.
+# Needs Settings → Pages → Source: GitHub Actions.
+name: Demo
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - index.html
+      - manifest.webmanifest
+      - version.json
+      - "*.png"
+      - sites/**
+      - custom_components/smarthomedash/frontend/**
+      - custom_components/smarthomedash/example/**
+      - .github/workflows/pages.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Assemble the site
+        # cp -L copies the files the example symlinks point to; Pages does not follow links.
+        run: |
+          mkdir -p _site/custom_components/smarthomedash
+          cp index.html manifest.webmanifest version.json icon-192.png icon-512.png _site/
+          cp -rL sites _site/sites
+          cp -r custom_components/smarthomedash/frontend _site/custom_components/smarthomedash/frontend
+          sed -i 's/<body data-default-site=/<body data-demo="true" data-default-site=/' _site/index.html
+          grep -q 'data-demo="true"' _site/index.html
+          touch _site/.nojekyll
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

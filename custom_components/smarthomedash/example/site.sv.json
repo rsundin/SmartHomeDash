@@ -349,6 +349,7 @@
     }
   ],
   "mock": {
+    "colors": { "light.living_room_floor_lamp": [176, 96, 255], "light.garage_outdoor": [210, 225, 255] },
     "sun": {
       "rise": "07:30",
       "set": "16:00"

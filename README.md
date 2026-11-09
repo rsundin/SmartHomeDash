@@ -1,6 +1,8 @@
 # SmartHomeDash
 
-A Home Assistant dashboard that shows your home as a picture. Lights glow where they are, wall lamps wash the facade, windows light up when a room's lamps are on, and solar panels glow green while they produce. Tap a building and the roof lifts to reveal its floor plan, with every lamp and thermostat controllable in place.
+A Home Assistant dashboard that shows your home as a picture. Lights glow where they are, in their own colour, wall lamps wash the facade, windows light up when a room's lamps are on, and solar panels glow green while they produce. Tap a building and the roof lifts to reveal its floor plan, with every lamp and thermostat controllable in place.
+
+**[Try the live demo](https://rsundin.github.io/SmartHomeDash/)**: the example house and apartment on test data, right in your browser.
 
 - Runs as a panel in the Home Assistant sidebar, behind Home Assistant's own login. No access tokens.
 - Set up entirely in the UI: upload a picture of your home and your floor plans, draw rooms, tap where each light and thermostat is.
@@ -79,7 +81,7 @@ No build step: plain HTML, CSS and JavaScript modules.
 python3 -m http.server 8000
 ```
 
-`http://localhost:8000/` runs the example house standalone on **test data**: lights switch, thermostats respond and temperatures drift. `?site=example-apartment` shows the example apartment: a floor plan only. Add `#edit` for placement mode.
+`http://localhost:8000/` runs the example house standalone on **test data**, the same page as the [online demo](https://rsundin.github.io/SmartHomeDash/), which `.github/workflows/pages.yml` publishes from `main`: lights switch, thermostats respond and temperatures drift. `?site=example-apartment` shows the example apartment: a floor plan only. Add `#edit` for placement mode.
 
 ```
 custom_components/smarthomedash/
@@ -108,6 +110,10 @@ index.html                 standalone page for development
 - Pictures you upload are not processed or sent anywhere.
 
 See [SECURITY.md](SECURITY.md) for how access is handled and how to report a problem.
+
+## Roadmap
+
+What comes next: doors, windows and warnings, energy flow on the picture, dusk, a doorbell camera on wall screens and more. See [ROADMAP.md](ROADMAP.md).
 
 ## Support
 

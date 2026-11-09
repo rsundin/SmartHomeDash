@@ -118,6 +118,10 @@ button { font: inherit; color: inherit; }
   border: 1px solid var(--danger); color: var(--ink); background: rgba(255, 122, 107, 0.08);
 }
 .banner a { color: var(--accent); }
+.banner-demo { display: flex; flex-wrap: wrap; gap: 10px 12px; align-items: center; border-color: var(--accent); background: rgba(167, 220, 191, 0.08); width: 100%; max-width: none; }
+.banner-demo span { flex: 1 1 320px; }
+.banner-demo a { text-decoration: none; color: var(--ink); }
+.banner-demo a.chip-primary { color: var(--bg); }
 .banner-mock { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; justify-content: space-between; border-color: var(--glow); background: rgba(255, 178, 74, 0.1); width: 100%; max-width: none; }
 
 /* ---------- layout */
@@ -219,8 +223,8 @@ button { font: inherit; color: inherit; }
 .fp-lamp-hit { fill: transparent; }
 .fp-lamp-ring { fill: var(--bg); stroke: var(--muted-2); transition: stroke 0.3s; }
 .fp-lamp-core { fill: var(--muted-2); transition: fill 0.3s; }
-.fp-lamp.is-on .fp-lamp-ring { stroke: var(--glow); }
-.fp-lamp.is-on .fp-lamp-core { fill: var(--glow-core); }
+.fp-lamp.is-on .fp-lamp-ring { stroke: var(--lamp, var(--glow)); }
+.fp-lamp.is-on .fp-lamp-core { fill: var(--lamp-core, var(--glow-core)); }
 .fp-lamp:hover .fp-lamp-ring, .fp-lamp:focus-visible .fp-lamp-ring { stroke: var(--accent); }
 .fp-lamp:focus-visible { outline: none; }
 .fp-lamp.is-missing { opacity: 0.35; }

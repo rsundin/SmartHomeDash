@@ -116,6 +116,7 @@ Each panel outline glows green while the panels produce, stronger as production 
 
 - Millimetres can be read straight off a dimensioned floor plan. Pick any origin, an outer corner works well.
 - `outline` is the outer walls. Without it the rooms are used.
+- Lamps that report their colour (`rgb_color`, also given for white lights with a colour temperature) glow in that colour on the floor plan and the overview picture; others glow in the theme's warm light.
 - `ha_area` links the room to a Home Assistant area by its area id. The room then shows the area's name as it is in Home Assistant, and the setup guide can add the area's lights, thermostat and temperature sensor. Without it, `name` is used. (`area` is the room's outline on the floor plan, not a Home Assistant area.)
 - `label` moves the room name when the middle of the room is a poor spot, such as in an L-shaped room.
 - `temperature` is a temperature sensor; `climate` is the thermostat that gets controlled. With both, the sensor value is shown.

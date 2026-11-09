@@ -20,6 +20,10 @@ import { createEditor } from './ui/editor.js';
 import { createSetup } from './ui/setup.js';
 import { createZoom } from './ui/zoom.js';
 import { loadAreas, applyAreaNames, noAreas } from './areas.js';
+
+// The online demo sets data-demo on <body> (see .github/workflows/pages.yml).
+const DEMO = document.body?.dataset.demo === 'true';
+const REPO_URL = 'https://github.com/rsundin/SmartHomeDash';
 import { t, setLanguage } from './i18n.js';
 
 const params = new URLSearchParams(location.search);
@@ -73,7 +77,7 @@ export async function start(opts) {
   } else {
     const savedConn = storage.get(connKey(site.id));
     const browserLogin = haLogin();
-    source = params.has('mock') ? 'mock' : savedConn?.token ? 'token' : browserLogin ? 'login' : 'mock';
+    source = params.has('mock') || DEMO ? 'mock' : savedConn?.token ? 'token' : browserLogin ? 'login' : 'mock';
     const conn = { token: savedConn, login: browserLogin }[source] ?? null;
     adapter = conn ? createHaAdapter(conn) : createMockAdapter(site);
   }
@@ -120,7 +124,7 @@ export async function start(opts) {
     el('div', { class: 'top-actions' }, clock, source === 'panel' ? null : status, site.overview || site.floorplans.length ? nightBtn : null, editing ? null : kioskBtn,
       opts.navigateEdit && !editing ? el('button', { class: 'chip', type: 'button', onclick: () => opts.navigateEdit(true) }, t('app.edit')) : null,
       canSetup && !editing ? el('button', { class: 'chip', type: 'button', onclick: () => openSetup() }, t('app.setup')) : null,
-      source === 'panel' ? null : el('button', { class: 'chip', type: 'button', onclick: () => settings.open() }, t('app.connection'))));
+      source === 'panel' || DEMO ? null : el('button', { class: 'chip', type: 'button', onclick: () => settings.open() }, t('app.connection'))));
   keepAwake();
 
   // ---- stage
@@ -139,8 +143,15 @@ export async function start(opts) {
   const main = el('main', { class: 'layout' }, stageWrap, side);
   app.replaceChildren(header, main, panel.el, settings.el);
 
+  // The online demo (GitHub Pages): say what it is and where to get it.
+  if (DEMO) {
+    const other = site.overview ? ['example-apartment', t('app.demoApartment')] : ['example-house', t('app.demoHouse')];
+    app.prepend(el('div', { class: 'banner banner-demo' },
+      el('span', {}, t('app.demoBanner')),
+      el('a', { class: 'chip', href: `?site=${other[0]}` }, other[1]),
+      el('a', { class: 'chip chip-primary', href: REPO_URL, target: '_blank', rel: 'noopener' }, t('app.demoGet'))));
   // Make test data impossible to mistake for the real house.
-  if (adapter.kind === 'mock' && !params.has('mock')) {
+  } else if (adapter.kind === 'mock' && !params.has('mock')) {
     app.prepend(el('div', { class: 'banner banner-mock' },
       el('span', {}, t('app.mockBanner')),
       el('button', { class: 'chip chip-primary', type: 'button', onclick: () => settings.open() }, t('app.connectNow'))));

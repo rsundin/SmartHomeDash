@@ -4,6 +4,7 @@
 import { el, sv, pts, centroid, bbox, press, fmt } from '../util.js';
 import { level, roomTemp, comfort, heating, climate } from '../entities.js';
 import { t } from '../i18n.js';
+import { lightColor, createTints } from '../glow.js';
 
 const FLAME = 'M12 2c1 3.5-1.5 5-1.5 7.5A2.5 2.5 0 0 0 13 12c0-1 .5-2 1.5-2.5C16 12 18 13.5 18 16a6 6 0 0 1-12 0c0-4 3-6 6-14z';
 
@@ -26,6 +27,13 @@ export function createFloorplan({ site, plan, store, adapter, onRoom }) {
     picture ? sv('image', { href: site.asset(picture.src), x: ix, y: iy, width: iw, height: ih, preserveAspectRatio: 'none', class: 'fp-picture' }) : null);
   const fills = sv('g', { class: 'fp-fills' });
   const glows = sv('g', { class: 'fp-glows' });
+  const haloGradient = (id, glow, coreC) => sv('radialGradient', { id },
+    sv('stop', { offset: '0', style: { stopColor: coreC, stopOpacity: '0.85' } }),
+    sv('stop', { offset: '0.3', style: { stopColor: glow, stopOpacity: '0.45' } }),
+    sv('stop', { offset: '1', style: { stopColor: glow, stopOpacity: '0' } }));
+  const defs = sv('defs', {}, haloGradient(gradId, 'var(--glow)', 'var(--glow-core)'));
+  // A lamp that reports its colour glows in it (see glow.js).
+  const tint = createTints((sx, glow, coreC) => defs.append(haloGradient(gradId + sx, glow, coreC)));
   const walls = sv('g', { class: 'fp-walls' },
     rooms.map((r) => sv('polygon', { class: 'fp-inner', points: pts(r.area), 'stroke-width': wall * 0.4 })),
     sv('polygon', { class: 'fp-outer', points: pts(outline), 'stroke-width': wall }));
@@ -78,8 +86,13 @@ export function createFloorplan({ site, plan, store, adapter, onRoom }) {
         () => onRoom(room));
       lamps.append(lamp);
       store.watch([light.entity], () => {
-        const lv = level(store.get(light.entity));
+        const st = store.get(light.entity);
+        const lv = level(st);
+        const c = tint(lightColor(st));
         halo.style.opacity = String(lv);
+        halo.setAttribute('fill', `url(#${gradId}${c.suffix})`);
+        lamp.style.setProperty('--lamp', c.glow ?? '');
+        lamp.style.setProperty('--lamp-core', c.core ?? '');
         lamp.classList.toggle('is-on', lv > 0);
         lamp.classList.toggle('is-missing', !store.get(light.entity));
       });
@@ -90,11 +103,7 @@ export function createFloorplan({ site, plan, store, adapter, onRoom }) {
     class: 'fp-svg', viewBox: `${bb.x - pad} ${bb.y - pad} ${bb.w + pad * 2} ${bb.h + pad * 2}`,
     role: 'group', 'aria-label': t('plan.label', { name: plan.name }),
   },
-  sv('defs', {},
-    sv('radialGradient', { id: gradId },
-      sv('stop', { offset: '0', style: { stopColor: 'var(--glow-core)', stopOpacity: '0.85' } }),
-      sv('stop', { offset: '0.3', style: { stopColor: 'var(--glow)', stopOpacity: '0.45' } }),
-      sv('stop', { offset: '1', style: { stopColor: 'var(--glow)', stopOpacity: '0' } }))),
+  defs,
   floor, fills, glows, walls, labels, lamps);
 
   const root = el('div', { class: `view fp${picture ? ' has-picture' : ''}`, 'data-plan': plan.id }, svg);
