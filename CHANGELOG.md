@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.8.3
+
+- The **Kiosk mode** button opens a small wall screen sheet: start kiosk mode, light mode on this device, and **Test the doorbell**, which shows the camera window on that screen without ringing anything
+- Light mode on this device is Auto, On or Off. Auto follows the setup guide's "light mode on every screen" and otherwise turns light mode on for older tablets with two cores or 2 GB of memory or less. `?lite` and `?lite=0` still work
+
 ## 0.8.2
 
 - Clearer energy flow on the overview picture: one line for each real flow, from where the power comes from to where it goes, in the colour of the source (yellow sun, blue grid, green battery). Lines are wider with more power and carry their kilowatts, and solar charging the battery runs straight from the roof to the battery instead of through the house

@@ -186,7 +186,7 @@ A row above the picture shows, most serious first: alarms (smoke, gas, carbon mo
 
 A touch on the dimmed screen only wakes it; it does not switch what is under the finger. A doorbell ring also wakes it. A browser cannot turn the backlight off, so the screen is dimmed with a dark layer; for a fully dark screen at night use the tablet's own schedule or a kiosk browser such as Fully Kiosk Browser.
 
-**lite**: `true` turns light mode on for every screen showing this dashboard: no blur, blending or animation, for older tablets that stutter. Lamp light is drawn without the soft wash on the facade. For a single screen add `?lite` to its address instead; the device remembers it, and `?lite=0` turns it off again.
+**lite**: `true` turns light mode on for every screen showing this dashboard: no blur, blending or animation, for older tablets that stutter. Lamp light is drawn without the soft wash on the facade. Each screen can also set light mode for itself under the **Kiosk mode** button: **Auto** (the default) follows `lite` and otherwise turns light mode on for devices with two cores or 2 GB of memory or less, while **On** and **Off** override both. `?lite` and `?lite=0` on the address set On and Off the same way; the device remembers it.
 
 ## energy
 
