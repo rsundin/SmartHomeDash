@@ -13,6 +13,7 @@
 
 import { el, sv, pts, svgPoint, centroid } from '../util.js';
 import { t } from '../i18n.js';
+import { readPower, kwText, MIN_KW } from '../power.js';
 import { noAreas, areaName, floorName, fillRoomFromArea, matchRoomsByName } from '../areas.js';
 
 const STEPS = ['basics', 'overview', 'plans', 'energy', 'buttons', 'wall', 'lights'];
@@ -435,6 +436,7 @@ export function createSetup({ site, store, saveSite, uploadFile, reload, openPla
         row('battery_power', t('cards.battery'), power),
         row('battery_soc', t('setup.batteryLevel'), battery),
         row('charger_power', t('cards.charger'), power)),
+      direction(E),
       section(t('setup.energyToday'),
         row('energy_today', t('cards.usedToday'), energyKwh),
         row('pv_energy_today', t('cards.solarToday'), energyKwh),
@@ -463,6 +465,30 @@ export function createSetup({ site, store, saveSite, uploadFile, reload, openPla
             return el('li', {}, el('label', {}, box, ` ${s.attributes?.friendly_name ?? s.entity_id}`, el('span', { class: 'muted small' }, ` · ${s.entity_id}`)));
           }))),
     ];
+  }
+
+  // Inverters disagree on which way is positive. Show what the dashboard reads right now,
+  // so a battery that is discharging but shown as charging is easy to spot and flip.
+  function direction(E) {
+    if (!E.grid_power && !E.battery_power) return null;
+    const p = readPower(store, E);
+    const now = (k) => {
+      const v = p[k];
+      if (v == null) return t('setup.dirUnknown');
+      if (Math.abs(v) < MIN_KW) return t('setup.dirIdle');
+      const word = k === 'grid' ? (v > 0 ? 'flow.buying' : 'flow.selling') : (v > 0 ? 'flow.batteryOut' : 'flow.batteryIn');
+      return `${t(word)} ${kwText(Math.abs(v), cfg.locale)}`;
+    };
+    const item = (k, key, label) => {
+      if (!E[`${k}_power`]) return null;
+      const box = el('input', { type: 'checkbox', checked: !!E[key] });
+      box.addEventListener('change', () => { if (box.checked) E[key] = true; else delete E[key]; changed(); render(); });
+      return el('li', {}, el('label', {}, box, ` ${label}`), el('span', { class: 'muted small' }, ` · ${t('setup.dirNow', { now: now(k) })}`));
+    };
+    return section(t('setup.direction'), el('p', { class: 'muted small' }, t('setup.directionHelp')),
+      el('ul', { class: 'setup-checks' },
+        item('battery', 'battery_invert', t('setup.dirBattery')),
+        item('grid', 'grid_invert', t('setup.dirGrid'))));
   }
 
   // ---------- 5. buttons
