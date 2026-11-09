@@ -180,6 +180,7 @@
     }
   ],
   "mock": {
+    "color_temps": { "light.kitchen_pendant": 4500, "light.dining_table": 2200 },
     "sensors": { "cover.living_room_blinds": {"state": "open", "attributes": {"device_class": "blind", "current_position": 100, "supported_features": 15}, "name": "Blinds"}, "cover.bedroom_curtains": {"state": "closed", "attributes": {"device_class": "curtain", "current_position": 0, "supported_features": 15}, "name": "Curtains"},"binary_sensor.front_door": {"device_class": "door", "state": "off", "name": "Front door"}, "lock.front_door": {"state": "unlocked", "name": "Front door lock"}, "binary_sensor.living_room_motion": {"device_class": "motion", "state": "on", "name": "Living room motion"}, "binary_sensor.bathroom_leak": {"device_class": "moisture", "state": "off", "name": "Leak sensor"}, "sensor.bathroom_leak_battery": {"device_class": "battery", "state": "12", "unit": "%", "name": "Leak sensor battery"}, "binary_sensor.bedroom_window": {"device_class": "window", "state": "off", "name": "Bedroom window"}},
     "colors": { "light.living_room_floor_lamp": [176, 96, 255], "light.balcony_string": [255, 120, 190], "light.bedside": [255, 150, 80] },
     "sun": {

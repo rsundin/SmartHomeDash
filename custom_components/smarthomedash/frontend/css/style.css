@@ -593,3 +593,8 @@ details.alert ul { margin: 6px 0 2px; padding-left: 18px; color: var(--muted); f
 @keyframes wx-snow { to { background-position: -114px 388px, 140px 211px, -32px 169px; } }
 @media (prefers-reduced-motion: reduce) { .ov-wx::after { animation: none !important; } }
 .draw-pick { display: flex; gap: 6px; align-items: center; }
+
+/* placement mode: drag lamps */
+.is-editing [data-drag] { cursor: grab; touch-action: none; }
+.is-editing [data-drag].is-dragging { cursor: grabbing; opacity: 0.5; }
+.drag-ghost { fill: rgba(255, 178, 74, 0.35); stroke: var(--glow); stroke-width: 2; vector-effect: non-scaling-stroke; pointer-events: none; }

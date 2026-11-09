@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.7.1
+
+- Placement mode: drag a lamp to move it, with the mouse or a finger, also while zoomed in. On a floor plan a lamp can be dropped in another room; on the overview picture each fixture of an outdoor lamp moves on its own
+- Lamps set by colour temperature glow in that temperature, from candle-warm to daylight, on the floor plans and the overview picture
+
 ## 0.7.0
 
 - Energy flow on the overview picture: dots running from the solar panels, the grid and the battery to the house, and from the house to the grid, the battery and the car charger, faster with more power. Place the house, grid, battery and charger in the setup guide

@@ -8,7 +8,7 @@
 // Changes are kept as a draft in this browser and applied by reloading the page.
 // "Copy site.json" puts the result on the clipboard to paste into the real file.
 
-import { el, svgPoint, inside, storage } from '../util.js';
+import { el, sv, svgPoint, inside, storage } from '../util.js';
 import { draftKey } from '../site.js';
 import { t } from '../i18n.js';
 import { areaOf, areaName } from '../areas.js';
@@ -69,8 +69,7 @@ export function createEditor({ site, store, saveSite = null, reload = () => loca
   const currentView = () => document.querySelector('.stage')?.dataset.view ?? null;
 
   // ---------- place on a floor plan
-  function placeInPlan(plan, at) {
-    const id = selected;
+  function placeInPlan(plan, at, id = selected) {
     const kind = kindOf(id);
     const rawPlan = (raw.floorplans ?? []).find((p) => p.id === plan.id);
     const room = (rawPlan?.rooms ?? []).find((r) => inside(at, r.area));
@@ -255,6 +254,61 @@ export function createEditor({ site, store, saveSite = null, reload = () => loca
   let pending = null;
   store.watch(null, () => { if (!pending) pending = setTimeout(() => { pending = null; renderList(); }, 1000); });
 
+  // ---------- drag a lamp to move it
+  // On a floor plan a lamp can be dropped in another room; on the overview picture one
+  // fixture of an outdoor lamp moves. A press without moving stays a tap.
+  let dragged = false;
+  function enableDrag(svg, { round, plan }) {
+    let drag = null;
+    const snap = (p) => [Math.round(p.x / round) * round, Math.round(p.y / round) * round];
+    svg.addEventListener('pointerdown', (e) => {
+      if (mode !== 'place' || e.button > 0) return;
+      const node = e.target.closest?.('[data-drag]');
+      if (!node) return;
+      const p = svgPoint(svg, e);
+      drag = { node, id: e.pointerId, from: [e.clientX, e.clientY], start: [p.x, p.y], moved: false, ghost: null };
+      svg.setPointerCapture?.(e.pointerId);
+    }, true);
+    svg.addEventListener('pointermove', (e) => {
+      if (!drag || e.pointerId !== drag.id) return;
+      if (!drag.moved && Math.hypot(e.clientX - drag.from[0], e.clientY - drag.from[1]) < 6) return;
+      e.preventDefault();
+      const p = svgPoint(svg, e);
+      if (!drag.moved) {
+        drag.moved = true;
+        drag.node.classList.add('is-dragging');
+        const r = Number(drag.node.querySelector?.('.fp-lamp-hit')?.getAttribute('r') ?? drag.node.getAttribute('r') ?? 12);
+        drag.ghost = sv('circle', { class: 'drag-ghost', r: Math.max(r * 0.8, 6) });
+        svg.append(drag.ghost);
+      }
+      drag.ghost.setAttribute('cx', p.x);
+      drag.ghost.setAttribute('cy', p.y);
+      const [dx, dy] = [p.x - drag.start[0], p.y - drag.start[1]];
+      drag.node.setAttribute('transform', `translate(${dx} ${dy})`);
+    }, true);
+    const end = (e) => {
+      if (!drag || e.pointerId !== drag.id) return;
+      const d = drag;
+      drag = null;
+      if (!d.moved) return;
+      dragged = true; // the click that follows is not a placement
+      setTimeout(() => { dragged = false; }, 0);
+      d.ghost?.remove();
+      const at = snap(svgPoint(svg, e));
+      if (d.node.dataset.drag === 'light' && plan) {
+        placeInPlan(plan, at, d.node.dataset.entity);
+      } else if (d.node.dataset.drag === 'lamp') {
+        const zone = (raw.overview?.zones ?? []).find((z) => z.id === d.node.dataset.zone);
+        const lamp = zone?.lamps?.[Number(d.node.dataset.lamp)];
+        if (!lamp) { d.node.removeAttribute('transform'); return; }
+        lamp.at = at;
+        save(t('editor.moved', { name: zone.name }));
+      }
+    };
+    svg.addEventListener('pointerup', end, true);
+    svg.addEventListener('pointercancel', (e) => { if (drag?.node) { drag.node.removeAttribute('transform'); drag.ghost?.remove(); } drag = null; }, true);
+  }
+
   return {
     el: root,
     initialView: storage.get(viewKey),
@@ -262,6 +316,7 @@ export function createEditor({ site, store, saveSite = null, reload = () => loca
     attach(svg, { label, round = 1, plan = null }) {
       svg.addEventListener('click', (e) => {
         e.stopPropagation(); e.preventDefault();
+        if (dragged) return;
         const p = svgPoint(svg, e);
         const at = [Math.round(p.x / round) * round, Math.round(p.y / round) * round];
         if (mode === 'draw') {
@@ -276,6 +331,7 @@ export function createEditor({ site, store, saveSite = null, reload = () => loca
         else placeOutdoor(at);
       }, true);
       for (const ev of ['pointerdown', 'pointerup', 'contextmenu']) svg.addEventListener(ev, (e) => e.stopPropagation(), true);
+      enableDrag(svg, { round, plan });
     },
   };
 }

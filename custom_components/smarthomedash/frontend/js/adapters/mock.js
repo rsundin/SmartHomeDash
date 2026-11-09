@@ -51,7 +51,9 @@ export function createMockAdapter(site) {
         brightness: on ? Math.round(140 + rnd() * 115) : null,
         ...(site.mock?.colors?.[id]
           ? { supported_color_modes: ['rgb'], color_mode: 'rgb', rgb_color: site.mock.colors[id] }
-          : { supported_color_modes: ['brightness'] }),
+          : site.mock?.color_temps?.[id]
+            ? { supported_color_modes: ['color_temp'], color_mode: 'color_temp', color_temp_kelvin: site.mock.color_temps[id] }
+            : { supported_color_modes: ['brightness'] }),
       }));
     }
     // Doors, windows, locks, presence and alarms: site.mock.sensors =

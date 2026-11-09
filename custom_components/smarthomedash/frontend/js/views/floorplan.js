@@ -107,7 +107,7 @@ export function createFloorplan({ site, plan, store, adapter, onRoom }) {
       const [x, y] = light.at ?? [cx, cy + unit * 2.5];
       const halo = sv('circle', { class: 'fp-halo', cx: x, cy: y, r: unit * 4.5, fill: `url(#${gradId})` });
       glows.append(halo);
-      const lamp = sv('g', { class: 'fp-lamp', tabindex: 0, role: 'button', 'aria-label': t('overview.toggle', { name: light.name ?? room.name }) },
+      const lamp = sv('g', { class: 'fp-lamp', 'data-drag': 'light', 'data-entity': light.entity, tabindex: 0, role: 'button', 'aria-label': t('overview.toggle', { name: light.name ?? room.name }) },
         sv('circle', { class: 'fp-lamp-hit', cx: x, cy: y, r: unit * 1.1 }),
         sv('circle', { class: 'fp-lamp-ring', cx: x, cy: y, r: unit * 0.55, 'stroke-width': unit * 0.14 }),
         sv('circle', { class: 'fp-lamp-core', cx: x, cy: y, r: unit * 0.3 }),
