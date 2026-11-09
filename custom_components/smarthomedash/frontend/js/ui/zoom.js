@@ -57,6 +57,8 @@ export function createZoom(stage) {
   stage.addEventListener('pointerdown', (e) => {
     if (e.pointerType === 'mouse') { drag.on = false; return; }
     if (e.isPrimary) pointers.clear(); // first finger of a new touch: forget any lost ones
+    // In placement mode a finger on a lamp drags the lamp, not the picture.
+    if (document.body.classList.contains('is-editing') && e.target.closest?.('[data-drag]')) return;
     pointers.set(e.pointerId, local(e));
     if (pointers.size === 1) drag.on = false;
     if (pointers.size === 2) drag.on = true; // a pinch is never a tap

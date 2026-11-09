@@ -155,9 +155,9 @@ export function createOverview({ site, store, adapter, onOpenBuilding }) {
   }
   const zoneHits = sv('g', { class: 'ov-zonehits' });
   for (const z of ov.zones) {
-    for (const l of z.lamps) {
+    for (const [li, l] of z.lamps.entries()) {
       const [x, y] = l.at;
-      const c = sv('circle', { class: 'ov-zonehit', cx: x, cy: y, r: Math.max(l.size * 0.5, 16), tabindex: 0, role: 'button', 'aria-label': t('overview.toggle', { name: z.name }) },
+      const c = sv('circle', { class: 'ov-zonehit', 'data-drag': 'lamp', 'data-zone': z.id, 'data-lamp': li, cx: x, cy: y, r: Math.max(l.size * 0.5, 16), tabindex: 0, role: 'button', 'aria-label': t('overview.toggle', { name: z.name }) },
         sv('title', {}, t('overview.toggleHint', { name: z.name })));
       press(c, () => toggleZone(z));
       zoneHits.append(c);
