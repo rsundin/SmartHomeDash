@@ -3,6 +3,7 @@
 // Place:  pick a light, switch, thermostat or temperature sensor from the list,
 //         then tap where it is. On a floor plan the room is found from the tap
 //         (point in polygon); on the overview a light becomes an outdoor lamp.
+//         Tapping a lamp already on a picture selects it and shows its name tag.
 // Draw:   click corners to get a polygon for site.json (rooms, buildings, panels).
 //
 // Changes are kept as a draft in this browser and applied by reloading the page.
@@ -22,6 +23,7 @@ const KINDS = [
 export function createEditor({ site, store, saveSite = null, reload = () => location.reload(), exit = null, update = null, reloadPage = () => location.reload() }) {
   const raw = site.raw;
   const viewKey = `shd:${site.id}:editview`;
+  const selKey = `shd:${site.id}:editsel`;
   let mode = 'place';
   let selected = null;
   let filter = '';
@@ -63,6 +65,8 @@ export function createEditor({ site, store, saveSite = null, reload = () => loca
   function save(message) {
     storage.set(draftKey(site.id), raw);
     storage.set(viewKey, currentView());
+    // Keep the selection and the message across the reload, so the moved lamp stays marked.
+    storage.set(selKey, { id: selected, message });
     status.textContent = message;
     setTimeout(reload, 350);
   }
@@ -74,6 +78,7 @@ export function createEditor({ site, store, saveSite = null, reload = () => loca
     const rawPlan = (raw.floorplans ?? []).find((p) => p.id === plan.id);
     const room = (rawPlan?.rooms ?? []).find((r) => inside(at, r.area));
     if (!room) { status.textContent = t('editor.outsideRooms'); return; }
+    selected = id;
     const existing = (room.lights ?? []).find((l) => l.entity === id);
     unplace(id);
     if (kind === 'lights') {
@@ -109,6 +114,8 @@ export function createEditor({ site, store, saveSite = null, reload = () => loca
   const list = el('div', { class: 'editor-list' });
   const selBox = el('div', { class: 'editor-sel' });
   const tabs = el('div', { class: 'seg' });
+  // Name tag over the selected (or dragged) lamp on the picture.
+  const tag = el('div', { class: 'lamp-tag', hidden: true, 'aria-hidden': 'true' });
   const out = el('code', { class: 'editor-out' });
   const placePane = el('div', { class: 'editor-pane' }, search, list, selBox);
   const drawPane = el('div', { class: 'editor-pane', hidden: true },
@@ -131,7 +138,7 @@ export function createEditor({ site, store, saveSite = null, reload = () => loca
         ? el('button', { class: 'chip editor-exit', type: 'button', onclick: () => { storage.set(viewKey, null); exit(); } }, t('editor.exit'))
         : el('a', { class: 'small editor-exit', href: location.pathname + location.search, onclick: () => storage.set(viewKey, null) }, t('editor.exit'))),
     site.fromDraft ? el('p', { class: 'small editor-draft' }, t('editor.draftNotice')) : null,
-    tabs, placePane, drawPane, status, draftRow,
+    tabs, placePane, drawPane, status, draftRow, tag,
     update ? el('div', { class: 'row editor-update' },
       el('button', { class: 'chip', type: 'button', onclick: (e) => runUpdate(e.currentTarget) }, t('editor.update'))) : null);
 
@@ -208,10 +215,57 @@ export function createEditor({ site, store, saveSite = null, reload = () => loca
     selected = id;
     const where = placementOf(id);
     selBox.replaceChildren(
-      el('p', { class: 'small' }, el('strong', {}, nameOf(id)), ` · ${where ?? t('editor.unplaced')}`),
+      el('p', { class: 'small' }, el('strong', {}, nameOf(id)), ` · ${where ?? t('editor.unplaced')}`,
+        el('span', { class: 'editor-sel-id' }, id)),
       where ? el('button', { class: 'chip', type: 'button', onclick: () => { unplace(id); save(t('editor.removed', { name: nameOf(id) })); } }, t('editor.remove')) : null);
     status.textContent = kindOf(id) === 'lights' ? t('editor.tapWhereLight') : t('editor.tapWhere');
     renderList();
+    list.querySelector('.is-selected')?.scrollIntoView?.({ block: 'nearest' });
+  }
+
+  // A tap on a lamp already on a picture selects it instead of placing something there.
+  function pick(node) {
+    let id = node.dataset.entity;
+    if (node.dataset.drag === 'lamp') id = (raw.overview?.zones ?? []).find((z) => z.id === node.dataset.zone)?.lights?.[0];
+    if (!id) return;
+    select(id);
+    status.textContent = t('editor.picked', { name: nameOf(id) });
+  }
+
+  // ---------- name tag
+  // Follows the lamp on screen (zoom, scroll, drag) while placement mode is open.
+  let dragNode = null;
+  let tagFor = null;
+  function lampNode(id) {
+    const zones = (raw.overview?.zones ?? []).filter((z) => (z.lights ?? []).includes(id)).map((z) => z.id);
+    const nodes = [...document.querySelectorAll('[data-drag]')].filter((n) =>
+      n.dataset.drag === 'light' ? n.dataset.entity === id : zones.includes(n.dataset.zone));
+    return nodes.find((n) => { const r = n.getBoundingClientRect(); return r.width > 0 && r.height > 0; }) ?? null;
+  }
+  function placeTag() {
+    if (!root.isConnected) return;
+    requestAnimationFrame(placeTag);
+    const node = mode === 'place' ? (dragNode ?? (selected ? lampNode(selected) : null)) : null;
+    const id = !node ? null : dragNode
+      ? (node.dataset.entity ?? (raw.overview?.zones ?? []).find((z) => z.id === node.dataset.zone)?.lights?.[0])
+      : selected;
+    if (!node || !id) {
+      if (!tag.hidden) document.querySelectorAll('.is-picked').forEach((n) => n.classList.remove('is-picked'));
+      tag.hidden = true; tagFor = null; return;
+    }
+    if (tagFor !== id) {
+      tagFor = id;
+      tag.replaceChildren(el('strong', {}, nameOf(id)), el('span', {}, id));
+    }
+    tag.hidden = false;
+    node.classList.add('is-picked');
+    document.querySelectorAll('.is-picked').forEach((n) => { if (n !== node) n.classList.remove('is-picked'); });
+    const r = node.getBoundingClientRect();
+    const w = tag.offsetWidth, h = tag.offsetHeight;
+    const x = Math.min(Math.max(r.left + r.width / 2 - w / 2, 8), innerWidth - w - 8);
+    const above = r.top - h - 8;
+    const y = above > 8 ? above : r.bottom + 8;
+    tag.style.transform = `translate(${Math.round(x)}px, ${Math.round(y)}px)`;
   }
 
   function renderDraw() {
@@ -250,6 +304,13 @@ export function createEditor({ site, store, saveSite = null, reload = () => loca
   renderList();
   renderDraw();
   setMode('place');
+  const resumed = storage.get(selKey);
+  storage.set(selKey, null);
+  if (resumed?.id) {
+    select(resumed.id);
+    if (resumed.message) status.textContent = resumed.message;
+  }
+  requestAnimationFrame(placeTag);
   // Refresh the list when states arrive (for example after connecting to HA), at most once a second.
   let pending = null;
   store.watch(null, () => { if (!pending) pending = setTimeout(() => { pending = null; renderList(); }, 1000); });
@@ -258,6 +319,7 @@ export function createEditor({ site, store, saveSite = null, reload = () => loca
   // On a floor plan a lamp can be dropped in another room; on the overview picture one
   // fixture of an outdoor lamp moves. A press without moving stays a tap.
   let dragged = false;
+  let tapped = null;
   function enableDrag(svg, { round, plan }) {
     let drag = null;
     const snap = (p) => [Math.round(p.x / round) * round, Math.round(p.y / round) * round];
@@ -277,6 +339,7 @@ export function createEditor({ site, store, saveSite = null, reload = () => loca
       if (!drag.moved) {
         drag.moved = true;
         drag.node.classList.add('is-dragging');
+        dragNode = drag.node;
         const r = Number(drag.node.querySelector?.('.fp-lamp-hit')?.getAttribute('r') ?? drag.node.getAttribute('r') ?? 12);
         drag.ghost = sv('circle', { class: 'drag-ghost', r: Math.max(r * 0.8, 6) });
         svg.append(drag.ghost);
@@ -290,7 +353,13 @@ export function createEditor({ site, store, saveSite = null, reload = () => loca
       if (!drag || e.pointerId !== drag.id) return;
       const d = drag;
       drag = null;
-      if (!d.moved) return;
+      dragNode = null;
+      if (!d.moved) {
+        // Pointer capture makes the svg the click target, so remember which lamp was tapped.
+        tapped = d.node;
+        setTimeout(() => { tapped = null; }, 0);
+        return;
+      }
       dragged = true; // the click that follows is not a placement
       setTimeout(() => { dragged = false; }, 0);
       d.ghost?.remove();
@@ -302,11 +371,12 @@ export function createEditor({ site, store, saveSite = null, reload = () => loca
         const lamp = zone?.lamps?.[Number(d.node.dataset.lamp)];
         if (!lamp) { d.node.removeAttribute('transform'); return; }
         lamp.at = at;
+        selected = zone.lights?.[0] ?? selected;
         save(t('editor.moved', { name: zone.name }));
       }
     };
     svg.addEventListener('pointerup', end, true);
-    svg.addEventListener('pointercancel', (e) => { if (drag?.node) { drag.node.removeAttribute('transform'); drag.ghost?.remove(); } drag = null; }, true);
+    svg.addEventListener('pointercancel', (e) => { dragNode = null; if (drag?.node) { drag.node.removeAttribute('transform'); drag.ghost?.remove(); } drag = null; }, true);
   }
 
   return {
@@ -326,6 +396,8 @@ export function createEditor({ site, store, saveSite = null, reload = () => loca
           status.textContent = t('editor.where', { label });
           return;
         }
+        const lampHit = tapped ?? e.target.closest?.('[data-drag]');
+        if (lampHit) { pick(lampHit); return; }
         if (!selected) { status.textContent = t('editor.pickFirst'); return; }
         if (plan) placeInPlan(plan, at);
         else placeOutdoor(at);

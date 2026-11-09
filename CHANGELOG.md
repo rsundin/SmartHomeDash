@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.8.1
+
+- Placement mode: tap a lamp on a floor plan or the overview picture to select it. A tag over the lamp shows its name and entity id, also while you drag it and after the page reloads with the lamp in its new spot, so lamps with the same name are easy to tell apart
+
 ## 0.8.0
 
 Wall screens.
