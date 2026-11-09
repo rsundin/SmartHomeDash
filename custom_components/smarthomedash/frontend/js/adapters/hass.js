@@ -33,6 +33,9 @@ export function createHassAdapter(initialHass) {
       sync();
     },
 
+    // Full address of a Home Assistant path such as a camera picture.
+    media(path) { return hass.hassUrl ? hass.hassUrl(path) : path; },
+
     call(domain, service, data) {
       return hass.callService(domain, service, data);
     },

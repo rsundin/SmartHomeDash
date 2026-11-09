@@ -21,6 +21,7 @@ import { createSetup } from './ui/setup.js';
 import { createZoom } from './ui/zoom.js';
 import { loadAreas, applyAreaNames, noAreas, linkByName, autoPlace } from './areas.js';
 import { assignSensors, warnings, warningIds } from './status.js';
+import { createWall, applyLite, isLite } from './ui/wall.js';
 
 // The online demo sets data-demo on <body> (see .github/workflows/pages.yml).
 const DEMO = document.body?.dataset.demo === 'true';
@@ -68,6 +69,8 @@ export async function start(opts) {
   const editing = opts.editing ?? location.hash === '#edit';
   const site = await loadSite(siteId, { useDraft: editing, loader: opts.loader });
   setLanguage(site.language);
+  // Light mode for older tablets (set per device on the wall screen sheet, or ?lite).
+  applyLite();
   document.title = `${site.name} · SmartHomeDash`;
 
   // Connection, in order: a token saved under Anslutning, the Home Assistant login of
@@ -111,7 +114,8 @@ export async function start(opts) {
   // buttons (and, in the panel, Home Assistant's sidebar) and goes full screen.
   // Hold the clock for two seconds to leave it.
   const kiosk = opts.kiosk ?? standaloneKiosk();
-  const kioskBtn = el('button', { class: 'chip', type: 'button', onclick: () => setKiosk(true, true) }, t('app.kiosk'));
+  // The kiosk button opens the wall screen sheet: kiosk mode, light mode, the doorbell.
+  const kioskBtn = el('button', { class: 'chip', type: 'button', onclick: () => wall.open() }, t('app.kiosk'));
   function setKiosk(on, gesture) {
     document.body.classList.toggle('is-kiosk', on);
     if (on) {
@@ -119,6 +123,7 @@ export async function start(opts) {
       toast(t('app.kioskHint'));
     } else {
       kiosk.exit();
+      wall.idle.wake();
     }
   }
   press(clock, null, () => { if (document.body.classList.contains('is-kiosk')) setKiosk(false); }, 2000);
@@ -146,7 +151,21 @@ export async function start(opts) {
   const side = el('div');
   const main = el('main', { class: 'layout' }, stageWrap, side);
   const alerts = el('div', { class: 'alerts', hidden: true, role: 'status', 'aria-live': 'polite' });
-  app.replaceChildren(header, alerts, main, panel.el, settings.el);
+  // Wall screens: the doorbell camera, idle mode (back to the overview, dimmed at night)
+  // and light mode. Idle mode only runs in kiosk mode.
+  const wall = createWall({
+    site, store, adapter, signal: run.signal,
+    enterKiosk: () => setKiosk(true, true),
+    goHome: () => {
+      settings.el.hidden = true;
+      wall.close();
+      alerts.querySelectorAll('details[open]').forEach((d) => { d.open = false; });
+      if (overview) showOverview();
+      else if (site.floorplans[0]) { showPlan(site.floorplans[0].id); panel.close(); }
+      zoom.reset();
+    },
+  });
+  app.replaceChildren(header, alerts, main, panel.el, settings.el, ...wall.els);
 
   // The online demo (GitHub Pages): say what it is and where to get it.
   if (DEMO) {
@@ -258,7 +277,7 @@ export async function start(opts) {
     if (!fp) return;
     if (view !== `plan:${planId}`) {
       const b = site.overview?.buildings.find((x) => x.floorplan === planId);
-      if (view === 'overview' && b && !reducedMotion()) {
+      if (view === 'overview' && b && !reducedMotion() && !isLite()) {
         overview.lift(b.id);
         await wait(520);
       }
@@ -303,6 +322,8 @@ export async function start(opts) {
   document.addEventListener('keydown', (e) => {
     if (e.key !== 'Escape') return;
     if (!settings.el.hidden) settings.el.hidden = true;
+    else if (wall.isOpen) wall.close();
+    else if (!wall.doorbell.el.hidden) wall.doorbell.close();
     else if (panel.room) panel.close();
     else if (view !== 'overview' && overview) showOverview();
   }, { signal: run.signal });

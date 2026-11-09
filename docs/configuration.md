@@ -21,6 +21,7 @@ Everything except `name` and at least one floor plan is optional. A card whose e
 | `weather` | entity | A `weather.*` entity |
 | `climates` | list | Climate devices that are not a room, such as a heat pump: `{ "entity": "climate.heat_pump", "name": "Heat pump" }`. Shown in the heating card |
 | `scenes` | list | Buttons for scenes or scripts: `{ "entity": "script.we_are_here", "name": "We're here" }` |
+| `wall_screen` | object | Doorbell camera and idle mode for wall screens, see below |
 | `mock` | object | Test data only, for example sunrise and sunset times |
 
 ## overview
@@ -180,6 +181,43 @@ Power may be in W or kW; the unit is read from the entity. `battery_soc` is show
 ### Electricity price
 
 `energy.price.window_hours` (default 3) is the length of the cheapest run of hours the price card points out, from now over today and, once published, tomorrow (`tomorrow` or `raw_tomorrow` attribute; `tomorrow_attribute` if yours differs). The card also says when the price right now is cheap or expensive compared with the rest of the day.
+
+## wall_screen
+
+```json
+"wall_screen": {
+  "doorbell": { "entity": "binary_sensor.doorbell", "camera": "camera.front_door", "seconds": 30 },
+  "idle": { "minutes": 2, "night": ["22:00", "06:30"], "dim": 0.15, "wake": ["binary_sensor.hall_motion"] }
+}
+```
+
+Set in the setup guide under **Wall screen**.
+
+### doorbell
+
+When the doorbell rings, every open dashboard shows the camera in a window that closes by itself after `seconds` (default 30), or when tapped.
+
+- `entity` rings when a `binary_sensor.*` turns on, or when an `event.*`, `button.*` or `input_button.*` entity gets a new time. A list of entities works too.
+- `camera` is a `camera.*` entity. The window shows its live picture through Home Assistant (`/api/camera_proxy_stream`), or a fresh still every second if the stream does not work or the device is in light mode. Without `camera` the window only says that someone is at the door.
+- A ring that happened more than a minute ago (seen after a lost connection) is not shown.
+- **Test the doorbell** on the wall screen sheet (the **Kiosk mode** button) shows the window on that device without ringing anything.
+
+### idle
+
+Idle mode runs only in kiosk mode.
+
+| Field | Default | Description |
+| --- | --- | --- |
+| `minutes` | 2 | Minutes without a touch before the dashboard goes back to the overview (or the first floor plan), closing the room panel and resetting the zoom. `0`, or `"idle": false`, turns idle mode off |
+| `night` | none | `["22:00", "06:30"]`: between these times the idle screen is dimmed. May run past midnight. Without it the screen is never dimmed |
+| `dim` | 0.15 | Brightness of the dimmed screen, 0 to 1. A web page cannot turn the backlight down, so this is a dark layer with the time on it |
+| `wake` | none | Motion or presence sensors. One turning on (or off again) brightens the screen and starts the idle time over |
+
+A tap on the dimmed screen, the doorbell, or the night ending brightens it again. The tap that wakes the screen does not switch anything under it.
+
+### Light mode
+
+Light mode is set per device, not in site.json: **Kiosk mode** in the header opens the wall screen sheet with **Light mode on this device**: Auto, On or Off. It drops blur, blending and animation (the lamps glow without additive blending, the energy flow stands still, no rain or snow), and dims the evening picture with a plain dark layer instead of a filter, so older tablets keep up. Auto turns it on for devices that report two processor cores or 2 GB of memory or less. `?lite` (or `?lite=0`) at the end of the address sets it on that device too.
 
 ## Placement mode
 

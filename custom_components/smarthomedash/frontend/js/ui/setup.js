@@ -5,6 +5,7 @@
 //   Floor plans a picture per floor plan, rooms drawn on it
 //   Energy      power, energy, price and weather entities
 //   Buttons     scenes and scripts shown as buttons
+//   Wall screen doorbell camera and idle mode
 //   Lights      hands over to placement mode
 //
 // Works on a copy of the config; "Save" writes it to Home Assistant and restarts
@@ -14,7 +15,7 @@ import { el, sv, pts, svgPoint, centroid } from '../util.js';
 import { t } from '../i18n.js';
 import { noAreas, areaName, floorName, fillRoomFromArea, matchRoomsByName } from '../areas.js';
 
-const STEPS = ['basics', 'overview', 'plans', 'energy', 'buttons', 'lights'];
+const STEPS = ['basics', 'overview', 'plans', 'energy', 'buttons', 'screen', 'lights'];
 
 // Prompts for making the overview pictures from a map screenshot with an image model.
 // English on purpose: image models follow it most consistently. Kept in step with
@@ -79,12 +80,12 @@ export function createSetup({ site, store, saveSite, uploadFile, reload, openPla
 
   function render() {
     // Without an overview picture (an apartment) that step is optional and comes after the plans.
-    const steps = cfg.overview ? STEPS : ['basics', 'plans', 'overview', 'energy', 'buttons', 'lights'];
+    const steps = cfg.overview ? STEPS : ['basics', 'plans', 'overview', 'energy', 'buttons', 'screen', 'lights'];
     nav.replaceChildren(...steps.map((s, i) => el('button', {
       type: 'button', class: `setup-step${s === step ? ' is-active' : ''}`, 'aria-current': String(s === step),
       onclick: () => { step = s; render(); },
     }, el('span', { class: 'setup-num' }, String(i + 1)), t(s === 'overview' && !cfg.overview ? 'setup.step.overviewOptional' : `setup.step.${s}`))));
-    body.replaceChildren(...{ basics, overview, plans, energy, buttons, lights }[step]());
+    body.replaceChildren(...{ basics, overview, plans, energy, buttons, screen, lights }[step]());
     body.scrollTop = 0;
   }
 
@@ -487,7 +488,62 @@ export function createSetup({ site, store, saveSite, uploadFile, reload, openPla
     ];
   }
 
-  // ---------- 6. lights and heating
+  // ---------- 6. wall screen: doorbell camera and idle mode
+  function screen() {
+    const W = (cfg.wall_screen ??= {});
+    const bell = () => (W.doorbell ??= {});
+    const idle = () => (W.idle ??= {});
+    // Drop what is empty again, so an untouched step leaves site.json as it was.
+    const tidy = () => {
+      if (W.doorbell && !W.doorbell.entity && !W.doorbell.camera) delete W.doorbell;
+      if (W.idle && !Object.keys(W.idle).length) delete W.idle;
+      if (!Object.keys(W).length) delete cfg.wall_screen;
+    };
+    const domain = (s) => s.entity_id.split('.')[0];
+    const ringer = (s) => ['event', 'button', 'input_button'].includes(domain(s)) || (domain(s) === 'binary_sensor' && !['door', 'window', 'opening', 'garage_door', 'battery', 'smoke', 'gas', 'moisture', 'carbon_monoxide', 'safety', 'connectivity', 'problem'].includes(s.attributes?.device_class));
+    const motion = store.all().filter((s) => domain(s) === 'binary_sensor' && ['motion', 'occupancy', 'presence'].includes(s.attributes?.device_class))
+      .sort((a, b) => (a.attributes?.friendly_name ?? a.entity_id).localeCompare(b.attributes?.friendly_name ?? b.entity_id, site.locale));
+    const night = W.idle?.night ?? [];
+    const setNight = (i, v) => {
+      const n = [...(idle().night ?? ['', ''])];
+      n[i] = v;
+      if (n[0] && n[1]) idle().night = n;
+      else if (!n[0] && !n[1]) delete idle().night;
+      else idle().night = n; // half filled: kept until both are set (ignored by the dashboard)
+      tidy();
+    };
+    const wake = new Set([].concat(W.idle?.wake ?? []));
+    const out = [
+      intro('setup.screenIntro'),
+      section(t('wall.doorbell'),
+        field(t('setup.doorbellEntity'), select(entityOptions(ringer), [].concat(W.doorbell?.entity ?? [])[0], (v) => { if (v) bell().entity = v; else if (W.doorbell) delete W.doorbell.entity; tidy(); }), t('setup.doorbellHelp')),
+        field(t('setup.camera'), select(entityOptions((s) => domain(s) === 'camera'), W.doorbell?.camera, (v) => { if (v) bell().camera = v; else if (W.doorbell) delete W.doorbell.camera; tidy(); })),
+        field(t('setup.doorbellSeconds'), input(W.doorbell?.seconds ?? 30, (v) => { const n = parseInt(v, 10); if (W.doorbell && n > 0) W.doorbell.seconds = n; }, { type: 'number', min: '5', max: '600', step: '5' }))),
+      section(t('wall.idle'),
+        field(t('setup.idleMinutes'), input(W.idle?.minutes ?? 2, (v) => { const n = parseFloat(v); if (Number.isFinite(n) && n >= 0) idle().minutes = n; tidy(); }, { type: 'number', min: '0', step: '1' }), t('setup.idleMinutesHelp')),
+        el('div', { class: 'setup-row' },
+          field(t('setup.nightFrom'), input(night[0] ?? '', (v) => setNight(0, v), { type: 'time' })),
+          field(t('setup.nightTo'), input(night[1] ?? '', (v) => setNight(1, v), { type: 'time' }))),
+        el('p', { class: 'muted small' }, t('setup.nightHelp2')),
+        field(t('setup.dimLevel'), select([['0.05', '5 %'], ['0.15', '15 %'], ['0.3', '30 %'], ['0.5', '50 %']], String(W.idle?.dim ?? 0.15), (v) => { idle().dim = parseFloat(v); tidy(); })),
+        el('h4', { class: 'setup-label' }, t('setup.wakeSensors')),
+        el('p', { class: 'muted small' }, t('setup.wakeHelp')),
+        motion.length ? el('ul', { class: 'setup-checks' }, motion.map((s) => {
+          const box = el('input', { type: 'checkbox', checked: wake.has(s.entity_id) });
+          box.addEventListener('change', () => {
+            if (box.checked) wake.add(s.entity_id); else wake.delete(s.entity_id);
+            if (wake.size) idle().wake = [...wake]; else if (W.idle) delete W.idle.wake;
+            tidy();
+            changed();
+          });
+          return el('li', {}, el('label', {}, box, ` ${s.attributes?.friendly_name ?? s.entity_id}`, el('span', { class: 'muted small' }, ` · ${s.entity_id}`)));
+        })) : el('p', { class: 'muted small' }, t('setup.noMotion'))),
+    ];
+    tidy();
+    return out;
+  }
+
+  // ---------- 7. lights and heating
   function lights() {
     const roomCount = cfg.floorplans.reduce((n, p) => n + (p.rooms ?? []).length, 0);
     return [

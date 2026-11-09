@@ -105,6 +105,14 @@ export function createMockAdapter(site) {
       if (list.some((s) => s.entity_id === id)) continue;
       list.push(S(id, 'off', { friendly_name: (typeof x === 'object' && x.name) || id, ...((typeof x === 'object' && x.attributes) || {}) }));
     }
+    // Wall screen: a test doorbell and a drawn camera picture of a front door.
+    const bell = site.wall_screen?.doorbell;
+    for (const id of [].concat(bell?.entity ?? [])) {
+      if (!list.some((x) => x.entity_id === id)) list.push(S(id, 'off', { friendly_name: 'Doorbell' }));
+    }
+    if (bell?.camera && !list.some((x) => x.entity_id === bell.camera)) {
+      list.push(S(bell.camera, 'idle', { friendly_name: site.mock?.camera_name ?? 'Front door', entity_picture: cameraPicture(site.mock?.camera_name ?? 'Front door') }));
+    }
     list.push(sunState());
     for (const sc of site.scenes) list.push(S(sc.entity, sc.entity.startsWith('script.') ? 'off' : 'scening', { friendly_name: sc.name }));
     return list;
@@ -257,6 +265,21 @@ export function createMockAdapter(site) {
       });
     },
   };
+}
+
+// A drawn doorstep at dusk with someone waiting, as a data URL, for the test doorbell.
+function cameraPicture(label) {
+  const esc = (x) => String(x).replace(/[<>&"']/g, '');
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 360">
+<defs><radialGradient id="l" cx="0.5" cy="0.18" r="0.7"><stop offset="0" stop-color="#ffd9a0" stop-opacity="0.55"/><stop offset="1" stop-color="#ffd9a0" stop-opacity="0"/></radialGradient></defs>
+<rect width="640" height="360" fill="#1d2a2f"/><rect y="250" width="640" height="110" fill="#2b3433"/>
+<rect x="210" y="40" width="220" height="250" fill="#3a4a4c"/><rect x="250" y="70" width="140" height="215" fill="#5a3b28"/>
+<rect x="268" y="90" width="104" height="60" fill="#1c2628"/><circle cx="372" cy="185" r="6" fill="#c9a96e"/>
+<circle cx="320" cy="52" r="7" fill="#fff3d6"/><rect width="640" height="360" fill="url(#l)"/>
+<circle cx="214" cy="178" r="30" fill="#0e1517"/><path d="M160 360 Q162 236 214 222 Q266 236 268 360 Z" fill="#0e1517"/>
+<rect x="10" y="10" width="${esc(label).length * 11 + 24}" height="28" rx="4" fill="#000" fill-opacity="0.45"/>
+<text x="22" y="30" fill="#fff" font-family="monospace" font-size="16">${esc(label).toUpperCase()}</text></svg>`;
+  return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
 }
 
 function seeded(seed) {

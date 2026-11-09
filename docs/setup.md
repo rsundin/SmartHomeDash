@@ -88,6 +88,10 @@ Pick the sensors you have; leave the rest empty and their rows or cards are hidd
 
 Tick the scenes and scripts to show as buttons, and give them short names.
 
+### Wall screen
+
+The doorbell and its camera, shown on every open dashboard when it rings, and idle mode for screens in kiosk mode: back to the overview after a few minutes without a touch, dimmed between two times at night, and the motion sensors that wake it. See [configuration.md](configuration.md#wall_screen).
+
 ### Lights and heating
 
 Opens placement mode (also available as **Placera** / **Place** in the header):
@@ -137,6 +141,12 @@ After sunset (or with the header button set to night) the pictures are dimmed, t
 - goes full screen on the first touch, where the browser allows it.
 
 Hold the clock for two seconds to leave kiosk mode; the sidebar comes back. A device left in kiosk mode starts in it again.
+
+The **Kiosk mode** button opens the wall screen sheet first, with **Start kiosk mode**, **Light mode on this device** and **Test the doorbell**.
+
+- **Doorbell:** when it rings, the camera opens in a window that closes by itself.
+- **Idle mode:** in kiosk mode the dashboard goes back to the overview after two minutes without a touch (set in the setup guide under *Wall screen*). With night times set, the idle screen is dimmed at night, showing only the time; a tap or a motion sensor wakes it.
+- **Light mode** for older tablets: no blur, blending or animation. Auto turns it on for slow devices; add `?lite` to the address to force it.
 
 **A dedicated tablet or wall screen**
 

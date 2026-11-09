@@ -328,6 +328,10 @@
     }
   },
   "weather": "weather.home",
+  "wall_screen": {
+    "doorbell": { "entity": "binary_sensor.doorbell", "camera": "camera.front_door", "seconds": 30 },
+    "idle": { "minutes": 2, "wake": ["binary_sensor.living_room_motion"] }
+  },
   "scenes": [
     {
       "entity": "scene.evening",
@@ -356,8 +360,9 @@
     }
   ],
   "mock": {
+    "camera_name": "Ytterdörr",
     "color_temps": { "light.kitchen_counter": 4500, "light.dining_table": 2200 },
-    "sensors": { "cover.living_room_blinds": {"state": "open", "attributes": {"device_class": "blind", "current_position": 100, "supported_features": 15}, "name": "Persienner"}, "cover.bedroom_curtains": {"state": "closed", "attributes": {"device_class": "curtain", "current_position": 0, "supported_features": 15}, "name": "Gardiner"},"binary_sensor.front_door": {"device_class": "door", "state": "off", "name": "Ytterdörr"}, "lock.front_door": {"state": "locked", "name": "Ytterdörrens lås"}, "binary_sensor.bedroom_window": {"device_class": "window", "state": "on", "name": "Sovrumsfönster"}, "binary_sensor.living_room_motion": {"device_class": "motion", "state": "on", "name": "Rörelse vardagsrum"}, "binary_sensor.kitchen_smoke": {"device_class": "smoke", "state": "off", "name": "Brandvarnare"}, "sensor.kitchen_smoke_battery": {"device_class": "battery", "state": "9", "unit": "%", "name": "Brandvarnarens batteri"}, "binary_sensor.garage_door": {"device_class": "garage_door", "state": "on", "name": "Garageport"}},
+    "sensors": { "binary_sensor.doorbell": {"state": "off", "name": "Dörrklocka"}, "cover.living_room_blinds": {"state": "open", "attributes": {"device_class": "blind", "current_position": 100, "supported_features": 15}, "name": "Persienner"}, "cover.bedroom_curtains": {"state": "closed", "attributes": {"device_class": "curtain", "current_position": 0, "supported_features": 15}, "name": "Gardiner"},"binary_sensor.front_door": {"device_class": "door", "state": "off", "name": "Ytterdörr"}, "lock.front_door": {"state": "locked", "name": "Ytterdörrens lås"}, "binary_sensor.bedroom_window": {"device_class": "window", "state": "on", "name": "Sovrumsfönster"}, "binary_sensor.living_room_motion": {"device_class": "motion", "state": "on", "name": "Rörelse vardagsrum"}, "binary_sensor.kitchen_smoke": {"device_class": "smoke", "state": "off", "name": "Brandvarnare"}, "sensor.kitchen_smoke_battery": {"device_class": "battery", "state": "9", "unit": "%", "name": "Brandvarnarens batteri"}, "binary_sensor.garage_door": {"device_class": "garage_door", "state": "on", "name": "Garageport"}},
     "colors": { "light.living_room_floor_lamp": [176, 96, 255], "light.garage_outdoor": [210, 225, 255] },
     "sun": {
       "rise": "07:30",

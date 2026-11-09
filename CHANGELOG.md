@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.8.0
+
+- Doorbell camera: when the doorbell rings (a binary sensor, or an event or button entity), every open dashboard shows the camera live in a window that closes by itself. Set the doorbell, the camera and the time in the setup guide under **Wall screen**
+- Idle mode on wall screens: in kiosk mode the dashboard goes back to the overview after a while without a touch. Between two times at night the idle screen is dimmed to a dark layer with the time; a tap, the doorbell or a motion sensor wakes it, and the tap that wakes it never switches a lamp
+- Light mode for older tablets: no blur, blending or animation, and a plain dark layer for the evening. Auto for slow devices, or On and Off per device; `?lite` on the address sets it
+- The **Kiosk mode** button opens a wall screen sheet: start kiosk mode, light mode on this device, and **Test the doorbell**
+- The examples have a test doorbell with a drawn camera picture
+
 ## 0.7.1
 
 - Placement mode: drag a lamp to move it, with the mouse or a finger, also while zoomed in. On a floor plan a lamp can be dropped in another room; on the overview picture each fixture of an outdoor lamp moves on its own

@@ -72,6 +72,9 @@ export function createHaAdapter({ url, token }) {
     kind: 'ha',
     connect(s, statusFn) { store = s; onStatus = statusFn; return open(true); },
 
+    // Full address of a Home Assistant path such as a camera picture.
+    media(path) { return (url || location.origin).replace(/\/$/, '') + path; },
+
     call(domain, service, data) {
       return send({ type: 'call_service', domain, service, service_data: data });
     },
