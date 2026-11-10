@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.8.9
+
+Linking a floor plan to its building is easier to find in the setup guide.
+
+- Each floor plan under *Floor plans* has a **Building on the overview picture** choice: the building that lifts its roof and opens the plan when tapped. Until now the link could only be set under *Overview picture*, in an unlabelled list further down the page
+- Under *Overview picture* each building now says which plan it opens ("Opens: House"), and says to add a floor plan first when there is none
+- Drawing a building when the site has exactly one floor plan that no building opens yet links the two, as uploading a plan already did the other way round
+
 ## 0.8.8
 
 Names as Home Assistant shows them, ready for the 2026.11 naming change.
