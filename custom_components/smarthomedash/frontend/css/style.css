@@ -220,6 +220,7 @@ button { font: inherit; color: inherit; }
 .fp-walls { pointer-events: none; }
 .fp-outer { fill: none; stroke: var(--wall); stroke-linejoin: miter; }
 .fp-inner { fill: none; stroke: var(--wall-inner); }
+.fp-tile { fill: var(--floor); stroke: var(--wall-inner); stroke-linejoin: round; }
 .fp-labels { pointer-events: none; }
 .fp-name { fill: var(--muted); font-family: var(--f-display); font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; }
 .fp-temp { fill: var(--ink); font-family: var(--f-mono); font-weight: 500; }

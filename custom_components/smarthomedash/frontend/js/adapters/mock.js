@@ -270,15 +270,15 @@ export function createMockAdapter(site) {
     },
 
     // Test areas: one per room and one per outdoor lamp group, named like them,
-    // or the list in site.mock.areas: [{ area_id, name, entities: [...] }].
+    // or the list in site.mock.areas: [{ area_id, name, floor_id?, entities: [...] }].
     async areas() {
       const areas = [], entities = [];
-      const add = (area_id, name, ids) => {
-        if (!areas.some((a) => a.area_id === area_id)) areas.push({ area_id, name });
+      const add = (area_id, name, ids, floor_id = null) => {
+        if (!areas.some((a) => a.area_id === area_id)) areas.push({ area_id, name, floor_id });
         for (const id of ids) if (id) entities.push({ entity_id: id, area_id, device_id: null });
       };
       if (site.mock?.areas) {
-        for (const a of site.mock.areas) add(a.area_id, a.name, a.entities ?? []);
+        for (const a of site.mock.areas) add(a.area_id, a.name, a.entities ?? [], a.floor_id ?? null);
       } else {
         for (const room of site.index.rooms.values()) {
           if (room.device) continue;

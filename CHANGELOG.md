@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.8.12
+
+A working dashboard before you draw anything: floor plans straight from Home Assistant's floors and areas.
+
+- **Start from my Home Assistant** in the setup guide makes a floor plan for each floor, with a tile per area on it, linked to the area. A room with more devices gets a wider tile. Areas on no floor share one plan. It is offered on a new dashboard, under *Basics* and *Floor plans*, and replaces the example pictures
+- Lights, thermostats and temperature sensors in each area show up on their tile by themselves, the lights in a row below the room's name. Nothing about them is written to site.json until you place them
+- A tile plan can get a picture later: **Upload a picture of the plan** stretches the tiles over it, and each room gets a **Draw** button to draw it where it really is, keeping its area and its lights
+- Test areas can be put on test floors (`floor_id` in `mock.areas`)
+
 ## 0.8.11
 
 Clear messages when site.json and Home Assistant disagree.
