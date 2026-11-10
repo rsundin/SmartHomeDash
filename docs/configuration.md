@@ -22,7 +22,7 @@ Everything except `name` and at least one floor plan is optional. A card whose e
 | `climates` | list | Climate devices that are not a room, such as a heat pump: `{ "entity": "climate.heat_pump", "name": "Heat pump" }`. Shown in the heating card |
 | `scenes` | list | Buttons for scenes or scripts: `{ "entity": "script.we_are_here", "name": "We're here" }` |
 | `wall_screen` | object | Doorbell camera, idle mode and light mode for wall screens, see [Wall screens](#wall-screens) |
-| `mock` | object | Test data only, for example sunrise and sunset times. `mock.prices` sets the test prices: `{ "minutes": 15, "format": "raw" }` (`minutes` 60 or 15; `format` `list`, `raw` with start and end times, or `action` for the Nord Pool action). `mock.devices` gives test entities a device, named the Home Assistant 2026.11 way: `[{ "id": "kitchen_hub", "name": "Kitchen", "entities": { "light.kitchen_ceiling": "Ceiling" } }]` shows that light as "Kitchen Ceiling" (`null` for the device's name alone). `mock.floors` and `mock.areas` replace the test floors and areas made from the plans and rooms: `[{ "floor_id": "ground", "name": "Ground floor", "level": 0 }]` and `[{ "area_id": "kitchen", "name": "Kitchen", "floor_id": "ground", "entities": ["light.kitchen_ceiling"] }]` |
+| `mock` | object | Test data only, for example sunrise and sunset times. `mock.prices` sets the test prices: `{ "minutes": 15, "format": "raw" }` (`minutes` 60 or 15; `format` `list`, `raw` with start and end times, or `action` for the Nord Pool action). `mock.devices` gives test entities a device, named the Home Assistant 2026.11 way: `[{ "id": "kitchen_hub", "name": "Kitchen", "entities": { "light.kitchen_ceiling": "Ceiling" } }]` shows that light as "Kitchen Ceiling" (`null` for the device's name alone). `mock.floors` and `mock.areas` replace the test floors and areas made from the plans and rooms: `[{ "floor_id": "ground", "name": "Ground floor", "level": 0 }]` and `[{ "area_id": "kitchen", "name": "Kitchen", "floor_id": "ground", "entities": ["light.kitchen_ceiling"] }]`. An entry in `mock.entities` can carry `"entity_category": "diagnostic"` or `"hidden": true`, as Home Assistant's entity registry does |
 
 ### Names
 
@@ -75,7 +75,7 @@ Rooms, buildings and floor plans linked to Home Assistant areas and floors take 
 ] }
 ```
 
-Each lamp lights up when any of the zone's lights is on, brighter at higher brightness. Tapping a lamp switches the zone. In the lights card, zones whose lights are in the same Home Assistant area share one switch, named after the area.
+Each lamp lights up when any of the zone's lights is on, brighter at higher brightness. Tapping a lamp switches the zone. A zone belongs to the Home Assistant area its lights are in: other lights in that area that are not on the dashboard yet switch with the zone by themselves (placement mode lists them as placed automatically). In the lights card, zones whose lights are in the same Home Assistant area share one switch, named after the area.
 
 | `type` | Looks like |
 | --- | --- |
@@ -228,7 +228,7 @@ Power may be in W or kW; the unit is read from the entity. `battery_soc` is show
 
 ## Placement mode
 
-In the Home Assistant panel, administrators tap **Placera** in the header (or open `/<url_path>/edit`). On the standalone page, add `#edit` to the address. A panel lists every light, switch, thermostat and temperature sensor in Home Assistant (on test data: the ones in the config plus `mock.entities`).
+In the Home Assistant panel, administrators tap **Placera** in the header (or open `/<url_path>/edit`). On the standalone page, add `#edit` to the address. A panel lists every light, temperature sensor, thermostat and switch in Home Assistant (on test data: the ones in the config plus `mock.entities`), in that order, not placed first. What matters less is folded away under **Show n more** in each group, and search still finds it: switches (most are plugs and settings, not lamps; a switch can still be placed as a lamp), a device's own diagnostic or hidden entities, and temperature sensors in no room or in a room that already shows another one.
 
 - **Place:** pick an entity, then tap where it is. On a floor plan the room is found from the tap: a light is placed at that spot, a thermostat or sensor is linked to the room. On the overview a light becomes an outdoor lamp; tap again to add more fixtures on the same switch.
 - **Remove placement** takes the selected entity out of every room and zone.

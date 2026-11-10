@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.8.13
+
+A calmer placement mode, outdoor lamps that find their area, and steadier tests.
+
+- Placement mode lists lights first, then temperature sensors, thermostats and switches, with the ones not placed at the top of each group
+- What matters less is folded away under **Show n more**, and search still finds it: switches (most are plugs and settings rather than lamps; one can still be placed as a lamp), a device's own diagnostic or hidden entities, and temperature sensors in no room or in a room that already shows one
+- Lights in the same Home Assistant area as an outdoor lamp group on the overview picture switch with it by themselves, as lights in a room's area already show up in the room
+- The group headings count only what is still to place: lights placed automatically no longer count as not placed
+- A steadier performance test. It runs last and on its own in `tests/run.sh`: beside the other browser test files it measured the competition for the CPU (108–114 ms instead of about 95). And it checks the three longest frames during the 30 s of state changes, which must average 100 ms or less with none over 150 ms, since the same frame measured 70–105 ms between runs of the same code. Making the side cards contain their layout and paint was tried and made no measurable difference
+- The pinch zoom test waits a frame between the drag and the tap on "Reset zoom". On a loaded test machine the tap right after the drag was sometimes lost (about one full run in three locally); with the wait it passed 14 runs in a row
+
 ## 0.8.12
 
 A working dashboard before you draw anything: floor plans straight from Home Assistant's floors and areas.

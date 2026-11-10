@@ -166,7 +166,7 @@ Hold the clock for two seconds to leave kiosk mode; the sidebar comes back. A de
 
 ### Performance
 
-The dashboard is measured on a large test home (3 floor plans, 40 rooms, 120 lamps, 60 sensors) in Chromium slowed down four times, like an old wall tablet. It has to start in under 2 seconds with under 4,000 elements on the overview, and never freeze the screen for more than 100 ms while states change. To stay there:
+The dashboard is measured on a large test home (3 floor plans, 40 rooms, 120 lamps, 60 sensors) in Chromium slowed down four times, like an old wall tablet. It has to start in under 2 seconds with under 4,000 elements on the overview, and while states change the three longest freezes in 30 seconds must average 100 ms or less, with none over 150 ms (a slowed-down test machine has hiccups of its own). To stay there:
 
 - Floor plans are built the first time you open them, not at start.
 - Changes from Home Assistant are drawn once per screen refresh, however many arrive at once.
