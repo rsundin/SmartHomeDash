@@ -2,12 +2,45 @@
 
 What is planned next, roughly in order. Plans change; ideas and votes are welcome in [issues](https://github.com/rsundin/SmartHomeDash/issues).
 
+## 0.9: Foundation
+
+- **Automated tests** in the repo and CI, covering the backend and the dashboard in a browser at five screen sizes.
+- **Performance budget** measured on a large test home with a slowed-down CPU, so old wall tablets stay smooth.
+- **Names as Home Assistant shows them**, following the 2026.11 naming change.
+- **Electricity prices at 15 minutes**, as Nord Pool publishes them since October 2025, in the chart and the cheapest hours.
+- **Clear messages** when site.json refers to devices that no longer exist.
+
+## 1.0: Nearly zero setup
+
+- **Quick start from Home Assistant**: a floor plan per floor with a tile per area, working before you draw anything.
+- **Editor comforts**: undo, move corners, snap, nudge.
+- **Export, import and restore points** for a whole dashboard.
+- **A card for any dashboard** (`custom:smarthomedash-card`).
+- **More languages**: German, Norwegian, Danish, Finnish, Dutch.
+- **The default HACS list.**
+
+## 1.1: More of the home on the picture
+
+- **People in rooms**, from person entities and room presence sensors (off by default).
+- **Doors and windows where they are**, opening on the plan and the picture.
+- **Media and appliances**: what is playing, and when the washing machine is done.
+- **Cameras on the picture**, with motion and a tap for the live view.
+- **Power per room** as an energy view of the floor plan.
+- **Humidity and CO₂** as alternatives to the temperature tint.
+
+## 1.2: Wall screens as an ambient display
+
+- **The house as screensaver** with clock, weather and the next event.
+- **Screen profiles and guest mode** per wall screen.
+- **Family strip**: calendar, to-do, waste collection.
+- **Voice from the wall** through Assist (exploratory).
+- **Alarm panel** state, with arming off by default.
+
 ## Later
 
-- **A card for any dashboard** (`custom:smarthomedash-card`), besides the sidebar panel, to put the overview picture in an existing dashboard.
-- **More languages**: German, Norwegian, Danish, Finnish, Dutch. Translations are welcome; all text is in `frontend/js/i18n.js`.
-- **Export and import** a whole dashboard, config and pictures, as one file, for backups and moving between installations.
-- **The default HACS list**, with the icon in Home Assistant's brands collection.
+- A timeline to scrub through today on the picture, heating schedules per room, an overview of several homes, sunlight through windows.
+
+The working plan with tasks and acceptance criteria is [docs/roadmap/plan.md](docs/roadmap/plan.md); the research behind it is [docs/roadmap/research-2026-11.md](docs/roadmap/research-2026-11.md).
 
 ## Done
 

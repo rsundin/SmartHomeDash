@@ -21,6 +21,10 @@ A picture-based Home Assistant dashboard, shipped as a custom integration (HACS 
 - Load the standalone page for both examples and kiosk; no console errors.
 - CI (hassfest, HACS, JavaScript syntax) is required on main.
 
+## Roadmap
+- Planned work is in `docs/roadmap/plan.md`: milestones with task ids (Q1, S2, H3 …), status, size, dependencies and **Done when** criteria. Pick the first `todo` task whose dependencies are done unless told otherwise, follow "How to work this plan" there, and mark the task `done (vX.Y.Z)` when it ships. `ROADMAP.md` is the public summary; keep both in step.
+- The research behind it, with sources, is `docs/roadmap/research-2026-11.md`.
+
 ## Releasing
 1. Bump `version` in `custom_components/smarthomedash/manifest.json` and add a section to `CHANGELOG.md`.
 2. Merge to main, then publish a GitHub release tagged `vX.Y.Z` with the changelog section. HACS offers the update from the release.
