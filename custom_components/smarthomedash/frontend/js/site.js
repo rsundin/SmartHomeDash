@@ -74,6 +74,9 @@ function index(site) {
   site.energy ??= {};
 
   const names = new Map();
+  // Names given to entities in site.json itself; they win over Home Assistant's (entities.js nameOf).
+  const labels = new Map();
+  const label = (id, name) => { if (id && name) labels.set(id, name); };
   const lights = new Set(), climates = new Set(), temps = new Set();
   const roomById = new Map();
 
@@ -88,7 +91,7 @@ function index(site) {
       room.plan = plan.id;
       room.lights ??= [];
       roomById.set(room.id, room);
-      for (const l of room.lights) { lights.add(l.entity); names.set(l.entity, l.name ?? room.name); }
+      for (const l of room.lights) { lights.add(l.entity); names.set(l.entity, l.name ?? room.name); label(l.entity, l.name); }
       if (room.climate) climates.add(room.climate);
       if (room.temperature) temps.add(room.temperature);
     }
@@ -103,13 +106,18 @@ function index(site) {
 
   // Climate devices that are not a room, such as a heat pump: listed in the heating card.
   for (const c of site.climates ?? []) {
+    label(c.entity, c.name);
     const room = { id: `climate:${c.entity}`, name: c.name ?? c.entity, climate: c.entity, temperature: c.temperature, lights: [], plan: null, device: true };
     roomById.set(room.id, room);
     climates.add(c.entity);
   }
 
+  for (const sc of site.scenes) label(sc.entity, sc.name);
+  for (const b of [].concat(site.wall_screen?.doorbell ?? [])) { label(b?.entity, b?.name); label(b?.camera, b?.name); }
+
   site.index = {
     names,
+    labels,
     lights: [...lights],
     climates: [...climates],
     temps: [...temps],

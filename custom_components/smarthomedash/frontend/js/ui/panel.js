@@ -1,7 +1,7 @@
 // Room panel: thermostat, 24 h temperature, and every light in the room.
 
 import { el, sv, fmt, clamp, num } from '../util.js';
-import { isOn, level, roomTemp, climate } from '../entities.js';
+import { isOn, level, roomTemp, climate, nameOf } from '../entities.js';
 import { t, has } from '../i18n.js';
 import { kindOf, isOpen, isUnlocked, isAlarm, isDead, statusIds, isClosedCover } from '../status.js';
 
@@ -130,7 +130,7 @@ export function createPanel({ site, store, adapter }) {
       list.append(li);
       unwatch.push(store.watch([id], () => {
         const s = store.get(id);
-        li.querySelector('.light-name').textContent = s?.attributes?.friendly_name ?? id;
+        li.querySelector('.light-name').textContent = nameOf(id, { store, site });
         const pos = num(s?.attributes?.current_position);
         state.textContent = isDead(s) ? t('status.unavailable') : pos != null ? `${pos} %` : t(isClosedCover(s) ? 'status.closed' : 'status.open');
         range.hidden = pos == null || !((s?.attributes?.supported_features ?? 0) & 4);
@@ -148,7 +148,7 @@ export function createPanel({ site, store, adapter }) {
         const s = store.get(id);
         const [text, warn] = statusText(s);
         return el('li', { class: warn ? 'is-warn' : '' },
-          el('span', {}, s?.attributes?.friendly_name ?? id),
+          el('span', {}, nameOf(id, { store, site })),
           el('span', { class: 'status-val' }, text));
       }));
     }));

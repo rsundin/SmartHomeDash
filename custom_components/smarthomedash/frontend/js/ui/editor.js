@@ -13,6 +13,7 @@ import { el, sv, svgPoint, inside, storage } from '../util.js';
 import { draftKey } from '../site.js';
 import { t } from '../i18n.js';
 import { areaOf, areaName } from '../areas.js';
+import { nameOf as entityName } from '../entities.js';
 
 const KINDS = [
   { id: 'lights', label: 'editor.kindLights', match: (s) => /^(light|switch)\./.test(s.entity_id) },
@@ -59,7 +60,7 @@ export function createEditor({ site, store, saveSite = null, reload = () => loca
     }
   }
 
-  const nameOf = (id) => store.get(id)?.attributes?.friendly_name ?? site.index.names.get(id) ?? id;
+  const nameOf = (id) => entityName(id, { store, site }, site.index.names.get(id) ?? id);
   const kindOf = (id) => KINDS.find((k) => k.match(store.get(id) ?? { entity_id: id, attributes: {} }))?.id;
 
   function save(message) {

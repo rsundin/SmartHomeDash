@@ -14,6 +14,7 @@
 import { el, sv, pts, svgPoint, centroid } from '../util.js';
 import { t } from '../i18n.js';
 import { readPower, kwText, MIN_KW } from '../power.js';
+import { nameOf } from '../entities.js';
 import { noAreas, areaName, floorName, fillRoomFromArea, matchRoomsByName } from '../areas.js';
 
 const STEPS = ['basics', 'overview', 'plans', 'energy', 'buttons', 'wall', 'lights'];
@@ -130,9 +131,11 @@ export function createSetup({ site, store, saveSite, uploadFile, reload, openPla
   }
   const slug = (s) => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '') || 'item';
   const uniqueId = (base, taken) => { let id = base, i = 2; while (taken.includes(id)) id = `${base}_${i++}`; return id; };
+  // Entity names as Home Assistant shows them (entities.js).
+  const label = (s) => nameOf(s.entity_id, { store, site });
   const entityOptions = (filter) => [['', t('setup.none')], ...store.all()
     .filter(filter)
-    .map((s) => [s.entity_id, `${s.attributes?.friendly_name ?? s.entity_id} · ${s.entity_id}`])
+    .map((s) => [s.entity_id, `${label(s)} · ${s.entity_id}`])
     .sort((a, b) => a[1].localeCompare(b[1], site.locale))];
   const rooms = () => cfg.floorplans.flatMap((p) => (p.rooms ?? []).map((r) => [r.id, `${r.name} (${p.name})`]));
 
@@ -459,10 +462,10 @@ export function createSetup({ site, store, saveSite, uploadFile, reload, openPla
             const box = el('input', { type: 'checkbox', checked: on });
             box.addEventListener('change', () => {
               cfg.climates = cfg.climates.filter((c) => c.entity !== s.entity_id);
-              if (box.checked) cfg.climates.push({ entity: s.entity_id, name: s.attributes?.friendly_name ?? s.entity_id });
+              if (box.checked) cfg.climates.push({ entity: s.entity_id, name: label(s) });
               changed();
             });
-            return el('li', {}, el('label', {}, box, ` ${s.attributes?.friendly_name ?? s.entity_id}`, el('span', { class: 'muted small' }, ` · ${s.entity_id}`)));
+            return el('li', {}, el('label', {}, box, ` ${label(s)}`, el('span', { class: 'muted small' }, ` · ${s.entity_id}`)));
           }))),
     ];
   }
@@ -494,13 +497,13 @@ export function createSetup({ site, store, saveSite, uploadFile, reload, openPla
   // ---------- 5. buttons
   function buttons() {
     const list = store.all().filter((s) => /^(scene|script)\./.test(s.entity_id))
-      .sort((a, b) => (a.attributes?.friendly_name ?? a.entity_id).localeCompare(b.attributes?.friendly_name ?? b.entity_id, site.locale));
+      .sort((a, b) => label(a).localeCompare(label(b), site.locale));
     return [
       intro('setup.buttonsIntro'),
       section(t('setup.step.buttons'), list.length ? el('ul', { class: 'setup-checks' }, list.map((s) => {
         const current = cfg.scenes.find((x) => x.entity === s.entity_id);
         const box = el('input', { type: 'checkbox', checked: !!current });
-        const name = input(current?.name ?? s.attributes?.friendly_name ?? s.entity_id, (v) => {
+        const name = input(current?.name ?? label(s), (v) => {
           const x = cfg.scenes.find((y) => y.entity === s.entity_id);
           if (x) x.name = v;
         }, { 'aria-label': t('setup.buttonName') });
@@ -534,7 +537,7 @@ export function createSetup({ site, store, saveSite, uploadFile, reload, openPla
     const set = (obj, key) => (v) => { if (v) obj()[key] = v; else delete obj()[key]; tidy(); };
     const ringers = (s) => /^(binary_sensor|event|button|input_button|input_boolean)\./.test(s.entity_id);
     const motion = store.all().filter((s) => s.entity_id.startsWith('binary_sensor.') && ['motion', 'occupancy', 'presence'].includes(s.attributes?.device_class))
-      .sort((a, b) => (a.attributes?.friendly_name ?? a.entity_id).localeCompare(b.attributes?.friendly_name ?? b.entity_id, site.locale));
+      .sort((a, b) => label(a).localeCompare(label(b), site.locale));
     const backAfter = String(W.idle?.back_after ?? 120);
     const dimLevel = String(W.idle?.dim ?? 0.85);
     return [
@@ -562,7 +565,7 @@ export function createSetup({ site, store, saveSite, uploadFile, reload, openPla
             tidy();
             changed();
           });
-          return el('li', {}, el('label', {}, box, ` ${s.attributes?.friendly_name ?? s.entity_id}`, el('span', { class: 'muted small' }, ` · ${s.entity_id}`)));
+          return el('li', {}, el('label', {}, box, ` ${label(s)}`, el('span', { class: 'muted small' }, ` · ${s.entity_id}`)));
         })) : el('p', { class: 'muted small' }, t('setup.noMotion'))),
       section(t('setup.lite'),
         el('label', {}, (() => {

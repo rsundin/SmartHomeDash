@@ -11,8 +11,9 @@
 // keeps typed room names and manual placement.
 
 import { centroid, bbox } from './util.js';
+import { nameOf } from './entities.js';
 
-export const noAreas = () => ({ list: [], byId: new Map(), entityArea: new Map(), floors: [], floorById: new Map() });
+export const noAreas = () => ({ list: [], byId: new Map(), entityArea: new Map(), floors: [], floorById: new Map(), entityReg: new Map(), deviceReg: new Map() });
 
 export async function loadAreas(adapter) {
   if (!adapter.areas) return noAreas();
@@ -34,7 +35,12 @@ export function resolve({ areas = [], entities = [], devices = [], floors = [] }
   }
   const list = [...byId.values()];
   const floorList = [...floors].sort((x, y) => (x.level ?? 0) - (y.level ?? 0));
-  return { list, byId, entityArea, floors: floorList, floorById: new Map(floorList.map((f) => [f.floor_id, f])) };
+  return {
+    list, byId, entityArea, floors: floorList, floorById: new Map(floorList.map((f) => [f.floor_id, f])),
+    // The registries themselves, for names as Home Assistant shows them (nameOf in entities.js).
+    entityReg: new Map(entities.map((e) => [e.entity_id, e])),
+    deviceReg: new Map(devices.map((d) => [d.id, d])),
+  };
 }
 
 export const areaName = (areas, id) => areas.byId.get(id)?.name ?? null;
@@ -77,7 +83,8 @@ const isTemp = (s) => s.entity_id.startsWith('sensor.')
 
 // The entities in an area that a room can show, sorted by name.
 export function entitiesInArea(areas, areaId, store) {
-  const byName = (a, b) => (a.attributes?.friendly_name ?? a.entity_id).localeCompare(b.attributes?.friendly_name ?? b.entity_id);
+  const name = (s) => nameOf(s.entity_id, { store, areas });
+  const byName = (a, b) => name(a).localeCompare(name(b));
   const inArea = store.all().filter((s) => areas.entityArea.get(s.entity_id) === areaId).sort(byName);
   return { lights: inArea.filter(isLight), climates: inArea.filter(isClimate), temps: inArea.filter(isTemp) };
 }
@@ -115,7 +122,7 @@ export function fillRoomFromArea(cfg, room, areas, store) {
       const a = (i / lights.length) * Math.PI * 2 - Math.PI / 2;
       room.lights.push({
         entity: s.entity_id,
-        name: s.attributes?.friendly_name ?? s.entity_id,
+        name: nameOf(s.entity_id, { store, areas }),
         at: [Math.round(cx + Math.cos(a) * r), Math.round(cy + Math.sin(a) * r)],
       });
       added++;
@@ -185,7 +192,7 @@ export function autoPlace(site, areas, store) {
     if (lights.length && room.building) {
       // No floor plan to draw them on: listed in the building's panel.
       for (const s of lights) {
-        const name = s.attributes?.friendly_name ?? s.entity_id;
+        const name = nameOf(s.entity_id, { store, areas });
         room.lights.push({ entity: s.entity_id, name, auto: true });
         site.index.lights.push(s.entity_id);
         site.index.names.set(s.entity_id, name);
@@ -198,7 +205,7 @@ export function autoPlace(site, areas, store) {
       const r = lights.length > 1 ? Math.min(box.w, box.h) * 0.22 : 0;
       lights.forEach((s, i) => {
         const a = (i / lights.length) * Math.PI * 2 - Math.PI / 2;
-        const name = s.attributes?.friendly_name ?? s.entity_id;
+        const name = nameOf(s.entity_id, { store, areas });
         room.lights.push({ entity: s.entity_id, name, at: [cx + Math.cos(a) * r, cy + Math.sin(a) * r], auto: true });
         site.index.lights.push(s.entity_id);
         site.index.names.set(s.entity_id, name);
