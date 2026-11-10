@@ -75,7 +75,7 @@ The community's top complaint is slow dashboards [R22][R23]. Work through Claude
 - **Files:** `entities.js` (`pricesToday`, `pricesTomorrow`, `cheapestWindow`), `ui/cards.js`, `adapters/mock.js` (a 96-slot mode), docs.
 - **Done when:** unit tests cover hourly, quarter-hourly, raw start/end lists and a DST day. The card on a 96-slot mock shows the right "now" slot and the right cheapest window across midnight.
 
-### Q5: Config check with clear messages. Status: todo. Size: S
+### Q5: Config check with clear messages. Status: done (v0.8.11). Size: S
 - **Why:** Entities renamed or removed in HA silently disappear from the picture today.
 - **What:**
   - On load, list entity ids in site.json that HA does not know. Show them as an info warning ("3 devices in the dashboard no longer exist in Home Assistant"), unfolding the list, with a link into placement mode filtered to them.

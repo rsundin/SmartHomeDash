@@ -138,7 +138,61 @@ export function warnings(site, store, name) {
   if (dead.length) {
     out.push({ level: 'info', key: 'dead', text: t(dead.length === 1 ? 'warn.dead1' : 'warn.dead', { n: dead.length }), items: dead.map(name) });
   }
+  const missing = missingEntities(site, store);
+  if (missing.length) {
+    out.push({ level: 'info', key: 'missing', text: t(missing.length === 1 ? 'warn.missing1' : 'warn.missing', { n: missing.length }), items: missing.map((m) => missingLine(m, name)), action: 'missing' });
+  }
   return out;
+}
+
+function missingLine({ id, where }, name) {
+  const label = name(id);
+  return `${label === id ? id : `${label} (${id})`} · ${where.join(', ')}`;
+}
+
+const ENTITY_ID = /^[a-z_]+\.[a-z0-9_]+$/i;
+
+// Every entity id site.json names, with where it is used ("Kitchen", "Scenes" …).
+export function configEntities(raw) {
+  const found = new Map();
+  const add = (id, where) => {
+    if (typeof id !== 'string' || !ENTITY_ID.test(id)) return;
+    if (!found.has(id)) found.set(id, []);
+    if (where && !found.get(id).includes(where)) found.get(id).push(where);
+  };
+  const list = (v) => (Array.isArray(v) ? v : []);
+  for (const plan of list(raw.floorplans)) {
+    for (const room of list(plan?.rooms)) {
+      const where = room?.name || room?.id || plan.name;
+      for (const l of list(room?.lights)) add(l?.entity, where);
+      add(room?.climate, where);
+      add(room?.temperature, where);
+      for (const id of list(room?.sensors)) add(id, where);
+    }
+  }
+  const ov = raw.overview ?? {};
+  for (const z of list(ov.zones)) for (const id of list(z?.lights)) add(id, `${t('editor.outdoor')}: ${z.name ?? z.id}`);
+  for (const w of list(ov.windows)) for (const id of list(w?.lights)) add(id, t('missing.window'));
+  for (const b of list(ov.buildings)) for (const id of list(b?.sensors)) add(id, b.name ?? b.id);
+  add(ov.solar?.entity, t('missing.energy'));
+  for (const c of list(raw.climates)) { add(c?.entity, c?.name ?? t('missing.heating')); add(c?.temperature, c?.name ?? t('missing.heating')); }
+  for (const sc of list(raw.scenes)) add(sc?.entity, t('missing.scene'));
+  for (const v of Object.values(raw.energy ?? {})) add(typeof v === 'string' ? v : v?.entity, t('missing.energy'));
+  add(raw.weather, t('missing.weather'));
+  const wall = raw.wall_screen ?? {};
+  for (const b of [].concat(wall.doorbell ?? [])) { add(b?.entity, t('missing.doorbell')); add(b?.camera, t('missing.doorbell')); }
+  for (const id of list(wall.idle?.wake)) add(id, t('missing.wake'));
+  return [...found].map(([id, where]) => ({ id, where }));
+}
+
+// Entities in site.json that Home Assistant does not know (renamed or removed).
+// Nothing is missing before the first states have arrived.
+const configCache = new WeakMap();
+export function missingEntities(site, store) {
+  if (!store.size) return [];
+  const raw = site.raw ?? site;
+  if (!configCache.has(raw)) configCache.set(raw, configEntities(raw));
+  return configCache.get(raw).filter(({ id }) => !store.get(id));
 }
 
 function batteryLine(s, name) {

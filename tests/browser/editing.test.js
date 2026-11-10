@@ -3,7 +3,9 @@
 
 const { describe, test } = require('node:test');
 const assert = require('node:assert/strict');
-const { setup, harness, close, check, centre } = require('./lib');
+const fs = require('node:fs');
+const path = require('node:path');
+const { ROOT, setup, harness, close, check, centre } = require('./lib');
 
 const lampAt = (page, id) => page.locator(`.fp.is-active .fp-lamp[data-entity="${id}"] .fp-lamp-ring`)
   .evaluate((n) => [Number(n.getAttribute('cx')), Number(n.getAttribute('cy'))]);
@@ -139,6 +141,52 @@ describe('editing', () => {
     assert.equal(saved.name, 'Test house');
     assert.equal(saved.setup_pending, undefined);
     assert.equal(await page.locator('header h1').textContent(), 'Test house');
+    check(page);
+    await close(page);
+  });
+  test('devices missing in Home Assistant are listed and removed in placement mode', async () => {
+    const site = JSON.parse(fs.readFileSync(path.join(ROOT, 'sites', 'example-house', 'site.json'), 'utf8'));
+    const room = (name) => site.floorplans.flatMap((p) => p.rooms).find((r) => r.name === name);
+    (room('Kitchen').sensors ??= []).push('binary_sensor.old_kitchen_motion');
+    (room('Office').sensors ??= []).push('binary_sensor.renamed_office_door');
+    const prepare = (page) => page.route('**/sites/example-house/site.json', (route) => route.fulfill({ contentType: 'application/json', body: JSON.stringify(site) }));
+    const page = await harness(env, '?site=example-house', { prepare });
+
+    const warning = page.locator('.alerts details.alert[data-key="missing"]');
+    await warning.locator('summary', { hasText: '2 devices in the dashboard no longer exist in Home Assistant' }).waitFor();
+    await warning.locator('summary').click();
+    await warning.locator('li', { hasText: 'binary_sensor.old_kitchen_motion · Kitchen' }).waitFor();
+
+    // One comes back (renamed back in Home Assistant): the count follows.
+    const officeBack = () => page.evaluate(() => window.store.update({ entity_id: 'binary_sensor.renamed_office_door', state: 'off', attributes: { device_class: 'door' } }));
+    await officeBack();
+    await warning.locator('summary', { hasText: '1 device in the dashboard no longer exists in Home Assistant' }).waitFor();
+
+    // The link opens placement mode with only the missing devices listed. The test data
+    // start over, so the office door is missing again until it reports.
+    await warning.locator('.alert-action').click();
+    await page.waitForFunction(() => window.harness.starts === 2 && document.body.classList.contains('is-editing'));
+    await page.evaluate(() => window.harness.ready);
+    const list = page.locator('aside.editor .editor-list');
+    await list.locator('.editor-missing .editor-ent', { hasText: 'binary_sensor.old_kitchen_motion' }).waitFor();
+    assert.equal(await list.locator('section').count(), 1, 'only the missing devices are listed');
+    assert.equal(await list.locator('.editor-ent').count(), 2);
+
+    await list.locator('.editor-ent', { hasText: 'binary_sensor.old_kitchen_motion' }).click();
+    await page.locator('aside.editor .editor-sel .chip', { hasText: 'Remove from the dashboard' }).click();
+    await page.waitForFunction(() => window.harness.starts === 3);
+    await page.evaluate(() => window.harness.ready);
+    await list.locator('.editor-ent', { hasText: 'binary_sensor.renamed_office_door' }).waitFor();
+    assert.equal(await list.locator('.editor-ent').count(), 1, 'removed from the list');
+    await officeBack();
+    await page.locator('aside.editor .editor-list', { hasText: 'Every device in site.json exists in Home Assistant.' }).waitFor();
+    const draft = await page.evaluate(() => JSON.parse(localStorage.getItem('shd:example-house:draft')));
+    const kitchen = draft.floorplans.flatMap((p) => p.rooms).find((r) => r.name === 'Kitchen');
+    assert.ok(!kitchen.sensors.includes('binary_sensor.old_kitchen_motion'));
+    assert.ok(draft.floorplans.flatMap((p) => p.rooms).find((r) => r.name === 'Office').sensors.includes('binary_sensor.renamed_office_door'));
+
+    await page.locator('aside.editor .editor-list .chip', { hasText: 'Show all devices' }).click();
+    assert.ok(await page.locator('aside.editor .editor-list section').count() > 1);
     check(page);
     await close(page);
   });

@@ -187,4 +187,8 @@ In landscape at 1024 pixels or wider the dashboard fills the screen without scro
 
 **Temperatures look wrong.** A room shows its temperature sensor if one is linked, otherwise the thermostat's own reading. Link a temperature sensor to the room in placement mode.
 
+**A warning says devices no longer exist in Home Assistant.** An entity in site.json was renamed or removed in Home Assistant. Unfold the warning to see which, and where each is used. **Show in placement mode** lists only those; place one again under its new name, or remove it from the dashboard.
+
+**Saving says "site.json was not saved".** The file failed Home Assistant's check, and the message says which part, such as a room outline that is not a list of number pairs. The file on disk is unchanged. Fix that part in placement mode or in the file.
+
 **The sidebar entry is missing after a restart.** Check *Settings → System → Logs* for messages from `smarthomedash`.

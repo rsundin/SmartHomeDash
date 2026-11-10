@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.8.11
+
+Clear messages when site.json and Home Assistant disagree.
+
+- Devices named in site.json that Home Assistant does not know, because they were renamed or removed, show as a warning above the picture: "3 devices in the dashboard no longer exist in Home Assistant". It unfolds to list each one and where it is used. Until now they quietly disappeared from the picture
+- For administrators the warning has **Show in placement mode**, which opens placement mode with only the missing devices listed. Place one again under its new name, or remove it from the dashboard in one go: out of rooms, zones, windows, sensor lists, scenes and heating devices
+- Home Assistant checks site.json before saving it: the types of the top-level keys, floor plans and rooms as objects, and outlines and solar panels as lists of `[x, y]` number pairs. A file that fails is not written, and the message says where, such as `floorplans[0].rooms[2].area should be a list of at least three [x, y] number pairs`
+- A refused save in placement mode or the setup guide shows Home Assistant's message instead of a status code and raw JSON
+
 ## 0.8.10
 
 Electricity prices per quarter-hour, as Nord Pool sets them since October 2025.

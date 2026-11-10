@@ -171,6 +171,40 @@ class SitesViewTest(unittest.TestCase):
             with self.subTest(body=body):
                 self.assertEqual(self.put("site.json", body).status, 400)
 
+    def test_malformed_config_is_refused_with_a_reason(self):
+        good_room = {"id": "hall", "area": [[0, 0], [10, 0], [10, 10]]}
+        cases = {
+            "name should be text": {"name": 5},
+            "warnings should be an object or false": {"warnings": "on"},
+            "scenes[1] should be an object": {"scenes": [{"entity": "script.a"}, "script.b"]},
+            "floorplans[0] should be an object": {"floorplans": ["house"]},
+            "floorplans[0].id should be text": {"floorplans": [{"rooms": []}]},
+            "floorplans[0].outline should be a list of at least three [x, y] number pairs":
+                {"floorplans": [{"id": "a", "outline": [[0, 0], [1, 1]]}]},
+            "floorplans[0].rooms[1].area should be a list of at least three [x, y] number pairs":
+                {"floorplans": [{"id": "a", "rooms": [good_room, {"id": "b", "area": [[0, 0], [1, "2"], [3, 4]]}]}]},
+            "floorplans[0].rooms[0].lights should be a list": {"floorplans": [{"id": "a", "rooms": [{"id": "b", "lights": "light.x"}]}]},
+            "overview.size should be [width, height] in numbers": {"overview": {"size": [100, True]}},
+            "overview.buildings[0].area should be a list of at least three [x, y] number pairs":
+                {"overview": {"buildings": [{"id": "h", "area": [[0, 0, 1], [1, 0, 1], [1, 1, 1]]}]}},
+            "overview.solar.panels[0] should be a list of at least three [x, y] number pairs":
+                {"overview": {"solar": {"panels": [[0, 0]]}}},
+        }
+        for reason, data in cases.items():
+            with self.subTest(reason=reason):
+                res = self.put("site.json", json.dumps(data).encode())
+                self.assertEqual(res.status, 400)
+                self.assertIn(reason, res.json()["message"])
+                self.assertEqual(self.config.read_text(), '{"floorplans": []}\n')
+
+    def test_examples_pass_validation(self):
+        base = Path(__file__).resolve().parents[2]
+        files = [*base.glob("sites/*/site.json"), *base.glob("custom_components/smarthomedash/example/*.json")]
+        self.assertTrue(files)
+        for path in files:
+            with self.subTest(path=path.name):
+                self.assertIsNone(views.validate_site(json.loads(path.read_text())))
+
     # ---- pictures
 
     def test_picture_in_chunks(self):
