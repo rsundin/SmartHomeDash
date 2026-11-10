@@ -22,7 +22,7 @@ Everything except `name` and at least one floor plan is optional. A card whose e
 | `climates` | list | Climate devices that are not a room, such as a heat pump: `{ "entity": "climate.heat_pump", "name": "Heat pump" }`. Shown in the heating card |
 | `scenes` | list | Buttons for scenes or scripts: `{ "entity": "script.we_are_here", "name": "We're here" }` |
 | `wall_screen` | object | Doorbell camera, idle mode and light mode for wall screens, see [Wall screens](#wall-screens) |
-| `mock` | object | Test data only, for example sunrise and sunset times. `mock.prices` sets the test prices: `{ "minutes": 15, "format": "raw" }` (`minutes` 60 or 15; `format` `list`, `raw` with start and end times, or `action` for the Nord Pool action). `mock.devices` gives test entities a device, named the Home Assistant 2026.11 way: `[{ "id": "kitchen_hub", "name": "Kitchen", "entities": { "light.kitchen_ceiling": "Ceiling" } }]` shows that light as "Kitchen Ceiling" (`null` for the device's name alone) |
+| `mock` | object | Test data only, for example sunrise and sunset times. `mock.prices` sets the test prices: `{ "minutes": 15, "format": "raw" }` (`minutes` 60 or 15; `format` `list`, `raw` with start and end times, or `action` for the Nord Pool action). `mock.devices` gives test entities a device, named the Home Assistant 2026.11 way: `[{ "id": "kitchen_hub", "name": "Kitchen", "entities": { "light.kitchen_ceiling": "Ceiling" } }]` shows that light as "Kitchen Ceiling" (`null` for the device's name alone). `mock.floors` and `mock.areas` replace the test floors and areas made from the plans and rooms: `[{ "floor_id": "ground", "name": "Ground floor", "level": 0 }]` and `[{ "area_id": "kitchen", "name": "Kitchen", "floor_id": "ground", "entities": ["light.kitchen_ceiling"] }]` |
 
 ### Names
 
@@ -142,6 +142,7 @@ Each panel outline glows green while the panels produce, stronger as production 
 - Lights, a thermostat and a temperature sensor in a linked room's area that are not in site.json show up in the room by themselves, the lights in a ring around its middle. Placement mode lists them as placed automatically; tapping one onto the plan saves its spot. Nothing is written to site.json until then.
 - Covers (`cover.*`) in a room are blinds and curtains: the room panel has up, stop and down and a position slider, and the room's windows on the overview picture glow less while they are closed. Garage doors and gates (`device_class` `garage`, `gate`, `door`) count as doors instead.
 - A floor plan's `ha_floor` links it to a Home Assistant floor by its floor id: the plan then shows the floor's name, and linked plans are listed in floor order.
+- `"layout": "tiles"` marks a plan from the setup guide's **Start from my Home Assistant**: no picture and no walls, each room drawn as a tile, and the lights found in a room's area set out in a row along the bottom of its tile. Uploading a picture for the plan removes it. A room with `"redraw": true` still has its tile's shape stretched over the new picture and waits to be drawn; the guide offers a **Draw** button for it.
 
 ### Warnings
 

@@ -11,11 +11,11 @@
 // Works on a copy of the config; "Save" writes it to Home Assistant and restarts
 // the dashboard, "Close" throws the changes away. Pictures are uploaded at once.
 
-import { el, sv, pts, svgPoint, centroid } from '../util.js';
+import { el, sv, pts, svgPoint, centroid, bbox, inside } from '../util.js';
 import { t } from '../i18n.js';
 import { readPower, kwText, MIN_KW } from '../power.js';
 import { nameOf } from '../entities.js';
-import { noAreas, areaName, floorName, fillRoomFromArea, matchRoomsByName } from '../areas.js';
+import { noAreas, areaName, floorName, fillRoomFromArea, matchRoomsByName, quickStart, fitTilesToPicture } from '../areas.js';
 
 const STEPS = ['basics', 'overview', 'plans', 'energy', 'buttons', 'wall', 'lights'];
 
@@ -143,6 +143,7 @@ export function createSetup({ site, store, saveSite, uploadFile, reload, openPla
   function basics() {
     return [
       site.raw.setup_pending ? exampleNote(cfg.overview ? 'setup.welcome' : 'setup.welcomeApartment') : null,
+      quickStartSection(),
       intro('setup.basicsIntro'),
       section(t('setup.step.basics'),
         field(t('setup.name'), input(cfg.name, (v) => { cfg.name = v; })),
@@ -151,6 +152,43 @@ export function createSetup({ site, store, saveSite, uploadFile, reload, openPla
         }), t('setup.languageHelp')),
         field(t('setup.currency'), input(cfg.currency ?? 'SEK', (v) => { cfg.currency = v.toUpperCase(); }, { maxlength: 3 }))),
     ];
+  }
+
+  // ---------- quick start: plans from Home Assistant's floors and areas, no drawing
+  // Offered until the site has floor plans of its own. Example pictures from the starter
+  // site belong to the example rooms, so the quick start takes their place.
+  // An example plan nobody has linked or placed anything in yet.
+  const untouched = (p) => isExample(p.image?.src ?? p.image)
+    && !(p.rooms ?? []).some((r) => r.ha_area || r.lights?.length || r.climate || r.temperature);
+  // The example overview goes with them, unless something was added to it.
+  const untouchedOverview = (c) => isExample(c.overview?.image) && !(c.overview.zones ?? []).length
+    && (c.overview.buildings ?? []).every((b) => !b.floorplan || !c.floorplans.some((p) => p.id === b.floorplan && !untouched(p)));
+  function freshAreas() {
+    if (cfg.floorplans.some((p) => !untouched(p))) return [];
+    return areas.list;
+  }
+  function quickStartSection() {
+    const free = freshAreas();
+    if (!free.length) return null;
+    const examples = cfg.floorplans.length > 0 || untouchedOverview(cfg);
+    return section(t('setup.quickTitle'),
+      el('p', { class: 'muted small' }, t('setup.quickHelp', { n: free.length })),
+      examples ? el('p', { class: 'muted small' }, t('setup.quickReplaces')) : null,
+      el('button', { class: 'chip chip-primary', type: 'button', onclick: startFromHa }, t('setup.quickStart')));
+  }
+  function startFromHa() {
+    const next = structuredClone(cfg);
+    if (untouchedOverview(next)) delete next.overview;
+    next.floorplans = next.floorplans.filter((p) => !untouched(p));
+    for (const b of next.overview?.buildings ?? []) if (b.floorplan && !next.floorplans.some((p) => p.id === b.floorplan)) delete b.floorplan;
+    const added = quickStart(next, areas, { otherName: t('setup.otherRooms'), homeName: t('setup.homePlan') });
+    if (!added.plans) { status.textContent = t('setup.quickNothing'); return; }
+    cfg.floorplans = next.floorplans;
+    if (next.overview) cfg.overview = next.overview; else delete cfg.overview;
+    changed();
+    step = 'plans';
+    render();
+    status.textContent = t('setup.quickDone', added);
   }
 
   // ---------- 2. overview
@@ -307,6 +345,8 @@ export function createSetup({ site, store, saveSite, uploadFile, reload, openPla
   function plans() {
     const out = [intro('setup.plansIntro')];
     if (cfg.floorplans.some((p) => isExample(p.image?.src ?? p.image))) out.push(exampleNote('setup.examplePlans'));
+    const quick = quickStartSection();
+    if (quick) out.push(quick);
     for (const [pi, plan] of cfg.floorplans.entries()) {
       const src = plan.image ? picture(typeof plan.image === 'string' ? plan.image : plan.image.src) : null;
       const size = plan.image?.bounds ? [plan.image.bounds[2], plan.image.bounds[3]] : null;
@@ -316,6 +356,7 @@ export function createSetup({ site, store, saveSite, uploadFile, reload, openPla
           ? el('span', { class: 'setup-room-name' }, areaName(areas, r.ha_area))
           : input(r.name, (v) => { r.name = v; }, { 'aria-label': t('setup.name') }),
         el('span', { class: 'muted small' }, roomSummary(r)),
+        r.redraw && src && size ? drawButton(t('setup.redrawRoom', { room: r.name }), { src, size, shapes: (plan.rooms ?? []).filter((x) => x !== r && !x.redraw).map((x) => ({ points: x.area, label: x.name, kind: 'room' })) }, (poly) => redrawRoom(r, poly)) : null,
         r.ha_area ? el('button', { class: 'chip', type: 'button', onclick: () => fill(r) }, t('setup.fetchFromArea')) : null,
         el('button', { class: 'chip chip-danger', type: 'button', onclick: () => { plan.rooms.splice(i, 1); changed(); render(); } }, t('setup.remove')))));
       out.push(section(plan.name,
@@ -334,7 +375,11 @@ export function createSetup({ site, store, saveSite, uploadFile, reload, openPla
             for (const b of cfg.overview?.buildings ?? []) if (b.floorplan === plan.id) delete b.floorplan;
             changed(); render();
           } }, t('setup.removePlan'))),
-        src ? el('img', { class: 'setup-plan-thumb', src, alt: plan.name }) : el('p', { class: 'muted small' }, t('setup.planNoPicture')),
+        src ? el('img', { class: 'setup-plan-thumb', src, alt: plan.name })
+          : el('div', { class: 'setup-field' },
+            el('p', { class: 'muted small' }, t(plan.layout === 'tiles' ? 'setup.planTiles' : 'setup.planNoPicture')),
+            el('div', { class: 'row' }, fileButton(t('setup.uploadPlanPicture'), (f) => addPlanPicture(plan, f).catch((e) => { status.textContent = e.message; })))),
+        (plan.rooms ?? []).some((r) => r.redraw) ? el('p', { class: 'setup-note' }, t('setup.redrawNote')) : null,
         el('h4', { class: 'setup-label' }, t('setup.rooms')),
         areas.list.length ? el('p', { class: 'muted small' }, t('setup.areasHelp')) : null,
         roomList,
@@ -385,6 +430,35 @@ export function createSetup({ site, store, saveSite, uploadFile, reload, openPla
         } catch (e) { status.textContent = e.message; }
       })));
     return out;
+  }
+
+  // A picture for a plan that has none (one from the quick start): the rooms keep their
+  // areas and lights, stretched over the picture until each is drawn where it really is.
+  async function addPlanPicture(plan, file) {
+    const size = await imageSize(file);
+    const path = `plan_${plan.id}.${ext(file)}`;
+    await upload(file, path);
+    plan.image = { src: path, bounds: [0, 0, size[0], size[1]] };
+    if ((plan.rooms ?? []).length) fitTilesToPicture(plan, size);
+    else { plan.outline = [[0, 0], [size[0], 0], [size[0], size[1]], [0, size[1]]]; delete plan.layout; }
+    render();
+  }
+  function redrawRoom(room, poly) {
+    room.area = poly;
+    delete room.redraw;
+    delete room.label;
+    // Lights placed on the old tile move into the room as drawn.
+    const out = (room.lights ?? []).filter((l) => l.at && !inside(l.at, poly));
+    if (out.length) {
+      const [cx, cy] = centroid(poly);
+      const box = bbox([poly]);
+      const r = out.length > 1 ? Math.min(box.w, box.h) * 0.22 : 0;
+      out.forEach((l, i) => {
+        const a = (i / out.length) * Math.PI * 2 - Math.PI / 2;
+        l.at = [Math.round(cx + Math.cos(a) * r), Math.round(cy + Math.sin(a) * r)];
+      });
+    }
+    status.textContent = t('setup.redrawn', { room: room.name });
   }
 
   // Which building on the overview picture opens this plan, lifting its roof when tapped.

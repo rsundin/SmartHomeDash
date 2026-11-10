@@ -38,7 +38,7 @@ A new dashboard starts from an example, with no lights or sensors linked since t
 - **House:** a day and evening picture of a house and a garage, with floor plans, rooms, windows and solar panels already drawn.
 - **Apartment:** a floor plan only, with rooms and a balcony. The dashboard opens on the floor plan; an overview picture can be added later in the setup guide, and a house's overview picture can be removed there too.
 
-Keep the example to try the dashboard out, place your own lights in it, or replace the pictures with your own home.
+Keep the example to try the dashboard out, place your own lights in it, or replace the pictures with your own home. If your Home Assistant has areas, the quickest start is **Start from my Home Assistant** in the setup guide (below): a working floor plan with nothing to draw.
 
 ## 3. Run the setup guide
 
@@ -47,6 +47,10 @@ Open the dashboard. On the first visit the setup guide opens by itself; later it
 ### Basics
 
 The dashboard's name, the language on screen (Swedish or English) and the currency for prices.
+
+**Start from my Home Assistant** is offered here, and under **Floor plans**, until the dashboard has floor plans of its own. It makes a floor plan for each floor in Home Assistant, with a tile for each area on that floor, linked to the area; a room with more devices gets a wider tile. Areas on no floor share a plan named *Other rooms* (or *Home* when Home Assistant has no floors). Lights, thermostats and temperature sensors show up in their tiles by themselves, and the area's sensors work as in a drawn room. The example pictures are replaced. **Save**, and the dashboard opens on the first floor.
+
+Later, a tile plan can get a real picture under **Floor plans**: **Upload a picture of the plan** stretches the tiles over it, and each room gets a **Draw** button to draw it where it really is. Its area link and the lights you have placed stay.
 
 ### Overview picture
 

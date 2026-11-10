@@ -89,7 +89,7 @@ The community's top complaint is slow dashboards [R22][R23]. Work through Claude
 
 Setup effort is the main barrier for every floor plan project [R5][R6][R11]. SmartHomeDash is already the easiest. This milestone makes it effortless and lets it reach every dashboard.
 
-### S1: Quick start from Home Assistant floors and areas. Status: todo. Size: L. Depends: Q3
+### S1: Quick start from Home Assistant floors and areas. Status: done (v0.8.12). Size: L. Depends: Q3
 - **Why:** HA builds dashboards from areas automatically [R1]. A new user should get something useful before drawing anything.
 - **What:**
   - In the setup guide, **Start from my Home Assistant** creates, for each HA floor, a floor plan with no picture: a tidy grid of room tiles, one per area on that floor (sized by device count), linked with `ha_area`. Areas without a floor go on one plan.

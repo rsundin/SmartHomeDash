@@ -12,7 +12,7 @@ What is planned next, roughly in order. Plans change; ideas and votes are welcom
 
 ## 1.0: Nearly zero setup
 
-- **Quick start from Home Assistant**: a floor plan per floor with a tile per area, working before you draw anything.
+- **Quick start from Home Assistant**: a floor plan per floor with a tile per area, working before you draw anything. Done in 0.8.12.
 - **Editor comforts**: undo, move corners, snap, nudge.
 - **Export, import and restore points** for a whole dashboard.
 - **A card for any dashboard** (`custom:smarthomedash-card`).

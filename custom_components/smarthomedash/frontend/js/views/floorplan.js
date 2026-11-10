@@ -31,8 +31,11 @@ export function createFloorplan({ site, plan, store, adapter, onRoom }) {
   const picture = plan.image ? (typeof plan.image === 'string' ? { src: plan.image } : plan.image) : null;
   const ob = bbox([outline]);
   const [ix, iy, iw, ih] = picture?.bounds ?? [ob.x, ob.y, ob.w, ob.h];
+  // A plan from the quick start has no picture and no walls: a tile per room.
+  const tiles = plan.layout === 'tiles' && !picture;
   const floor = sv('g', { class: 'fp-floor' },
-    sv('polygon', { class: 'fp-outline', points: pts(outline) }),
+    tiles ? rooms.map((r) => sv('polygon', { class: 'fp-tile', points: pts(r.area), 'stroke-width': wall * 0.5 }))
+      : sv('polygon', { class: 'fp-outline', points: pts(outline) }),
     picture ? sv('image', { href: site.asset(picture.src), x: ix, y: iy, width: iw, height: ih, preserveAspectRatio: 'none', class: 'fp-picture' }) : null);
   const fills = sv('g', { class: 'fp-fills' });
   const glows = sv('g', { class: 'fp-glows' });
@@ -43,7 +46,7 @@ export function createFloorplan({ site, plan, store, adapter, onRoom }) {
   const defs = sv('defs', {}, haloGradient(gradId, 'var(--glow)', 'var(--glow-core)'));
   // A lamp that reports its colour glows in it (see glow.js).
   const tint = createTints((sx, glow, coreC) => defs.append(haloGradient(gradId + sx, glow, coreC)));
-  const walls = sv('g', { class: 'fp-walls' },
+  const walls = tiles ? sv('g', { class: 'fp-walls' }) : sv('g', { class: 'fp-walls' },
     rooms.map((r) => sv('polygon', { class: 'fp-inner', points: pts(r.area), 'stroke-width': wall * 0.4 })),
     sv('polygon', { class: 'fp-outer', points: pts(outline), 'stroke-width': wall }));
   const labels = sv('g', { class: 'fp-labels' });
@@ -137,7 +140,7 @@ export function createFloorplan({ site, plan, store, adapter, onRoom }) {
   defs,
   floor, fills, glows, walls, labels, lamps);
 
-  const root = el('div', { class: `view fp${picture ? ' has-picture' : ''}`, 'data-plan': plan.id }, svg);
+  const root = el('div', { class: `view fp${picture ? ' has-picture' : ''}${tiles ? ' is-tiles' : ''}`, 'data-plan': plan.id }, svg);
 
   return {
     el: root,

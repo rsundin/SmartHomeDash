@@ -185,6 +185,7 @@ export function autoPlace(site, areas, store) {
   if (!areas.entityArea.size) return [];
   const used = usedEntities(site);
   const added = [];
+  const tiles = new Set(site.floorplans.filter((p) => p.layout === 'tiles' && !p.image).map((p) => p.id));
   for (const room of site.index.rooms.values()) {
     if (!room.ha_area || !(room.plan && room.area) && !room.building) continue;
     const found = entitiesInArea(areas, room.ha_area, store);
@@ -203,10 +204,15 @@ export function autoPlace(site, areas, store) {
       const [cx, cy] = centroid(room.area);
       const box = bbox([room.area]);
       const r = lights.length > 1 ? Math.min(box.w, box.h) * 0.22 : 0;
+      // On a tile from the quick start, in a row below the room's name and temperature.
+      const tile = tiles.has(room.plan);
       lights.forEach((s, i) => {
         const a = (i / lights.length) * Math.PI * 2 - Math.PI / 2;
         const name = nameOf(s.entity_id, { store, areas });
-        room.lights.push({ entity: s.entity_id, name, at: [cx + Math.cos(a) * r, cy + Math.sin(a) * r], auto: true });
+        const at = tile
+          ? [box.x + (box.w * (i + 1)) / (lights.length + 1), box.y + box.h * 0.8]
+          : [cx + Math.cos(a) * r, cy + Math.sin(a) * r];
+        room.lights.push({ entity: s.entity_id, name, at, auto: true });
         site.index.lights.push(s.entity_id);
         site.index.names.set(s.entity_id, name);
         used.add(s.entity_id);
@@ -220,4 +226,106 @@ export function autoPlace(site, areas, store) {
   }
   site.index.climateRooms = [...site.index.rooms.values()].filter((r) => r.climate || r.temperature);
   return added;
+}
+
+// ---------- quick start: floor plans from Home Assistant floors and areas
+// Before anything is drawn: one floor plan per Home Assistant floor, with a tile per
+// area on it, linked with ha_area. Areas without a floor share one plan. The tiles
+// are rectangles on a plan without a picture ("layout": "tiles"); lights, thermostats
+// and temperature sensors are not written, they are placed by autoPlace at start.
+
+const TILE = { width: 1200, row: 300, gap: 30 };
+
+// Rows of tiles, each row as wide as the plan, a tile's width following its weight.
+// items: [{ weight }] in order; returns [[x, y], ...] rectangles in the same order.
+export function tileLayout(items) {
+  if (!items.length) return [];
+  // Rows as even as they can be: 4 tiles make 2 + 2, 9 make 3 + 3 + 3.
+  const rowCount = Math.ceil(items.length / Math.ceil(Math.sqrt(items.length * 1.5)));
+  const perRow = Math.ceil(items.length / rowCount);
+  const rows = [];
+  for (let i = 0; i < items.length; i += perRow) rows.push(items.slice(i, i + perRow));
+  const avg = items.reduce((s, x) => s + x.weight, 0) / rows.length;
+  const out = [];
+  rows.forEach((row, ri) => {
+    // A short last row keeps the tile sizes of the rows above instead of stretching.
+    const total = Math.max(row.reduce((s, x) => s + x.weight, 0), ri === rows.length - 1 ? avg : 0);
+    const free = TILE.width - TILE.gap * (row.length - 1);
+    let x = 0;
+    const y = ri * (TILE.row + TILE.gap);
+    for (const item of row) {
+      const w = Math.round((free * item.weight) / total);
+      out.push([[x, y], [x + w, y], [x + w, y + TILE.row], [x, y + TILE.row]]);
+      x += w + TILE.gap;
+    }
+  });
+  return out;
+}
+
+// Adds the plans to a raw config. Areas already linked to a room or a building, and
+// floors that already have a plan, are left alone. Returns { plans, rooms } added.
+export function quickStart(cfg, areas, { otherName = 'Other rooms', homeName = 'Home' } = {}) {
+  cfg.floorplans ??= [];
+  const used = new Set([
+    ...cfg.floorplans.flatMap((p) => (p.rooms ?? []).map((r) => r.ha_area)),
+    ...(cfg.overview?.buildings ?? []).map((b) => b.ha_area),
+  ].filter(Boolean));
+  const planned = new Set(cfg.floorplans.map((p) => p.ha_floor).filter(Boolean));
+  const devices = new Map();
+  for (const area of areas.entityArea.values()) devices.set(area, (devices.get(area) ?? 0) + 1);
+  const floors = areas.floors ?? [];
+  const known = new Set(floors.map((f) => f.floor_id));
+  const groups = floors.map((f) => ({ floor: f, list: [] }));
+  const loose = { floor: null, list: [] };
+  const sorted = [...areas.list].sort((a, b) => (a.name ?? '').localeCompare(b.name ?? ''));
+  for (const a of sorted) {
+    if (used.has(a.area_id)) continue;
+    const g = known.has(a.floor_id) ? groups.find((x) => x.floor.floor_id === a.floor_id) : loose;
+    if (g.floor && planned.has(g.floor.floor_id)) continue;
+    g.list.push(a);
+  }
+  const ids = cfg.floorplans.flatMap((p) => [p.id, ...(p.rooms ?? []).map((r) => r.id)]);
+  const unique = (base) => {
+    const clean = nameKey(base).replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '') || 'item';
+    let id = clean, i = 2;
+    while (ids.includes(id)) id = `${clean}_${i++}`;
+    ids.push(id);
+    return id;
+  };
+  let plans = 0, rooms = 0;
+  for (const g of [...groups, loose]) {
+    if (!g.list.length) continue;
+    // A device or two makes a small tile; a busy room a wider one.
+    const tiles = tileLayout(g.list.map((a) => ({ weight: 1 + Math.min(devices.get(a.area_id) ?? 0, 12) / 6 })));
+    const bb = bbox(tiles);
+    const name = g.floor?.name ?? (floors.length ? otherName : homeName);
+    cfg.floorplans.push({
+      id: unique(g.floor?.floor_id ?? name),
+      name,
+      ...(g.floor ? { ha_floor: g.floor.floor_id } : {}),
+      unit: 'px',
+      layout: 'tiles',
+      outline: [[bb.x, bb.y], [bb.x + bb.w, bb.y], [bb.x + bb.w, bb.y + bb.h], [bb.x, bb.y + bb.h]],
+      rooms: g.list.map((a, i) => ({ id: unique(a.area_id), name: a.name, ha_area: a.area_id, area: tiles[i], lights: [] })),
+    });
+    plans++;
+    rooms += g.list.length;
+  }
+  return { plans, rooms };
+}
+
+// A plan from the quick start gets its picture: the tiles are stretched over the picture,
+// to be drawn again where the rooms really are. Lights placed on a tile move along.
+export function fitTilesToPicture(plan, [w, h]) {
+  const bb = bbox([plan.outline ?? (plan.rooms ?? []).flatMap((r) => r.area)]);
+  const sx = w / (bb.w || 1), sy = h / (bb.h || 1);
+  const map = ([x, y]) => [Math.round((x - bb.x) * sx), Math.round((y - bb.y) * sy)];
+  for (const room of plan.rooms ?? []) {
+    room.area = room.area.map(map);
+    if (room.label) room.label = map(room.label);
+    for (const l of room.lights ?? []) if (l.at) l.at = map(l.at);
+    room.redraw = true;
+  }
+  plan.outline = [[0, 0], [w, 0], [w, h], [0, h]];
+  delete plan.layout;
 }
