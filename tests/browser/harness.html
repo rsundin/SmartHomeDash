@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="sv">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>SmartHomeDash test harness</title>
+<link rel="stylesheet" href="../../custom_components/smarthomedash/frontend/css/style.css">
+<style>html, body { height: 100%; }</style>
+</head>
+<body>
+<div id="app"></div>
+<!--
+  Starts the dashboard the way the Home Assistant panel does (frontend/panel.js), with
+  test data instead of a `hass` object. Served from the repository root:
+
+    harness.html?site=example-house   which site (sites/<id>/)
+    harness.html?edit                 start in placement mode
+    harness.html?kiosk                start in kiosk mode
+
+  For the tests it exposes:
+    window.store                  the dashboard's store: store.update({...}) sets a state
+    window.harness.saved          every config saved through the panel's saveSite
+    window.harness.uploads        names of pictures uploaded through uploadFile
+    window.harness.starts         how many times the dashboard has started
+    window.harness.ready          a promise for the current start
+    window.harness.navigateEdit   switch placement mode on or off, restarting in place
+-->
+<script type="module">
+window.SHD_PANEL = true; // main.js must not start the standalone page by itself
+const FRONTEND = '../../custom_components/smarthomedash/frontend/js/';
+const [{ start, showFatal }, { loadSite }, { createMockAdapter }] = await Promise.all([
+  import(`${FRONTEND}main.js`),
+  import(`${FRONTEND}site.js`),
+  import(`${FRONTEND}adapters/mock.js`),
+]);
+
+const params = new URLSearchParams(location.search);
+const siteId = params.get('site') || 'example-house';
+const root = document.getElementById('app');
+const harness = window.harness = { saved: [], uploads: [], starts: 0, editing: params.has('edit'), ready: null };
+
+// Site files, as the panel loads them through Home Assistant's API: a saved config
+// replaces the file until the page is reloaded.
+const loader = {
+  async get(path) {
+    const last = harness.saved[harness.saved.length - 1];
+    if (path === 'site.json' && last) return new Response(JSON.stringify(last), { headers: { 'Content-Type': 'application/json' } });
+    return fetch(`../../sites/${siteId}/${path}`, { cache: 'no-store' });
+  },
+};
+
+const timers = [];
+async function boot() {
+  harness.starts++;
+  // Test data for this start; the previous start's timers stop, as a page reload would.
+  timers.splice(0).forEach(clearInterval);
+  const site = await loadSite(siteId, { useDraft: harness.editing, loader });
+  const mock = createMockAdapter(site);
+  const realInterval = window.setInterval;
+  const adapter = {
+    ...mock,
+    async connect(store, onStatus) {
+      window.store = store;
+      window.setInterval = (fn, ms) => { const id = realInterval(fn, ms); timers.push(id); return id; };
+      try { await mock.connect(store, onStatus); } finally { window.setInterval = realInterval; }
+    },
+  };
+  try {
+    await start({
+      root,
+      siteId,
+      editing: harness.editing,
+      adapter,
+      loader,
+      saveSite: async (raw) => { harness.saved.push(structuredClone(raw)); },
+      uploadFile: async (name) => { harness.uploads.push(name); },
+      reload: () => (harness.ready = boot()),
+      navigateEdit: (on) => { harness.editing = on; harness.ready = boot(); },
+    });
+  } catch (e) {
+    showFatal(root, e);
+    throw e;
+  }
+}
+harness.navigateEdit = (on) => { harness.editing = on; return (harness.ready = boot()); };
+harness.ready = boot();
+</script>
+</body>
+</html>

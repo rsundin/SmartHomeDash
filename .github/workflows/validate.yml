@@ -36,4 +36,20 @@ jobs:
       - uses: actions/setup-node@v7
         with:
           node-version: 20
-      - run: for f in $(find custom_components/smarthomedash/frontend -name '*.js'); do node --check "$f"; done
+      # Read as ES modules: a plain `node --check` on a .js file lets some syntax errors through.
+      - run: for f in $(find custom_components/smarthomedash/frontend -name '*.js'); do node --input-type=module --check < "$f" || { echo "Syntax error in $f"; exit 1; }; done
+
+  tests:
+    name: Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+      # The backend tests need only Python's standard library (3.12+, as on ubuntu-latest).
+      - name: Install Playwright and Chromium
+        run: |
+          npm install --no-save --no-package-lock playwright@1.63.0
+          npx playwright install --with-deps chromium
+      - run: tests/run.sh

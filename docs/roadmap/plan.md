@@ -26,7 +26,7 @@ The working plan behind [ROADMAP.md](../../ROADMAP.md), written for Claude Code 
 
 The community's top complaint is slow dashboards [R22][R23]. Work through Claude Code also needs a safety net. So this milestone comes first.
 
-### Q1: Automated tests in the repo and in CI. Status: todo. Size: M
+### Q1: Automated tests in the repo and in CI. Status: done (v0.8.6). Size: M
 - **Why:** Until now, regression checks have lived outside the repo. Every later task depends on catching breakage.
 - **What:**
   - `tests/backend/`: run the integration with stand-ins for `homeassistant` and `aiohttp`. Cover `safe_path` (traversal and symlinks), `_is_picture`, chunked uploads (a 3 MB picture and a large site.json arriving in 64 kB chunks), size limits, admin-only writes, starter sites (house and apartment, sv and en; entities stripped), and `updater.install` (GitHub-style tarball, refusing `../`).

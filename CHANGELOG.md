@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.8.6
+
+Nothing changes in the dashboard itself; this release adds the safety net for the work ahead.
+
+- Automated tests in the repository: `tests/run.sh` runs backend tests (safe paths and symlinks, picture checks, chunked uploads, size limits, admin-only writes, starter sites, the updater) and browser tests in Chromium (both examples at five screen sizes, kiosk mode, rooms and lamps, night mode, pinch zoom, dragging a lamp in placement mode, the setup guide, warnings and badges, the energy flow)
+- A new **Tests** check runs them on every push and pull request
+- The JavaScript syntax check reads the dashboard's files as modules, so it no longer lets some syntax errors through
+
 ## 0.8.5
 
 - Renaming a dashboard in the setup guide renames its entry in Home Assistant's sidebar too, at once and without a restart. Renaming it under *Settings → Devices & services → SmartHomeDash → Configure* also changes the name in the dashboard's heading. Dashboards set up in YAML keep the sidebar title written there
