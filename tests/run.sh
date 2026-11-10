@@ -23,6 +23,9 @@ fi
 
 if [[ "$part" == all || "$part" == browser ]]; then
   echo "== Browser tests"
-  node --test tests/browser/*.test.js
+  # The performance budget runs last and on its own: run beside the other test files,
+  # its timings would measure the competition for the CPU, not the dashboard.
+  node --test $(ls tests/browser/*.test.js | grep -v '/perf\.test\.js$')
+  node --test tests/browser/perf.test.js
 fi
 echo "All tests passed."

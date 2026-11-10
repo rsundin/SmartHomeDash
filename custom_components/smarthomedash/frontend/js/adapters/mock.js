@@ -301,6 +301,13 @@ export function createMockAdapter(site) {
         if (e) Object.assign(e, reg, { device_id: reg.device_id ?? e.device_id });
         else entities.push({ entity_id: s.entity_id, area_id: null, device_id: null, ...reg });
       }
+      // Registry flags from site.mock.entities: { entity, entity_category: 'diagnostic' } or hidden.
+      for (const x of site.mock?.entities ?? []) {
+        if (typeof x !== 'object') continue;
+        const e = entities.find((y) => y.entity_id === x.entity);
+        if (e && x.entity_category) e.entity_category = x.entity_category;
+        if (e && x.hidden) e.hidden_by = 'user';
+      }
       const devices = mockDevices.map(({ id, name, name_by_user = null, area_id = null }) => ({ id, name, name_by_user, area_id }));
       return { areas, entities, devices, floors };
     },

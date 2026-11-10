@@ -16,11 +16,17 @@ import { areaOf, areaName } from '../areas.js';
 import { nameOf as entityName } from '../entities.js';
 import { configEntities, missingEntities } from '../status.js';
 
+// Lights first, then temperature: what the dashboard is mostly for. Switches can be
+// placed as lamps too, but most are not lamps (plugs, heaters, settings), so they get
+// their own group, folded away until opened.
 const KINDS = [
-  { id: 'lights', label: 'editor.kindLights', match: (s) => /^(light|switch)\./.test(s.entity_id) },
-  { id: 'climate', label: 'editor.kindClimate', match: (s) => s.entity_id.startsWith('climate.') },
+  { id: 'lights', label: 'editor.kindLights', match: (s) => s.entity_id.startsWith('light.') },
   { id: 'temperature', label: 'editor.kindTemp', match: (s) => s.entity_id.startsWith('sensor.') && (s.attributes?.device_class === 'temperature' || /°C|°F/.test(s.attributes?.unit_of_measurement || '')) },
+  { id: 'climate', label: 'editor.kindClimate', match: (s) => s.entity_id.startsWith('climate.') },
+  { id: 'switches', label: 'editor.kindSwitches', match: (s) => s.entity_id.startsWith('switch.'), folded: true },
 ];
+// Switches are placed as lamps.
+const placeKind = (kind) => (kind === 'switches' ? 'lights' : kind);
 
 export function createEditor({ site, store, saveSite = null, reload = () => location.reload(), exit = null, update = null, reloadPage = () => location.reload() }) {
   const raw = site.raw;
@@ -29,6 +35,7 @@ export function createEditor({ site, store, saveSite = null, reload = () => loca
   let mode = 'place';
   let selected = null;
   let filter = '';
+  const unfolded = new Set(); // groups showing their less important entities too
   // Opened from the missing-devices warning: list only the devices Home Assistant does not know.
   let onlyMissing = !!storage.get(missingFilterKey(site.id));
   storage.set(missingFilterKey(site.id), null);
@@ -84,7 +91,7 @@ export function createEditor({ site, store, saveSite = null, reload = () => loca
   const missingNow = () => missingEntities(site, store);
 
   const nameOf = (id) => entityName(id, { store, site }, site.index.names.get(id) ?? id);
-  const kindOf = (id) => KINDS.find((k) => k.match(store.get(id) ?? { entity_id: id, attributes: {} }))?.id;
+  const kindOf = (id) => placeKind(KINDS.find((k) => k.match(store.get(id) ?? { entity_id: id, attributes: {} }))?.id);
 
   function save(message) {
     storage.set(draftKey(site.id), raw);
@@ -208,6 +215,22 @@ export function createEditor({ site, store, saveSite = null, reload = () => loca
   }
   const storeAll = () => store.all();
 
+  // Less important, folded away under "Show n more" (search still finds them): a device's
+  // own diagnostic or hidden entities, a switch, and a temperature sensor whose room
+  // already shows another one, or that is in no room at all (a fridge, a router).
+  const roomOfArea = (area) => [...site.index.rooms.values()].find((r) => r.ha_area === area && !r.device);
+  function minor(s, kind) {
+    const reg = site.areas?.entityReg?.get(s.entity_id);
+    if (reg && (reg.entity_category || reg.hidden_by || reg.hidden)) return true;
+    if (KINDS.find((k) => k.id === kind)?.folded) return true;
+    if (kind === 'temperature') {
+      const area = site.areas ? areaOf(site.areas, s.entity_id) : null;
+      const room = area && roomOfArea(area);
+      return !room || (room.temperature && room.temperature !== s.entity_id);
+    }
+    return false;
+  }
+
   function renderList() {
     const missing = missingNow();
     const missingIds = new Set(missing.map((m) => m.id));
@@ -235,12 +258,23 @@ export function createEditor({ site, store, saveSite = null, reload = () => loca
       const area = site.areas ? areaName(site.areas, areaOf(site.areas, s.entity_id)) : null;
       const auto = site.autoPlaced?.has(s.entity_id);
       if (filter && !`${name} ${s.entity_id} ${area ?? ''}`.toLowerCase().includes(filter)) continue;
-      g.rows.push({ id: s.entity_id, name, area, auto, where: placementOf(s.entity_id) });
+      const where = placementOf(s.entity_id);
+      g.rows.push({ id: s.entity_id, name, area, auto, where, minor: !where && !auto && s.entity_id !== selected && minor(s, g.k.id) });
     }
-    list.replaceChildren(...(missingSection ? [missingSection] : []), ...groups.filter((g) => g.rows.length).map(({ k, rows }) => {
-      rows.sort((a, b) => (!!a.where - !!b.where) || a.name.localeCompare(b.name, site.locale));
-      return el('section', {},
-        el('h3', { class: 'eyebrow' }, `${t(k.label)} · ${rows.filter((r) => !r.where).length} ${t('editor.unplacedCount')}`),
+    list.replaceChildren(...(missingSection ? [missingSection] : []), ...groups.filter((g) => g.rows.length).map(({ k, rows: all }) => {
+      // Not placed first, then placed automatically, then placed.
+      const rank = (r) => (r.where ? 2 : r.auto ? 1 : 0);
+      all.sort((a, b) => rank(a) - rank(b) || a.name.localeCompare(b.name, site.locale));
+      const more = all.filter((r) => r.minor);
+      const open = filter || unfolded.has(k.id);
+      const rows = open ? all : all.filter((r) => !r.minor);
+      const unplaced = all.filter((r) => !r.where && !r.auto && !r.minor).length;
+      return el('section', { 'data-kind': k.id },
+        el('h3', { class: 'eyebrow' }, unplaced ? `${t(k.label)} · ${unplaced} ${t('editor.unplacedCount')}` : t(k.label)),
+        more.length && !filter ? el('button', {
+          class: 'chip editor-more', type: 'button', 'aria-expanded': String(!!open),
+          onclick: () => { if (open) unfolded.delete(k.id); else unfolded.add(k.id); renderList(); },
+        }, t(open ? 'editor.showFewer' : 'editor.showMore', { n: more.length })) : null,
         el('ul', {}, rows.map((r) => el('li', {},
           el('button', {
             type: 'button', class: `editor-ent${r.id === selected ? ' is-selected' : ''}${r.where ? '' : ' is-unplaced'}`,

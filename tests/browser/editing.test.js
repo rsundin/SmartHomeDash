@@ -190,4 +190,49 @@ describe('editing', () => {
     check(page);
     await close(page);
   });
+  test('placement mode puts lights first and folds away what matters less', async () => {
+    const site = JSON.parse(fs.readFileSync(path.join(ROOT, 'sites', 'example-house', 'site.json'), 'utf8'));
+    const temp = { unit_of_measurement: '°C', device_class: 'temperature' };
+    site.mock.entities = [
+      { entity: 'light.garden_path', name: 'Garden path' },
+      { entity: 'light.facade_spot', name: 'Facade spot' },
+      { entity: 'switch.coffee_maker', name: 'Coffee maker' },
+      { entity: 'sensor.router_temperature', name: 'Router temperature', attributes: temp },
+      { entity: 'sensor.fridge_temperature', name: 'Fridge temperature', attributes: temp, entity_category: 'diagnostic' },
+    ];
+    // A spot in the same Home Assistant area as the facade lamps, on a device placed there.
+    site.mock.devices = [{ id: 'facade_spot', name: 'Facade spot', area_id: 'outdoor_facade', entities: { 'light.facade_spot': null } }];
+    const prepare = (page) => page.route('**/sites/example-house/site.json', (route) => route.fulfill({ contentType: 'application/json', body: JSON.stringify(site) }));
+    const page = await harness(env, '?site=example-house&edit', { prepare });
+    const list = page.locator('aside.editor .editor-list');
+    const group = (kind) => list.locator(`section[data-kind="${kind}"]`);
+    const row = (kind, id) => group(kind).locator('.editor-ent', { hasText: id });
+
+    assert.deepEqual(await list.locator('section').evaluateAll((n) => n.map((x) => x.dataset.kind)), ['lights', 'temperature', 'climate', 'switches']);
+    // A light with no room is shown; one in the facade's area joins the facade by itself.
+    await row('lights', 'light.garden_path').waitFor();
+    assert.match(await row('lights', 'light.facade_spot').textContent(), /placed automatically/);
+    // A temperature sensor in no room, and a device's own diagnostic sensor, wait under "Show 2 more".
+    assert.equal(await row('temperature', 'sensor.router_temperature').count(), 0);
+    assert.equal(await row('temperature', 'sensor.fridge_temperature').count(), 0);
+    await group('temperature').locator('.editor-more', { hasText: 'Show 2 more' }).click();
+    await row('temperature', 'sensor.router_temperature').waitFor();
+    await row('temperature', 'sensor.fridge_temperature').waitFor();
+    // Switches are folded away; search finds them anyway.
+    assert.equal(await row('switches', 'switch.coffee_maker').count(), 0);
+    await group('switches').locator('.editor-more', { hasText: 'Show 1 more' }).waitFor();
+    await page.locator('#editor-search').fill('coffee');
+    await row('switches', 'switch.coffee_maker').waitFor();
+    check(page);
+    await close(page);
+
+    // On the dashboard the facade lamps switch the spot too.
+    const dash = await harness(env, '?site=example-house', { prepare });
+    await dash.evaluate(() => window.store.update({ ...window.store.get('light.facade'), state: 'off' }));
+    await dash.evaluate(() => window.store.update({ ...window.store.get('light.facade_spot'), state: 'off' }));
+    await dash.locator('.ov-zonehit[data-zone="facade"]').first().click();
+    await dash.waitForFunction(() => window.store.get('light.facade_spot').state === 'on');
+    check(dash);
+    await close(dash);
+  });
 });

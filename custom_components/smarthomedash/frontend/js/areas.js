@@ -224,6 +224,21 @@ export function autoPlace(site, areas, store) {
     const temp = found.temps.find((s) => !used.has(s.entity_id));
     if (!room.temperature && temp) { room.temperature = temp.entity_id; site.index.temps.push(temp.entity_id); used.add(temp.entity_id); added.push(temp.entity_id); }
   }
+  // Outdoor lamps on the overview picture: a zone belongs to the area its lights are in,
+  // and the area's other lights that are nowhere yet switch with it.
+  for (const z of site.overview?.zones ?? []) {
+    const area = z.ha_area ?? z.lights.map((id) => areas.entityArea.get(id)).find(Boolean);
+    if (!area || [...site.index.rooms.values()].some((r) => r.ha_area === area)) continue;
+    for (const s of entitiesInArea(areas, area, store).lights) {
+      if (used.has(s.entity_id)) continue;
+      z.lights.push(s.entity_id);
+      (z.autoLights ??= []).push(s.entity_id);
+      site.index.lights.push(s.entity_id);
+      if (!site.index.names.has(s.entity_id)) site.index.names.set(s.entity_id, z.name);
+      used.add(s.entity_id);
+      added.push(s.entity_id);
+    }
+  }
   site.index.climateRooms = [...site.index.rooms.values()].filter((r) => r.climate || r.temperature);
   return added;
 }

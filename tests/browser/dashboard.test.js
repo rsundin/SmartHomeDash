@@ -112,6 +112,9 @@ describe('dashboard', () => {
     assert.notEqual(await page.locator('.zoom-layer').evaluate((n) => n.style.transform), t0, 'drag pans');
     assert.equal(await page.getAttribute('.stage', 'data-view'), 'overview', 'a drag is not a tap');
 
+    // Let the drag's last events land first: a tap milliseconds after a drag on a loaded
+    // test machine was sometimes lost (about one full run in three), which no finger does.
+    await page.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => setTimeout(resolve, 50))));
     await page.locator('.zoom-reset').tap();
     await page.waitForFunction(() => !document.querySelector('.stage').classList.contains('is-zoomed'));
     check(page);
