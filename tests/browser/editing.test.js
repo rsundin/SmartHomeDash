@@ -74,6 +74,34 @@ describe('editing', () => {
     }
   });
 
+  test('linking a floor plan to a building from the floor plan step', async () => {
+    const page = await harness(env, '?site=example-house');
+    await page.locator('.top-actions .chip', { hasText: 'Setup' }).click();
+    await page.locator('.setup-step', { hasText: 'Floor plans' }).click();
+    const garagePlan = page.locator('.setup-section', { has: page.locator('h3', { hasText: /^Garage$/ }) });
+    const pick = garagePlan.getByLabel('Building on the overview picture');
+    assert.equal(await pick.inputValue(), 'garage', 'shows the building that opens it');
+
+    // The house now opens the garage plan; the garage building lets go of it.
+    await pick.selectOption('house');
+    const housePlan = page.locator('.setup-section', { has: page.locator('h3', { hasText: /^House$/ }) });
+    assert.equal(await housePlan.getByLabel('Building on the overview picture').inputValue(), '', 'a building opens one plan');
+
+    // The overview step shows the same link, in words.
+    await page.locator('.setup-step', { hasText: 'Overview picture' }).click();
+    const opens = page.locator('.setup-rooms select[aria-label="Floor plan"]');
+    assert.deepEqual(await opens.evaluateAll((ns) => ns.map((n) => n.selectedOptions[0].textContent)), ['Opens: Garage', 'Opens: no floor plan']);
+
+    await page.locator('.setup-head .chip', { hasText: 'Save' }).click();
+    await page.waitForFunction(() => window.harness.saved.length === 1);
+    const saved = await page.evaluate(() => window.harness.saved[0].overview.buildings.map((b) => [b.id, b.floorplan ?? null]));
+    assert.deepEqual(saved, [['house', 'garage'], ['garage', null]]);
+    await page.waitForFunction(() => window.harness.starts === 2);
+    await page.evaluate(() => window.harness.ready);
+    check(page);
+    await close(page);
+  });
+
   test('closing the setup guide without changes', async () => {
     const page = await harness(env, '?site=example-house');
     await page.locator('.top-actions .chip', { hasText: 'Setup' }).click();

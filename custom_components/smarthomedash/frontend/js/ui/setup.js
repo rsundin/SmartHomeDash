@@ -201,13 +201,19 @@ export function createSetup({ site, store, saveSite, uploadFile, reload, openPla
       b.ha_area && areaName(areas, b.ha_area)
         ? el('span', { class: 'setup-room-name' }, areaName(areas, b.ha_area))
         : input(b.name, (v) => { b.name = v; }, { 'aria-label': t('setup.name') }),
-      select([['', t('setup.noPlan')], ...cfg.floorplans.map((p) => [p.id, p.name])], b.floorplan, (v) => { if (v) b.floorplan = v; else delete b.floorplan; }, { 'aria-label': t('setup.floorPlan') }),
+      cfg.floorplans.length
+        ? select([['', t('setup.opensNoPlan')], ...cfg.floorplans.map((p) => [p.id, t('setup.opensPlan', { name: p.name })])], b.floorplan, (v) => { if (v) b.floorplan = v; else delete b.floorplan; }, { 'aria-label': t('setup.floorPlan') })
+        : el('span', { class: 'muted small' }, t('setup.noPlansYet')),
       el('button', { class: 'chip chip-danger', type: 'button', onclick: () => { ov.buildings.splice(i, 1); changed(); render(); } }, t('setup.remove')))));
     out.push(section(t('setup.buildings'), el('p', { class: 'muted small' }, t('setup.buildingsHelp')), bList,
       drawButton(t('setup.drawBuilding'), { src: picture(ov.image), size: ov.size, shapes: overviewShapes(), pick: areaPick() }, (poly, areaId) => {
         ov.buildings ??= [];
         const name = (areaId && areaName(areas, areaId)) || t('setup.building', { n: ov.buildings.length + 1 });
-        ov.buildings.push({ id: uniqueId(slug(name), ov.buildings.map((b) => b.id)), name, area: poly, ...(areaId ? { ha_area: areaId } : {}) });
+        const b = { id: uniqueId(slug(name), ov.buildings.map((x) => x.id)), name, area: poly, ...(areaId ? { ha_area: areaId } : {}) };
+        // Plans added first: a single plan no building opens yet goes with the new building.
+        const [only, ...more] = cfg.floorplans;
+        if (only && !more.length && !ov.buildings.some((x) => x.floorplan === only.id)) b.floorplan = only.id;
+        ov.buildings.push(b);
       })));
 
     // solar panels
@@ -322,6 +328,7 @@ export function createSetup({ site, store, saveSite, uploadFile, reload, openPla
             plan.ha_floor,
             (v) => { if (v) { plan.ha_floor = v; plan.name = floorName(areas, v); } else delete plan.ha_floor; render(); },
             { 'aria-label': t('setup.floor') })) : null,
+          cfg.overview?.buildings?.length ? buildingField(plan) : null,
           el('button', { class: 'chip chip-danger', type: 'button', onclick: () => {
             cfg.floorplans.splice(pi, 1);
             for (const b of cfg.overview?.buildings ?? []) if (b.floorplan === plan.id) delete b.floorplan;
@@ -378,6 +385,20 @@ export function createSetup({ site, store, saveSite, uploadFile, reload, openPla
         } catch (e) { status.textContent = e.message; }
       })));
     return out;
+  }
+
+  // Which building on the overview picture opens this plan, lifting its roof when tapped.
+  // A building opens one plan, so picking it here moves it off any other plan.
+  function buildingField(plan) {
+    const buildings = cfg.overview.buildings;
+    const current = buildings.find((b) => b.floorplan === plan.id);
+    const options = [['', t('setup.noBuilding')], ...buildings.map((b) => [b.id, b.name])];
+    return field(t('setup.buildingLabel'), select(options, current?.id, (v) => {
+      for (const b of buildings) if (b.floorplan === plan.id) delete b.floorplan;
+      const b = buildings.find((x) => x.id === v);
+      if (b) b.floorplan = plan.id;
+      render();
+    }, { 'aria-label': t('setup.buildingLabel') }));
   }
 
   // Areas still free: not linked to a room or a building yet (plus the one given).

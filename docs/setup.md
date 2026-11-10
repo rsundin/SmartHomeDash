@@ -54,7 +54,7 @@ Optional for an apartment: without it the dashboard opens on the floor plan. **R
 
 1. **Upload** the day picture. Replacing the example picture also clears the example's buildings, windows and solar panels, since they were drawn on that picture.
 2. Optionally upload the evening picture. It must have exactly the same size as the day picture; the guide refuses one that does not match.
-3. **Draw a building** for every building: click its corners in order, pick its Home Assistant area in the bar, then **Done**. Pick its floor plan once you have added one. A building without a floor plan, such as a shed or a workshop, opens the lights, heating and sensors of its area when tapped.
+3. **Draw a building** for every building: click its corners in order, pick its Home Assistant area in the bar, then **Done**. Pick the floor plan it opens once you have added one, here or under **Floor plans**. A building without a floor plan, such as a shed or a workshop, opens the lights, heating and sensors of its area when tapped.
 4. **Draw a panel area** for every group of solar panels, and set the peak output in kW. The panels glow green while producing, stronger as output approaches the peak.
 5. **Draw a window** and pick the room behind it, to have it light up when a light in that room is on. Needs a floor plan with rooms first.
 
@@ -63,7 +63,7 @@ Optional for an apartment: without it the dashboard opens on the floor plan. **R
 1. **Upload floor plan picture.** One per building or storey.
 2. **Draw a room** for every room: click the corners, pick its Home Assistant area in the bar, **Done**.
 3. **Pick the room's Home Assistant area.** The room takes the area's name and its lights, thermostat and temperature sensor. The lights are set out in the middle of the room; move them to their real spots in placement mode. Rooms already named like an area can be linked all at once with **Link rooms to areas with the same name**. Without areas, type the room's name instead and place everything by hand.
-4. Back under **Overview picture**, link each building to its floor plan.
+4. **Pick the building on the overview picture** that opens the plan. Tapping that building lifts its roof and shows the plan. The same link can be set under **Overview picture**, where each building says which plan it opens. With a single building and a single plan they are linked by themselves.
 
 Rooms do not need to be exact. A room is used to find which room you tap in, to tint it by temperature and to light up windows.
 
