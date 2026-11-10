@@ -76,6 +76,16 @@ export function createHaAdapter({ url, token }) {
       return send({ type: 'call_service', domain, service, service_data: data });
     },
 
+    // An action that answers (return_response), such as nordpool.get_prices_for_date.
+    callResponse(domain, service, data) {
+      return send({ type: 'call_service', domain, service, service_data: data, return_response: true }).then((r) => r?.response ?? null);
+    },
+
+    // The config entry an entity belongs to, which some actions need.
+    configEntry(entityId) {
+      return send({ type: 'config/entity_registry/get', entity_id: entityId }).then((r) => r?.config_entry_id ?? null);
+    },
+
     // Address of a Home Assistant path, such as a camera picture.
     url(path) {
       return (url || location.origin).replace(/\/$/, '') + path;

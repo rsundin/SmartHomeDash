@@ -7,7 +7,7 @@ The working plan behind [ROADMAP.md](../../ROADMAP.md), written for Claude Code 
 1. Take the first task whose status is `todo` and whose `Depends` are `done`, unless the owner names another.
 2. Branch `feat/<task-id>-<short-name>` (for example `feat/q1-tests`), one task per branch and pull request.
 3. Read `CLAUDE.md` first; its rules apply (English in code and docs, UI strings in `i18n.js` in Swedish and English, no real-home data, no build step, no outside calls).
-4. Meet every point under **Done when**. Add or extend tests (see Q1), update `docs/configuration.md` or `docs/setup.md` when behaviour or config changes, and add a `CHANGELOG.md` entry with a version bump in `manifest.json` (patch for fixes, minor for a milestone's features).
+4. Meet every point under **Done when**. Add or extend tests (see Q1), update `docs/configuration.md` or `docs/setup.md` when behaviour or config changes, and add a `CHANGELOG.md` entry with a version bump in `manifest.json`: the next patch version for each task (0.8.10, 0.8.11 …); the owner decides when a release is big enough for 0.9.0, and 1.0.0 comes when everything runs stable.
 5. In this file, set the task's status to `done (vX.Y.Z)`; in `ROADMAP.md`, move finished milestones to **Done**.
 6. Keep the product principles below. If a task seems to need breaking one, stop and ask the owner.
 
@@ -63,7 +63,7 @@ The community's top complaint is slow dashboards [R22][R23]. Work through Claude
 - **Files:** `entities.js`, `adapters/*.js`, every `friendly_name` reader.
 - **Done when:** no direct `friendly_name` reads remain outside the helper. A unit test covers the four cases. Names on the plan, the cards and the panel match HA's more-info dialog.
 
-### Q4: Electricity prices at 15 minutes. Status: todo. Size: M
+### Q4: Electricity prices at 15 minutes. Status: done (v0.8.10). Size: M
 - **Why:** Nord Pool moved to 15-minute day-ahead prices in October 2025 [R15][R16]. `entities.js` averages them back to hours, which hides the price swings that 15-minute pricing is about.
 - **What:**
   - Keep the native resolution (24, 96 or 92/100 slots on DST days).

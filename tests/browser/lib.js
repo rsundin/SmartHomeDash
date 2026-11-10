@@ -66,8 +66,9 @@ function setup() {
 // A page in its own context. Console errors and uncaught exceptions are collected in
 // page.errors; `check(page)` asserts there were none.
 // `prepare(page)` runs before the page loads: routes, CPU throttling, init scripts.
-async function open(env, url, { width = 1280, height = 800, touch = false, storage = null, prepare = null } = {}) {
-  const context = await env.browser.newContext({ viewport: { width, height }, hasTouch: touch, isMobile: false });
+// `timezoneId` sets the page's time zone (for example Europe/Stockholm).
+async function open(env, url, { width = 1280, height = 800, touch = false, storage = null, prepare = null, timezoneId = undefined } = {}) {
+  const context = await env.browser.newContext({ viewport: { width, height }, hasTouch: touch, isMobile: false, timezoneId });
   if (storage) {
     await context.addInitScript((items) => {
       if (sessionStorage.getItem('__seeded')) return;

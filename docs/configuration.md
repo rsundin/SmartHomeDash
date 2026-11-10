@@ -22,7 +22,7 @@ Everything except `name` and at least one floor plan is optional. A card whose e
 | `climates` | list | Climate devices that are not a room, such as a heat pump: `{ "entity": "climate.heat_pump", "name": "Heat pump" }`. Shown in the heating card |
 | `scenes` | list | Buttons for scenes or scripts: `{ "entity": "script.we_are_here", "name": "We're here" }` |
 | `wall_screen` | object | Doorbell camera, idle mode and light mode for wall screens, see [Wall screens](#wall-screens) |
-| `mock` | object | Test data only, for example sunrise and sunset times. `mock.devices` gives test entities a device, named the Home Assistant 2026.11 way: `[{ "id": "kitchen_hub", "name": "Kitchen", "entities": { "light.kitchen_ceiling": "Ceiling" } }]` shows that light as "Kitchen Ceiling" (`null` for the device's name alone) |
+| `mock` | object | Test data only, for example sunrise and sunset times. `mock.prices` sets the test prices: `{ "minutes": 15, "format": "raw" }` (`minutes` 60 or 15; `format` `list`, `raw` with start and end times, or `action` for the Nord Pool action). `mock.devices` gives test entities a device, named the Home Assistant 2026.11 way: `[{ "id": "kitchen_hub", "name": "Kitchen", "entities": { "light.kitchen_ceiling": "Ceiling" } }]` shows that light as "Kitchen Ceiling" (`null` for the device's name alone) |
 
 ### Names
 
@@ -217,11 +217,13 @@ A touch on the dimmed screen only wakes it; it does not switch what is under the
 }
 ```
 
-Power may be in W or kW; the unit is read from the entity. `battery_soc` is shown next to the battery row; `load_power` adds a house usage row. Hourly prices come from an attribute: `today` matches Nordpool from HACS, and `raw_today` and `prices_today` are recognised automatically. Quarter-hour prices are averaged per hour.
+Power may be in W or kW; the unit is read from the entity. `battery_soc` is shown next to the battery row; `load_power` adds a house usage row. Prices come from an attribute: `today` matches Nordpool from HACS, and `raw_today` and `prices_today` are recognised automatically. They are kept at the resolution they come in: 24 hourly prices, 96 quarter-hour prices (92 or 100 on the days the clocks change), or a list of `{ start, end, value }` (or `price`) placed by its times.
 
 ### Electricity price
 
-`energy.price.window_hours` (default 3) is the length of the cheapest run of hours the price card points out, from now over today and, once published, tomorrow (`tomorrow` or `raw_tomorrow` attribute; `tomorrow_attribute` if yours differs). The card also says when the price right now is cheap or expensive compared with the rest of the day.
+`energy.price.window_hours` (default 3) is the length of the cheapest run of hours the price card points out, from now over today and, once published, tomorrow (`tomorrow` or `raw_tomorrow` attribute; `tomorrow_attribute` if yours differs). The window is counted in the prices' own slots, so with quarter-hour prices it can start at a quarter past. The card also says when the price in the slot running now is cheap or expensive compared with the rest of the day. The chart has one bar per slot and marks the one running now.
+
+**Home Assistant's own Nord Pool integration** keeps its prices behind the `nordpool.get_prices_for_date` action instead of in attributes. When the price entity has no price attributes, the card asks that action for today and, from 13:00, tomorrow. It finds the integration's config entry from the entity; set `config_entry` if that does not work, `area` (for example `"SE3"`) to pick an area, and `action_divisor` if your prices are not per MWh (default 1000, giving per kWh). `"action": false` turns this off.
 
 ## Placement mode
 

@@ -2,7 +2,7 @@
 // Every card is skipped when the site config has no entity for it.
 
 import { el, sv, fmt, hhmm, num } from '../util.js';
-import { isOn, zoneLevel, kw, pricesToday, pricesTomorrow, cheapestWindow, roomTemp, climate, heating, comfort } from '../entities.js';
+import { isOn, zoneLevel, kw, priceSlots, priceSlotsTomorrow, slotAt, cheapestWindow, dayBounds, nordpoolSlots, roomTemp, climate, heating, comfort } from '../entities.js';
 import { areaOf, areaName } from '../areas.js';
 import { t } from '../i18n.js';
 import { readPower, splitPower, powerSentence } from '../power.js';
@@ -73,7 +73,7 @@ function energyCard({ site, store }) {
   return card(t('cards.energyNow'), says, list, today);
 }
 
-function priceCard({ site, store }) {
+function priceCard({ site, store, adapter }) {
   const cfg = site.energy.price;
   if (!cfg?.entity) return null;
   const now = el('div', { class: 'kpi' });
@@ -82,54 +82,107 @@ function priceCard({ site, store }) {
   const level = el('span', { class: 'price-level' });
   const best = el('p', { class: 'price-best' });
   const hours = Math.max(1, Math.min(8, num(cfg.window_hours) ?? 3));
-  const hh = (h) => `${String(h % 24).padStart(2, '0')}`;
+  // "12" on the hour, "12:15" otherwise.
+  const pad = (n) => String(n).padStart(2, '0');
+  const clock = (ms) => { const d = new Date(ms); return d.getMinutes() ? `${pad(d.getHours())}:${pad(d.getMinutes())}` : pad(d.getHours()); };
+  const hhmm = (ms) => { const d = new Date(ms); return `${pad(d.getHours())}:${pad(d.getMinutes())}`; };
+  // Prices from Home Assistant's Nord Pool action, by day, when the entity has no price attributes.
+  const fetched = new Map();
+  let shownSlot = null;
+  let lastTry = 0, busy = false;
+
   const render = () => {
-    const vals = pricesToday(store, cfg);
-    const h = new Date().getHours();
-    const cur = vals[h] ?? num(store.get(cfg.entity)?.state);
-    now.replaceChildren(fmt(cur, 2, site.locale), el('span', { class: 'unit' }, `${site.currency}/kWh`), level);
-    const ok = vals.filter((v) => v != null);
+    const at = new Date();
+    const slots = priceSlots(store, cfg, at, fetched);
+    const cur = slotAt(slots, at.getTime());
+    shownSlot = cur?.start ?? null;
+    const value = cur?.value ?? num(store.get(cfg.entity)?.state);
+    now.replaceChildren(fmt(value, 2, site.locale), el('span', { class: 'unit' }, `${site.currency}/kWh`), level);
+    const ok = slots.filter((x) => x.value != null);
     if (!ok.length) { range.textContent = t('cards.noPrices'); chart.replaceChildren(); best.textContent = ''; level.textContent = ''; return; }
-    const lo = Math.min(...ok), hi = Math.max(...ok);
-    const loH = vals.indexOf(lo), hiH = vals.indexOf(hi);
-    range.textContent = t('cards.priceRange', { lo: fmt(lo, 2, site.locale), loH: `${String(loH).padStart(2, '0')}:00`, hi: fmt(hi, 2, site.locale), hiH: `${String(hiH).padStart(2, '0')}:00` });
-    // Cheap or dear right now, compared with the rest of the day.
-    const avg = ok.reduce((a, b) => a + b, 0) / ok.length;
-    const rel = cur == null ? null : (cur - avg) / (avg || 1);
+    const lo = ok.reduce((a, b) => (b.value < a.value ? b : a));
+    const hi = ok.reduce((a, b) => (b.value > a.value ? b : a));
+    range.textContent = t('cards.priceRange', { lo: fmt(lo.value, 2, site.locale), loH: hhmm(lo.start), hi: fmt(hi.value, 2, site.locale), hiH: hhmm(hi.start) });
+    // Cheap or dear in the slot running now, compared with the rest of the day.
+    const avg = ok.reduce((a, b) => a + b.value, 0) / ok.length;
+    const rel = value == null ? null : (value - avg) / (avg || 1);
     level.textContent = rel == null ? '' : rel < -0.15 ? t('cards.priceCheap') : rel > 0.15 ? t('cards.priceDear') : '';
     level.dataset.level = rel == null ? '' : rel < -0.15 ? 'cheap' : rel > 0.15 ? 'dear' : '';
     // The cheapest few hours from now, today or tomorrow: when to run the dishwasher or charge the car.
-    const win = cheapestWindow(vals, pricesTomorrow(store, cfg), h, hours);
+    const tomorrow = priceSlotsTomorrow(store, cfg, at, fetched);
+    const win = cheapestWindow([...slots, ...tomorrow], at.getTime(), hours);
+    const midnight = dayBounds(at, 1)[0];
     best.textContent = win
-      ? t(win.start >= 24 ? 'cards.priceBestTomorrow' : win.start === h ? 'cards.priceBestNow' : 'cards.priceBest',
-        { from: hh(win.start), to: hh(win.start + hours), avg: fmt(win.avg, 2, site.locale), n: hours })
+      ? t(win.start >= midnight ? 'cards.priceBestTomorrow' : cur && win.start === cur.start ? 'cards.priceBestNow' : 'cards.priceBest',
+        { from: clock(win.start), to: clock(win.end), avg: fmt(win.avg, 2, site.locale), n: hours })
       : '';
-    chart.replaceChildren(priceBars(vals, h, lo, hi, win && win.start < 24 ? [win.start, Math.min(24, win.start + hours)] : null));
+    chart.replaceChildren(priceBars(slots, dayBounds(at), cur, lo.value, hi.value, win));
   };
-  store.watch([cfg.entity], render);
-  // The hour changes without the price entity changing: redraw on the hour.
+  store.watch([cfg.entity], () => { render(); fetchPrices(); });
+
+  // Home Assistant's own Nord Pool integration keeps prices behind an action, not in
+  // attributes: ask it for today and tomorrow, at most every 15 minutes while some are missing.
+  async function fetchPrices() {
+    const at = new Date();
+    const state = store.get(cfg.entity);
+    if (cfg.action === false || !adapter?.callResponse || busy || !state) return;
+    if (priceSlots(store, cfg, at).length) return; // the entity has its own price attributes
+    const days = [0, 1].map((o) => dayBounds(at, o)[0]);
+    for (const k of fetched.keys()) if (!days.includes(k)) fetched.delete(k);
+    const missing = days.filter((d, i) => !fetched.get(d)?.length && (i === 0 || at.getHours() >= 13));
+    if (!missing.length || Date.now() - lastTry < 15 * 60e3) return;
+    busy = true;
+    lastTry = Date.now();
+    try {
+      const entry = cfg.config_entry ?? await adapter.configEntry?.(cfg.entity);
+      if (!entry) return;
+      for (const d of missing) {
+        const day = new Date(d);
+        const date = `${day.getFullYear()}-${pad(day.getMonth() + 1)}-${pad(day.getDate())}`;
+        const res = await adapter.callResponse('nordpool', 'get_prices_for_date', { config_entry: entry, date, ...(cfg.area ? { areas: cfg.area } : {}) });
+        const slots = nordpoolSlots(res, cfg.area, num(cfg.action_divisor) ?? 1000);
+        if (slots.length) fetched.set(d, slots);
+      }
+      render();
+    } catch (e) {
+      console.warn('SmartHomeDash: no prices from the Nord Pool action', e);
+    } finally {
+      busy = false;
+    }
+  }
+
+  // The slot changes without the price entity changing: redraw when a new one starts.
   const timer = setInterval(() => {
     if (!now.isConnected) { clearInterval(timer); return; } // the dashboard was rebuilt
-    if (new Date().getMinutes() === 0) render();
-  }, 60000);
+    const at = new Date();
+    if (slotAt(priceSlots(store, cfg, at, fetched), at.getTime())?.start !== shownSlot) render();
+    fetchPrices();
+  }, 30000);
   return card(t('cards.priceToday'), now, best, chart, range);
 }
 
-function priceBars(vals, nowH, lo, hi, window = null) {
-  const W = 288, H = 74, B = 16, gap = 2;
-  const bw = (W - gap * 23) / 24;
-  const Y = (v) => (H - B) * (1 - v / (hi * 1.05));
-  return sv('svg', { viewBox: `0 0 ${W} ${H}`, class: 'pbars', role: 'img', 'aria-label': t('cards.priceChart') },
-    vals.map((v, h) => {
-      if (v == null) return null;
-      const rel = hi === lo ? 0.5 : (v - lo) / (hi - lo);
-      const cls = h === nowH ? 'now' : rel < 0.33 ? 'cheap' : rel > 0.66 ? 'dear' : 'mid';
-      const y = Y(v);
-      const inBest = window && h >= window[0] && h < window[1];
-      return sv('rect', { x: h * (bw + gap), y, width: bw, height: H - B - y, rx: 1.5, class: `${cls}${inBest ? ' best' : ''}` },
-        sv('title', {}, `${String(h).padStart(2, '0')}:00 · ${v.toFixed(2)}`));
+// One bar per slot (24 hours or 96 quarter-hours), placed by time across the day.
+function priceBars(slots, [d0, d1], cur, lo, hi, win = null) {
+  const W = 288, H = 74, B = 16;
+  const x = (ms) => ((ms - d0) / (d1 - d0)) * W;
+  // Quarter-hour bars are thinner and sit closer together.
+  const gap = slots.length > 30 ? 0.6 : 2;
+  const Y = (v) => (H - B) * (1 - Math.max(0, v) / (hi * 1.05 || 1));
+  const pad = (n) => String(n).padStart(2, '0');
+  const label = (ms) => { const d = new Date(ms); return `${pad(d.getHours())}:${pad(d.getMinutes())}`; };
+  const quarters = slots.length > 30;
+  return sv('svg', { viewBox: `0 0 ${W} ${H}`, class: `pbars${quarters ? ' is-quarters' : ''}`, role: 'img', 'aria-label': t(quarters ? 'cards.priceChartQuarter' : 'cards.priceChart') },
+    slots.map((s) => {
+      if (s.value == null) return null;
+      const rel = hi === lo ? 0.5 : (s.value - lo) / (hi - lo);
+      const cls = s === cur ? 'now' : rel < 0.33 ? 'cheap' : rel > 0.66 ? 'dear' : 'mid';
+      const y = Y(s.value);
+      const inBest = win && s.start >= win.start && s.start < win.end;
+      const x0 = x(s.start);
+      return sv('rect', { x: x0.toFixed(2), y: y.toFixed(2), width: Math.max(0.6, x(s.end) - x0 - gap).toFixed(2), height: (H - B - y).toFixed(2), rx: quarters ? 0.5 : 1.5, class: `${cls}${inBest ? ' best' : ''}`, 'data-start': label(s.start) },
+        sv('title', {}, `${label(s.start)} · ${s.value.toFixed(2)}`));
     }),
-    [0, 6, 12, 18].map((h) => sv('text', { x: h * (bw + gap), y: H - 3, class: 'axis' }, String(h).padStart(2, '0'))),
+    [0, 6, 12, 18].map((h) => { const d = new Date(d0); d.setHours(h); return sv('text', { x: x(d.getTime()).toFixed(1), y: H - 3, class: 'axis' }, pad(h)); }),
     sv('text', { x: W, y: H - 3, 'text-anchor': 'end', class: 'axis' }, '24'));
 }
 
