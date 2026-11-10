@@ -8,6 +8,8 @@ import { storage } from './util.js';
 // site.json. `site.raw` is an untouched copy of the config that the editor changes.
 
 export const draftKey = (id) => `shd:${id}:draft`;
+// Set by the missing-devices warning: placement mode then lists only those devices.
+export const missingFilterKey = (id) => `shd:${id}:editmissing`;
 
 // Where site files come from:
 // - standalone page: plain fetches from sites/<id>/ next to index.html

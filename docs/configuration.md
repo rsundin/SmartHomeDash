@@ -145,7 +145,7 @@ Each panel outline glows green while the panels produce, stronger as production 
 
 ### Warnings
 
-A row above the picture shows, most serious first: alarms (smoke, gas, carbon monoxide, water leak), a door or window open in a room while it is heating, low batteries and devices that stopped responding. An alarm or open window opens its room when tapped; the others unfold a list.
+A row above the picture shows, most serious first: alarms (smoke, gas, carbon monoxide, water leak), a door or window open in a room while it is heating, low batteries, devices that stopped responding, and devices named in site.json that Home Assistant does not know (renamed or removed). An alarm or open window opens its room when tapped; the others unfold a list. For administrators, the list of missing devices has **Show in placement mode**, which opens placement mode with only those devices listed.
 
 ```json
 "warnings": { "battery": 20 }
@@ -231,9 +231,10 @@ In the Home Assistant panel, administrators tap **Placera** in the header (or op
 
 - **Place:** pick an entity, then tap where it is. On a floor plan the room is found from the tap: a light is placed at that spot, a thermostat or sensor is linked to the room. On the overview a light becomes an outdoor lamp; tap again to add more fixtures on the same switch.
 - **Remove placement** takes the selected entity out of every room and zone.
+- **Missing in Home Assistant** lists the entities in site.json that Home Assistant does not know, with where each is used. **Remove from the dashboard** takes one out of rooms, zones, windows, sensor lists, scenes, heating devices and the screen's wake sensors. Energy, weather and doorbell entities are changed in the setup guide or in the file.
 - **Draw area:** click corners to get a polygon for `area`, `outline` or a solar panel.
 
-Changes are kept as a draft in that browser and shown immediately. In the panel, **Spara i Home Assistant** writes `site.json` (the previous version is kept as `site.json.bak`). **Kopiera site.json** puts the result on the clipboard instead; **Släng utkast** goes back to the saved file.
+Changes are kept as a draft in that browser and shown immediately. In the panel, **Spara i Home Assistant** writes `site.json` (the previous version is kept as `site.json.bak`). Home Assistant checks the file before writing it: the top-level keys must have the types in this reference, floor plans and rooms must be objects, and every `area`, `outline` and solar panel must be at least three `[x, y]` number pairs. A file that fails is not written, and the message says where, for example `floorplans[0].rooms[2].area should be a list of at least three [x, y] number pairs`. **Kopiera site.json** puts the result on the clipboard instead; **Släng utkast** goes back to the saved file.
 
 ## Pictures
 

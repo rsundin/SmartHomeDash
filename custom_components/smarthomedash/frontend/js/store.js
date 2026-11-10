@@ -16,6 +16,8 @@ export class Store {
 
   all() { return [...this.#states.values()]; }
 
+  get size() { return this.#states.size; }
+
   // Everything at once (on connect): watchers run straight away.
   replace(list) {
     this.#states.clear();

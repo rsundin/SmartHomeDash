@@ -17,6 +17,13 @@ const ls = {
   get(k) { try { return JSON.parse(localStorage.getItem(k)); } catch { return null; } },
   set(k, v) { try { if (v == null) localStorage.removeItem(k); else localStorage.setItem(k, JSON.stringify(v)); } catch { /* blocked */ } },
 };
+// The reason a save was refused: the server's message ("site.json was not saved: …"), or the status.
+async function failure(res) {
+  const text = await res.text().catch(() => '');
+  try { const msg = JSON.parse(text).message; if (typeof msg === 'string' && msg) return msg; } catch { /* not JSON */ }
+  return `${res.status} ${text}`.trim();
+}
+
 function haKiosk() {
   const top = window.parent;
   const root = () => top.document.querySelector('home-assistant');
@@ -124,7 +131,7 @@ class SmartHomeDashPanel extends HTMLElement {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(raw, null, 2),
           });
-          if (!res.ok) throw new Error(`${res.status} ${await res.text()}`);
+          if (!res.ok) throw new Error(await failure(res));
         },
         reload: () => this._boot(),
         navigateEdit,
@@ -133,7 +140,7 @@ class SmartHomeDashPanel extends HTMLElement {
           const res = await this._hass.fetchWithAuth(`${API}/${siteId}/${name}`, {
             method: 'PUT', headers: { 'Content-Type': blob.type || 'application/octet-stream' }, body: blob,
           });
-          if (!res.ok) throw new Error(`${res.status} ${await res.text()}`);
+          if (!res.ok) throw new Error(await failure(res));
         } : null,
         // Installs the latest version from GitHub (smarthomedash.update, admins only).
         // Only offered when the update action exists (a configured repository or token).

@@ -10,10 +10,11 @@
 // "Copy site.json" puts the result on the clipboard to paste into the real file.
 
 import { el, sv, svgPoint, inside, storage } from '../util.js';
-import { draftKey } from '../site.js';
+import { draftKey, missingFilterKey } from '../site.js';
 import { t } from '../i18n.js';
 import { areaOf, areaName } from '../areas.js';
 import { nameOf as entityName } from '../entities.js';
+import { configEntities, missingEntities } from '../status.js';
 
 const KINDS = [
   { id: 'lights', label: 'editor.kindLights', match: (s) => /^(light|switch)\./.test(s.entity_id) },
@@ -28,6 +29,9 @@ export function createEditor({ site, store, saveSite = null, reload = () => loca
   let mode = 'place';
   let selected = null;
   let filter = '';
+  // Opened from the missing-devices warning: list only the devices Home Assistant does not know.
+  let onlyMissing = !!storage.get(missingFilterKey(site.id));
+  storage.set(missingFilterKey(site.id), null);
   // draw mode
   let points = [];
   let drawTarget = null;
@@ -59,6 +63,25 @@ export function createEditor({ site, store, saveSite = null, reload = () => loca
       raw.overview.zones = raw.overview.zones.filter((z) => z.lights.length);
     }
   }
+
+  // A device Home Assistant no longer knows: take it out of every list in site.json.
+  // Energy, weather and doorbell settings are left for the setup guide or the file.
+  function forget(id) {
+    unplace(id);
+    const drop = (list) => (Array.isArray(list) ? list.filter((x) => x !== id) : list);
+    for (const plan of raw.floorplans ?? []) {
+      for (const room of plan.rooms ?? []) if (room.sensors) room.sensors = drop(room.sensors);
+    }
+    for (const w of raw.overview?.windows ?? []) if (w.lights) w.lights = drop(w.lights);
+    for (const b of raw.overview?.buildings ?? []) if (b.sensors) b.sensors = drop(b.sensors);
+    if (raw.climates) {
+      raw.climates = raw.climates.filter((c) => c.entity !== id);
+      for (const c of raw.climates) if (c.temperature === id) delete c.temperature;
+    }
+    if (raw.scenes) raw.scenes = raw.scenes.filter((sc) => sc.entity !== id);
+    if (raw.wall_screen?.idle?.wake) raw.wall_screen.idle.wake = drop(raw.wall_screen.idle.wake);
+  }
+  const missingNow = () => missingEntities(site, store);
 
   const nameOf = (id) => entityName(id, { store, site }, site.index.names.get(id) ?? id);
   const kindOf = (id) => KINDS.find((k) => k.match(store.get(id) ?? { entity_id: id, attributes: {} }))?.id;
@@ -186,8 +209,26 @@ export function createEditor({ site, store, saveSite = null, reload = () => loca
   const storeAll = () => store.all();
 
   function renderList() {
+    const missing = missingNow();
+    const missingIds = new Set(missing.map((m) => m.id));
+    const missingRows = missing.map((m) => ({ id: m.id, name: nameOf(m.id), where: m.where.join(', ') }))
+      .filter((r) => !filter || `${r.name} ${r.id} ${r.where}`.toLowerCase().includes(filter));
+    const missingSection = missingRows.length ? el('section', { class: 'editor-missing' },
+      el('h3', { class: 'eyebrow' }, `${t('editor.missingGroup')} · ${missingRows.length}`),
+      el('ul', {}, missingRows.map((r) => el('li', {},
+        el('button', { type: 'button', class: `editor-ent is-missing${r.id === selected ? ' is-selected' : ''}`, onclick: () => select(r.id) },
+          el('span', { class: 'editor-ent-name' }, r.name),
+          el('span', { class: 'editor-ent-where' }, r.where),
+          el('span', { class: 'editor-ent-id' }, r.id)))))) : null;
+    if (onlyMissing) {
+      list.replaceChildren(
+        missingSection ?? el('p', { class: 'muted small' }, t('editor.missingNone')),
+        el('button', { class: 'chip', type: 'button', onclick: () => { onlyMissing = false; renderList(); } }, t('editor.showAll')));
+      return;
+    }
     const groups = KINDS.map((k) => ({ k, rows: [] }));
     for (const s of entities()) {
+      if (missingIds.has(s.entity_id)) continue;
       const g = groups.find((x) => x.k.match(s));
       if (!g) continue;
       const name = nameOf(s.entity_id);
@@ -196,7 +237,7 @@ export function createEditor({ site, store, saveSite = null, reload = () => loca
       if (filter && !`${name} ${s.entity_id} ${area ?? ''}`.toLowerCase().includes(filter)) continue;
       g.rows.push({ id: s.entity_id, name, area, auto, where: placementOf(s.entity_id) });
     }
-    list.replaceChildren(...groups.filter((g) => g.rows.length).map(({ k, rows }) => {
+    list.replaceChildren(...(missingSection ? [missingSection] : []), ...groups.filter((g) => g.rows.length).map(({ k, rows }) => {
       rows.sort((a, b) => (!!a.where - !!b.where) || a.name.localeCompare(b.name, site.locale));
       return el('section', {},
         el('h3', { class: 'eyebrow' }, `${t(k.label)} · ${rows.filter((r) => !r.where).length} ${t('editor.unplacedCount')}`),
@@ -214,6 +255,16 @@ export function createEditor({ site, store, saveSite = null, reload = () => loca
 
   function select(id) {
     selected = id;
+    const gone = missingNow().find((m) => m.id === id);
+    if (gone) {
+      selBox.replaceChildren(
+        el('p', { class: 'small' }, el('strong', {}, nameOf(id)), ` · ${t('editor.missingSel')}`,
+          el('span', { class: 'editor-sel-id' }, id)),
+        el('button', { class: 'chip', type: 'button', onclick: () => removeMissing(id) }, t('editor.missingRemove')));
+      status.textContent = t('editor.missingHelp', { where: gone.where.join(', ') });
+      renderList();
+      return;
+    }
     const where = placementOf(id);
     selBox.replaceChildren(
       el('p', { class: 'small' }, el('strong', {}, nameOf(id)), ` · ${where ?? t('editor.unplaced')}`,
@@ -222,6 +273,14 @@ export function createEditor({ site, store, saveSite = null, reload = () => loca
     status.textContent = kindOf(id) === 'lights' ? t('editor.tapWhereLight') : t('editor.tapWhere');
     renderList();
     list.querySelector('.is-selected')?.scrollIntoView?.({ block: 'nearest' });
+  }
+
+  function removeMissing(id) {
+    forget(id);
+    const left = configEntities(raw).find((e) => e.id === id);
+    selected = null;
+    if (onlyMissing) storage.set(missingFilterKey(site.id), true);
+    save(left ? t('editor.missingLeft', { name: nameOf(id), where: left.where.join(', ') }) : t('editor.removed', { name: nameOf(id) }));
   }
 
   // A tap on a lamp already on a picture selects it instead of placing something there.

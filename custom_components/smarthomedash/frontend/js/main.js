@@ -8,7 +8,7 @@
 
 import { el, storage, wait, reducedMotion, press, paused, syncPause } from './util.js';
 import { Store } from './store.js';
-import { loadSite } from './site.js';
+import { loadSite, missingFilterKey } from './site.js';
 import { createHaAdapter, haLogin } from './adapters/ha.js';
 import { createMockAdapter } from './adapters/mock.js';
 import { createOverview } from './views/overview.js';
@@ -21,7 +21,7 @@ import { createSetup } from './ui/setup.js';
 import { createZoom } from './ui/zoom.js';
 import { createWall, liteMode } from './ui/wall.js';
 import { loadAreas, applyAreaNames, noAreas, linkByName, autoPlace } from './areas.js';
-import { assignSensors, warnings, warningIds } from './status.js';
+import { assignSensors, warnings, warningIds, configEntities } from './status.js';
 import { nameOf as entityName } from './entities.js';
 
 // The online demo sets data-demo on <body> (see .github/workflows/pages.yml).
@@ -229,7 +229,13 @@ export async function start(opts) {
   const nameOf = (id) => entityName(id, { store, site }, site.index.names.get(id) ?? id);
   // Rebuilt only when the warnings themselves change, not on every lamp or temperature.
   let shownWarnings = null;
-  store.watch(warningIds(site), () => {
+  // "Show in placement mode" under the missing devices: placement mode opens with only them listed.
+  const openEdit = opts.navigateEdit ? () => opts.navigateEdit(true)
+    : source === 'panel' ? null : () => { location.hash = 'edit'; location.reload(); };
+  const actions = {
+    missing: openEdit && !editing ? el('button', { class: 'chip alert-action', type: 'button', onclick: () => { storage.set(missingFilterKey(site.id), true); openEdit(); } }, t('warn.missingShow')) : null,
+  };
+  store.watch([...warningIds(site), ...configEntities(site.raw).map((e) => e.id)], () => {
     const list = warnings(site, store, nameOf);
     const key = JSON.stringify(list.map((w) => [w.level, w.text, w.items]));
     if (key === shownWarnings) return;
@@ -239,7 +245,8 @@ export async function start(opts) {
     alerts.replaceChildren(...list.map((w) => (w.items
       ? el('details', { class: 'alert', 'data-level': w.level, 'data-key': w.key, open: unfolded.has(w.key) },
         el('summary', {}, w.text),
-        el('ul', {}, w.items.map((i) => el('li', {}, i))))
+        el('ul', {}, w.items.map((i) => el('li', {}, i))),
+        actions[w.action] ?? null)
       : el('button', { class: 'alert', type: 'button', 'data-level': w.level, onclick: () => w.room && openRoom(w.room) }, w.text))));
   });
   if (editor) {
