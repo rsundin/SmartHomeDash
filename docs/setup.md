@@ -79,7 +79,7 @@ Pick the sensors you have; leave the rest empty and their rows or cards are hidd
 | Battery level | battery state of charge in % |
 | Used today, Solar today | energy sensors in kWh that reset daily |
 | Cost today, Battery savings today | sensors in your currency |
-| Electricity price today | a price sensor with hourly prices, such as Nordpool |
+| Electricity price today | a price sensor with prices per hour or per quarter-hour, such as Nord Pool (the HACS integration, or Home Assistant's own) |
 | Weather | any `weather.*` entity |
 
 **Heating devices** lists thermostats that are not linked to a room yet, such as a heat pump. Ticked ones are shown in the heating card.

@@ -3,6 +3,7 @@
 // Lets you build and try a site before it is connected to Home Assistant.
 
 import { num, paused } from '../util.js';
+import { dayBounds } from '../entities.js';
 
 export function createMockAdapter(site) {
   let store;
@@ -17,6 +18,7 @@ export function createMockAdapter(site) {
   };
 
   const E = site.energy || {};
+  let priceDays = [[], []];
   // Test devices, named the 2026.11 way: site.mock.devices =
   // [{ id, name, name_by_user?, area_id?, entities: { entity_id: own name, or null for the device's name } }]
   const mockDevices = site.mock?.devices ?? [];
@@ -39,14 +41,28 @@ export function createMockAdapter(site) {
       { next_rising: nextRise.toISOString(), next_setting: nextSet.toISOString(), elevation: +elevation.toFixed(1), friendly_name: 'Sun' });
   }
 
-  function prices() {
-    // A typical Swedish winter day: night trough, morning and evening peaks, SEK/kWh.
-    return Array.from({ length: 24 }, (_, h) => {
-      const morning = Math.exp(-((h - 8) ** 2) / 4) * 1.1;
-      const evening = Math.exp(-((h - 18) ** 2) / 5) * 1.6;
-      return +(0.45 + morning + evening + rnd() * 0.15).toFixed(2);
-    });
+  // A typical Swedish winter day: night trough, morning and evening peaks, SEK/kWh.
+  // site.mock.prices = { minutes: 60 | 15, format: 'list' | 'raw' | 'action' }:
+  // 'list' is a plain attribute list (Nordpool from HACS), 'raw' a list with start and end
+  // times (raw_today), 'action' no attributes, only Home Assistant's Nord Pool action.
+  const P = { minutes: 60, format: 'list', ...(site.mock?.prices ?? {}) };
+  function priceAt(h) {
+    const morning = Math.exp(-((h - 8) ** 2) / 4) * 1.1;
+    const evening = Math.exp(-((h - 18) ** 2) / 5) * 1.6;
+    return +(0.45 + morning + evening + rnd() * 0.15).toFixed(3);
   }
+  // One day of slots, `offset` days from today, P.minutes long (92 or 100 quarters when the clocks change).
+  function priceDay(offset = 0) {
+    const [d0, d1] = dayBounds(new Date(), offset);
+    const len = P.minutes * 60e3;
+    const out = [];
+    for (let t = d0; t < d1; t += len) {
+      const d = new Date(t);
+      out.push({ start: new Date(t).toISOString(), end: new Date(t + len).toISOString(), value: priceAt(d.getHours() + d.getMinutes() / 60) });
+    }
+    return out;
+  }
+
 
   function seed() {
     const list = [];
@@ -106,8 +122,14 @@ export function createMockAdapter(site) {
     if (E.pv_energy_today) list.push(S(E.pv_energy_today, (Math.min(new Date().getHours(), 15) * 0.35).toFixed(2), { unit_of_measurement: 'kWh' }));
     if (E.cost_today) list.push(S(E.cost_today, (new Date().getHours() * 1.9).toFixed(2), { unit_of_measurement: site.currency }));
     if (E.price?.entity) {
-      const today = prices();
-      list.push(S(E.price.entity, today[new Date().getHours()], { [E.price.today_attribute || 'today']: today, unit_of_measurement: `${site.currency}/kWh` }));
+      // Tomorrow's prices come out early in the afternoon, as Nord Pool's do.
+      priceDays = [priceDay(0), new Date().getHours() >= 13 ? priceDay(1) : []];
+      const nowMs = Date.now();
+      const cur = priceDays[0].find((x) => Date.parse(x.start) <= nowMs && nowMs < Date.parse(x.end))?.value ?? 1;
+      const attrs = { unit_of_measurement: `${site.currency}/kWh` };
+      if (P.format === 'raw') Object.assign(attrs, { raw_today: priceDays[0], raw_tomorrow: priceDays[1] });
+      else if (P.format !== 'action') Object.assign(attrs, { [E.price.today_attribute || 'today']: priceDays[0].map((x) => x.value), [E.price.tomorrow_attribute || 'tomorrow']: priceDays[1].map((x) => x.value) });
+      list.push(S(E.price.entity, cur, attrs));
     }
     if (site.weather) {
       list.push(S(site.weather, 'cloudy', { temperature: 6.5, wind_speed: 4, wind_gust_speed: 9, humidity: 86, temperature_unit: '°C', wind_speed_unit: 'm/s' }));
@@ -166,6 +188,12 @@ export function createMockAdapter(site) {
       set(E.pv_power, demoMode !== 'night' && (up || demoDay) ? Math.round(peak * (0.75 + rnd() * 0.25)) : 0);
     }
     balance();
+    // The price follows the slot running now.
+    if (E.price?.entity) {
+      const nowMs = Date.now();
+      const slot = priceDays[0].find((x) => Date.parse(x.start) <= nowMs && nowMs < Date.parse(x.end));
+      if (slot && store.get(E.price.entity)?.state !== String(slot.value)) set(E.price.entity, slot.value);
+    }
     if (E.energy_today) {
       const kwh = num(store.get(E.energy_today)?.state) ?? 0;
       const w = num(store.get(E.grid_power)?.state) ?? 1500;
@@ -275,6 +303,15 @@ export function createMockAdapter(site) {
       }
       const devices = mockDevices.map(({ id, name, name_by_user = null, area_id = null }) => ({ id, name, name_by_user, area_id }));
       return { areas, entities, devices, floors };
+    },
+
+    // Home Assistant's Nord Pool action, for format 'action': prices per MWh by area.
+    async configEntry(entityId) { return entityId === E.price?.entity ? 'mock_nordpool' : null; },
+    async callResponse(domain, service, data = {}) {
+      if (domain !== 'nordpool' || service !== 'get_prices_for_date' || P.format !== 'action') throw new Error(`Unknown action ${domain}.${service}`);
+      const midnight = dayBounds(new Date(`${data.date}T12:00:00`))[0];
+      const day = priceDays.find((d) => d.length && Date.parse(d[0].start) === midnight) ?? [];
+      return { SE3: day.map((x) => ({ start: x.start, end: x.end, price: Math.round(x.value * 1000 * 100) / 100 })) };
     },
 
     async history(entityId, hours = 24) {

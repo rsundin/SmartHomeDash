@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.8.10
+
+Electricity prices per quarter-hour, as Nord Pool sets them since October 2025.
+
+- The price card keeps prices at the resolution they come in: per hour, or per quarter-hour (92 or 100 on the days the clocks change). Until now quarter-hour prices were averaged per hour, which hid the swings within the hour
+- The chart has one bar per quarter-hour and marks the one running now. "Cheap now" compares the quarter running now
+- The cheapest hours are counted in quarter-hours, so a window can start at a quarter past, and still run across midnight into tomorrow's prices
+- Price lists with start and end times (`raw_today`, `raw_tomorrow`) are placed by their times, not by their order
+- Home Assistant's own Nord Pool integration works too: when the price entity has no price attributes, the card asks its `nordpool.get_prices_for_date` action. See *Electricity price* in `docs/configuration.md`
+
 ## 0.8.9
 
 Linking a floor plan to its building is easier to find in the setup guide.

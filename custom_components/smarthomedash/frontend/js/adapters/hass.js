@@ -37,6 +37,17 @@ export function createHassAdapter(initialHass) {
       return hass.callService(domain, service, data);
     },
 
+    // An action that answers (return_response), such as nordpool.get_prices_for_date.
+    async callResponse(domain, service, data) {
+      const r = await hass.callWS({ type: 'call_service', domain, service, service_data: data, return_response: true });
+      return r?.response ?? null;
+    },
+
+    // The config entry an entity belongs to, which some actions need.
+    async configEntry(entityId) {
+      return (await hass.callWS({ type: 'config/entity_registry/get', entity_id: entityId }))?.config_entry_id ?? null;
+    },
+
     // Address of a Home Assistant path, such as a camera picture.
     url(path) {
       return typeof hass.hassUrl === 'function' ? hass.hassUrl(path) : path;

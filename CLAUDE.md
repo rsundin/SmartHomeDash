@@ -18,7 +18,7 @@ A picture-based Home Assistant dashboard, shipped as a custom integration (HACS 
 - Config format: `docs/configuration.md`. User guide: `docs/setup.md`.
 
 ## Checks before pushing
-- Run `tests/run.sh` and make it pass before every push. It checks syntax (Python, frontend JS read as ES modules, JSON), runs the backend tests (`tests/backend/`, standard library only, with stand-ins for Home Assistant and aiohttp) and the browser tests (`tests/browser/`, Playwright on Chromium against `python3 -m http.server`: both examples at five screen sizes, kiosk, rooms and lamps, night mode, pinch zoom, placement drag, setup guide, warnings, energy flow, entity names, and the performance budget in `perf.test.js` on the large site from `tests/fixtures/perf-site.js`). `tests/run.sh backend` or `tests/run.sh browser` runs one part.
+- Run `tests/run.sh` and make it pass before every push. It checks syntax (Python, frontend JS read as ES modules, JSON), runs the backend tests (`tests/backend/`, standard library only, with stand-ins for Home Assistant and aiohttp) and the browser tests (`tests/browser/`, Playwright on Chromium against `python3 -m http.server`: both examples at five screen sizes, kiosk, rooms and lamps, night mode, pinch zoom, placement drag, setup guide, warnings, energy flow, entity names, electricity prices, and the performance budget in `perf.test.js` on the large site from `tests/fixtures/perf-site.js`). `tests/run.sh backend` or `tests/run.sh browser` runs one part.
 - New behaviour gets a test. Browser tests that need the panel use `tests/browser/harness.html`: the panel code with test data, `window.store` to set states, and restarts in place like the HA panel.
 - CI (hassfest, HACS, JavaScript syntax, Tests) is required on main.
 

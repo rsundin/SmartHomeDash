@@ -100,46 +100,100 @@ export function kw(store, id) {
   return unit === 'kw' ? v : v / 1000;
 }
 
-// Hourly prices for today from common price integrations.
-export function pricesToday(store, cfg) {
-  return hourly(store, cfg, cfg?.today_attribute || 'today', ['raw_today', 'prices_today']);
+// ---------- electricity prices
+//
+// Prices are kept at the resolution the integration gives: 24 hours, 96 quarter-hours
+// (92 or 100 on the days the clocks change), or lists with start and end times. Each
+// is a slot { start, end, value } in milliseconds, placed by time rather than by index.
+
+const HOUR = 3600e3;
+
+// [midnight, next midnight] in local time, `offset` days from `now`; 23 or 25 hours
+// long on the days the clocks change.
+export function dayBounds(now = new Date(), offset = 0) {
+  const d = new Date(now);
+  d.setHours(0, 0, 0, 0);
+  d.setDate(d.getDate() + offset);
+  const e = new Date(d);
+  e.setDate(e.getDate() + 1);
+  return [d.getTime(), e.getTime()];
 }
 
-// Tomorrow's hourly prices, once published (Nord Pool: early afternoon). [] before that.
-export function pricesTomorrow(store, cfg) {
-  const vals = hourly(store, cfg, cfg?.tomorrow_attribute || 'tomorrow', ['raw_tomorrow', 'prices_tomorrow']);
-  return vals.some((v) => v != null) ? vals : [];
+const slotValue = (x) => num(typeof x === 'object' && x ? x.value ?? x.price ?? x.total : x);
+const slotStart = (x) => (typeof x === 'object' && x ? Date.parse(x.start ?? x.startsAt ?? x.hour ?? x.time ?? '') : NaN);
+
+// A price list from an attribute or an action, as slots within the day [d0, d1).
+// Plain numbers divide the day evenly; entries with a start (and end) go where they say.
+export function toSlots(raw, [d0, d1]) {
+  if (!Array.isArray(raw) || !raw.length) return [];
+  if (raw.every((x) => typeof x !== 'object' || x == null || Number.isNaN(slotStart(x)))) {
+    const len = (d1 - d0) / raw.length;
+    return raw.map((x, i) => ({ start: d0 + i * len, end: d0 + (i + 1) * len, value: slotValue(x) }));
+  }
+  const timed = raw.map((x) => ({ start: slotStart(x), end: Date.parse(x?.end ?? x?.endsAt ?? ''), value: slotValue(x) }))
+    .filter((x) => !Number.isNaN(x.start) && x.start >= d0 && x.start < d1)
+    .sort((a, b) => a.start - b.start);
+  // Without an end, a slot lasts until the next one, or as long as the one before it.
+  timed.forEach((x, i) => {
+    if (Number.isNaN(x.end)) x.end = timed[i + 1]?.start ?? x.start + (i ? x.start - timed[i - 1].start : HOUR);
+  });
+  return timed;
 }
 
-// The cheapest run of `hours` whole hours from now on, over today and tomorrow:
-// { start: hour index from today's midnight, avg } or null.
-export function cheapestWindow(today, tomorrow, fromHour, hours = 3) {
-  const all = [...today, ...tomorrow];
+function attributeSlots(store, cfg, attr, fallbacks, bounds) {
+  const a = store.get(cfg?.entity)?.attributes;
+  if (!a) return [];
+  const raw = a[attr] ?? fallbacks.map((f) => a[f]).find((v) => Array.isArray(v) && v.length) ?? [];
+  return toSlots(raw, bounds);
+}
+
+// Today's price slots. `fetched` holds slots from the Nord Pool action by day (see
+// cards.js), used when the entity has no price attributes.
+export function priceSlots(store, cfg, now = new Date(), fetched = null) {
+  const bounds = dayBounds(now);
+  const own = attributeSlots(store, cfg, cfg?.today_attribute || 'today', ['raw_today', 'prices_today'], bounds);
+  return own.length ? own : (fetched?.get(bounds[0]) ?? []);
+}
+
+// Tomorrow's, once published (Nord Pool: early afternoon); [] before that.
+export function priceSlotsTomorrow(store, cfg, now = new Date(), fetched = null) {
+  const bounds = dayBounds(now, 1);
+  const own = attributeSlots(store, cfg, cfg?.tomorrow_attribute || 'tomorrow', ['raw_tomorrow', 'prices_tomorrow'], bounds);
+  const slots = own.length ? own : (fetched?.get(bounds[0]) ?? []);
+  return slots.some((x) => x.value != null) ? slots : [];
+}
+
+// The slot running at `now`, or null.
+export const slotAt = (slots, now = Date.now()) => slots.find((x) => x.start <= now && now < x.end) ?? null;
+
+// The cheapest run of `hours` from the slot running now, over today and tomorrow:
+// { start, end, avg } (ms; avg weighted by slot length), or null. Counted in slots,
+// so quarter-hour prices find quarter-hour windows; a gap or a missing price breaks a run.
+export function cheapestWindow(slots, now = Date.now(), hours = 3) {
+  const want = hours * HOUR;
+  const list = slots.filter((x) => x.end > now);
   let best = null;
-  for (let h = fromHour; h + hours <= all.length; h++) {
-    const slice = all.slice(h, h + hours);
-    if (slice.some((v) => v == null)) continue;
-    const avg = slice.reduce((a, b) => a + b, 0) / hours;
-    if (!best || avg < best.avg) best = { start: h, avg };
+  for (let i = 0; i < list.length; i++) {
+    let sum = 0, len = 0;
+    for (let j = i; j < list.length && len < want - 1; j++) {
+      const x = list[j];
+      if (x.value == null || (j > i && x.start !== list[j - 1].end)) { len = -1; break; }
+      sum += x.value * (x.end - x.start);
+      len += x.end - x.start;
+    }
+    if (len < want - 1) continue;
+    const avg = sum / len;
+    if (!best || avg < best.avg - 1e-9) best = { start: list[i].start, end: list[i].start + len, avg };
   }
   return best;
 }
 
-function hourly(store, cfg, attr, fallbacks) {
-  const s = store.get(cfg?.entity);
-  if (!s) return [];
-  const a = s.attributes || {};
-  const raw = a[attr] ?? fallbacks.map((f) => a[f]).find(Boolean) ?? [];
-  const vals = raw.map((x) => num(typeof x === 'object' ? x.value ?? x.price ?? x.total : x));
-  if (vals.length > 24) {
-    // quarter-hour prices: average per hour
-    const out = [];
-    const per = Math.round(vals.length / 24);
-    for (let h = 0; h < 24; h++) {
-      const slice = vals.slice(h * per, h * per + per).filter((v) => v != null);
-      out.push(slice.length ? slice.reduce((a, b) => a + b, 0) / slice.length : null);
-    }
-    return out;
-  }
-  return vals;
+// The response of Home Assistant's Nord Pool action (nordpool.get_prices_for_date):
+// { "SE3": [{ start, end, price }] } in currency per MWh, as slots per kWh.
+export function nordpoolSlots(response, area = null, divisor = 1000) {
+  const byArea = response?.response ?? response ?? {};
+  const list = (area && byArea[area]) || Object.values(byArea).find(Array.isArray) || [];
+  return list.map((x) => ({ start: Date.parse(x.start), end: Date.parse(x.end), value: num(x.price) == null ? null : num(x.price) / divisor }))
+    .filter((x) => !Number.isNaN(x.start) && !Number.isNaN(x.end))
+    .sort((a, b) => a.start - b.start);
 }
