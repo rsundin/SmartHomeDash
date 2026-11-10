@@ -7,6 +7,8 @@ const assert = require('node:assert/strict');
 const { setup, harness, close, check, assertNoOverflow, centre } = require('./lib');
 
 const lampState = (page, id) => page.evaluate((x) => window.store.get(x)?.state, id);
+// The store redraws on the next frame; this draws pending changes now, before reading the page.
+const drawn = (page) => page.evaluate(() => window.store.flush());
 
 describe('dashboard', () => {
   const env = setup();
@@ -33,6 +35,7 @@ describe('dashboard', () => {
     const sw = panel.locator('.light-list .switch').first();
     await sw.click();
     await page.waitForFunction((b) => window.store.get('light.bedroom').state !== b, before);
+    await drawn(page);
     const after = await lampState(page, 'light.bedroom');
     assert.equal(await sw.getAttribute('aria-checked'), String(after === 'on'));
     const lamp = page.locator('.fp[data-plan="house"] .fp-lamp[data-entity="light.bedroom"]');
@@ -42,6 +45,7 @@ describe('dashboard', () => {
     await page.keyboard.press('Escape');
     await lamp.click();
     await page.waitForFunction((b) => window.store.get('light.bedroom').state !== b, after);
+    await drawn(page);
     assert.equal(await lamp.evaluate((n) => n.classList.contains('is-on')), before === 'on');
 
     // Escape closes the panel; the back button returns to the overview.
@@ -156,6 +160,7 @@ describe('dashboard', () => {
     await page.locator('.top-actions .chip', { hasText: /Auto/ }).click();
     await page.locator('.top-actions .chip', { hasText: 'Night' }).click();
     await page.waitForFunction(() => Number(window.store.get('sensor.solar_power')?.state) > 0, null, { timeout: 8000 });
+    await drawn(page);
     const flows = await page.locator('.ov-flow-track').count();
     assert.ok(flows >= 1, 'flow lines are drawn');
     const words = (await page.locator('.ov-flow text').allTextContents()).join(' ');
