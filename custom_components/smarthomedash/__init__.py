@@ -37,7 +37,8 @@ import voluptuous as vol
 
 from homeassistant.components import frontend, panel_custom, persistent_notification
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.core import HomeAssistant, ServiceCall, ServiceResponse, SupportsResponse
+from homeassistant.const import EVENT_PANELS_UPDATED
+from homeassistant.core import HomeAssistant, ServiceCall, callback, ServiceResponse, SupportsResponse
 import homeassistant.helpers.config_validation as cv
 from homeassistant.helpers.service import async_register_admin_service
 from homeassistant.helpers.typing import ConfigType
@@ -105,7 +106,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     dash = {**entry.data, **entry.options}
     await hass.async_add_executor_job(_create_starter_site, data["sites_dir"], dash, hass.config.language, hass.config.currency)
     await _async_add_dashboard(hass, dash)
-    entry.async_on_unload(entry.add_update_listener(_async_reload_entry))
+    data["entries"][entry.entry_id] = dash
+    entry.async_on_unload(entry.add_update_listener(_async_entry_updated))
     return True
 
 
@@ -115,11 +117,70 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     url_path = dash.get(CONF_URL_PATH) or dash[CONF_SITE]
     frontend.async_remove_panel(hass, url_path)
     hass.data[DOMAIN]["sites"].discard(dash[CONF_SITE])
+    hass.data[DOMAIN]["entries"].pop(entry.entry_id, None)
     return True
 
 
-async def _async_reload_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
+async def _async_entry_updated(hass: HomeAssistant, entry: ConfigEntry) -> None:
+    """Options saved. A new name is changed in place, in the sidebar and in the
+    site's own config; anything else reloads the dashboard."""
+    old = hass.data[DOMAIN]["entries"].get(entry.entry_id)
+    new = {**entry.data, **entry.options}
+    if old is not None and {**old, CONF_TITLE: None} == {**new, CONF_TITLE: None}:
+        if old.get(CONF_TITLE) == new.get(CONF_TITLE):
+            return
+        url_path = new.get(CONF_URL_PATH) or new[CONF_SITE]
+        if _set_sidebar_title(hass, url_path, new[CONF_TITLE]):
+            hass.data[DOMAIN]["entries"][entry.entry_id] = new
+            if entry.title != new[CONF_TITLE]:
+                hass.config_entries.async_update_entry(entry, title=new[CONF_TITLE])
+            await hass.async_add_executor_job(
+                _set_site_name, hass.data[DOMAIN]["sites_dir"], new[CONF_SITE], new[CONF_TITLE])
+            return
     await hass.config_entries.async_reload(entry.entry_id)
+
+
+def _set_sidebar_title(hass: HomeAssistant, url_path: str, title: str) -> bool:
+    """Rename a registered panel without removing it, so an open dashboard stays
+    open. False if the panel is not there to rename."""
+    panels = hass.data.get(frontend.DATA_PANELS, {})
+    panel = panels.get(url_path)
+    if panel is None:
+        return False
+    panel.sidebar_title = title
+    hass.bus.async_fire(EVENT_PANELS_UPDATED)
+    return True
+
+
+def _set_site_name(sites_dir: Path, site: str, name: str) -> None:
+    """Write a name chosen in the integration's options into the site config, so
+    the dashboard's heading follows the sidebar."""
+    path = sites_dir / site / "site.json"
+    try:
+        config = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return
+    if not isinstance(config, dict) or config.get("name") == name:
+        return
+    config["name"] = name
+    write_atomic(path, (json.dumps(config, ensure_ascii=False, indent=2) + "\n").encode("utf-8"), True)
+
+
+@callback
+def async_site_renamed(hass: HomeAssistant, site: str, name: str) -> None:
+    """The setup guide saved a new name for a site: the dashboard set up from the
+    UI for that site takes it as its sidebar title. Dashboards from YAML keep the
+    title written there."""
+    name = name.strip()
+    if not name:
+        return
+    for entry in hass.config_entries.async_entries(DOMAIN):
+        dash = {**entry.data, **entry.options}
+        if dash.get(CONF_SITE) != site:
+            continue
+        if dash.get(CONF_TITLE) != name or entry.title != name:
+            hass.config_entries.async_update_entry(
+                entry, title=name, options={**entry.options, CONF_TITLE: name})
 
 
 async def _async_setup_shared(hass: HomeAssistant, conf: dict) -> dict:
@@ -139,6 +200,7 @@ async def _async_setup_shared(hass: HomeAssistant, conf: dict) -> dict:
         "version": manifest.get("version", "0"),
         "sites": set(),
         "yaml_sites": set(),
+        "entries": {},
         "update": _update_conf(conf),
     }
     hass.http.register_view(FrontendView(hass, root / "frontend"))

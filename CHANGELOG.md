@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.8.5
+
+- Renaming a dashboard in the setup guide renames its entry in Home Assistant's sidebar too, at once and without a restart. Renaming it under *Settings → Devices & services → SmartHomeDash → Configure* also changes the name in the dashboard's heading. Dashboards set up in YAML keep the sidebar title written there
+
 ## 0.8.4
 
 - Setup guide, Energy: a new **Direction** section shows how the dashboard reads the battery and the grid right now ("Battery charging 1.2 kW"), with a box to turn each one around. Inverters disagree on which way is positive, and since 0.8.2 the labels on the picture make a wrong sign easy to see. The boxes set `battery_invert` and `grid_invert`
