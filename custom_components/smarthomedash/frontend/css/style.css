@@ -139,6 +139,8 @@ button { font: inherit; color: inherit; }
 .stage {
   position: relative; border-radius: 12px; overflow: hidden; max-width: 100%;
   background: #08100d; border: 1px solid var(--line);
+  /* A lamp or a temperature changing on the picture never lays out the rest of the page. */
+  contain: layout paint;
 }
 .stage.no-ov { aspect-ratio: 4 / 3; }
 /* Pinch zoom: one finger still scrolls the page until the picture is zoomed in. */
@@ -239,6 +241,7 @@ button { font: inherit; color: inherit; }
 .card {
   background: var(--surface); border: 1px solid var(--line); border-radius: var(--r);
   padding: 14px 16px; display: grid; gap: 10px; min-width: 0;
+  contain: layout;
 }
 .kpi { font: 500 34px/1 var(--f-mono); font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
 .kpi .unit { font: 500 13px var(--f-display); color: var(--muted); margin-left: 6px; letter-spacing: 0.04em; }
@@ -632,11 +635,18 @@ details.alert ul { margin: 6px 0 2px; padding-left: 18px; color: var(--muted); f
 .idle-dim { position: fixed; inset: 0; z-index: 75; background: rgba(0, 0, 0, var(--dim, 0.85)); display: grid; place-items: center; cursor: none; touch-action: none; }
 .idle-clock { font: 500 clamp(48px, 12vw, 160px) var(--f-mono); font-variant-numeric: tabular-nums; color: var(--ink); opacity: 0.22; user-select: none; -webkit-user-select: none; }
 
-/* ---------- light mode for older tablets: no blur, blending or animation */
-.is-lite *, .is-lite *::before, .is-lite *::after { animation: none !important; transition: none !important; }
+/* ---------- hidden page or night dim: animations rest (syncPause in util.js) */
+.is-paused *, .is-paused *::before, .is-paused *::after { animation-play-state: paused !important; }
+
+/* ---------- light mode for older tablets: no filters, blur, blending or animation */
+.is-lite *, .is-lite *::before, .is-lite *::after {
+  animation: none !important; transition: none !important;
+  filter: none !important; -webkit-backdrop-filter: none !important; backdrop-filter: none !important;
+}
 .is-lite .ov-glows, .is-lite .ov-windows, .is-lite .ov-solar, .is-lite .fp-glows, .is-lite .ov-tint { mix-blend-mode: normal; }
-.is-lite .ov [filter], .is-lite .ov-flow-dots, .is-lite .stage.is-night .fp-glows { filter: none; }
-.is-lite .ov:not(.is-active) { filter: none; opacity: 0; }
+/* Evening without filters: the overview darkens through .ov-tint, floor plan pictures fade. */
+.is-lite .stage.is-night .fp-picture { opacity: 0.45; }
+.is-lite .ov:not(.is-active) { opacity: 0; }
 .is-lite .ov-window-bloom, .is-lite .ov-wash, .is-lite .ov-solar-sweep, .is-lite .ov-wx::after { display: none; }
 .is-lite .stage.is-night .fp-halo { transform: none; }
 .is-lite .sheet, .is-lite .bell { background: rgba(4, 9, 7, 0.9); }

@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.8.7
+
+Faster on large homes and old tablets, with a performance budget the tests check.
+
+- Floor plans are built the first time they are opened. A large home starts with about half as many elements on the page
+- Changes from Home Assistant are drawn once per screen refresh, however many arrive at once, and warnings, labels and the heating list are only redrawn when what they show changes
+- While the page is hidden or the night dim is on, animations, the clock and test data rest, and nothing is redrawn until the page shows again
+- Light mode also turns off the remaining filters: the evening darkening of the pictures now uses a plain dark layer, and floor plan pictures fade instead of being filtered
+- A performance test on a large test home (3 floor plans, 40 rooms, 120 lamps, 60 sensors) with the CPU slowed down four times: under 4,000 elements on the overview, first render under 2 s, and no task over 100 ms during 30 s of state changes. It also checks the pause and light mode. See *Performance* in `docs/setup.md`
+
 ## 0.8.6
 
 Nothing changes in the dashboard itself; this release adds the safety net for the work ahead.

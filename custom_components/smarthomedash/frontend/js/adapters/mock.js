@@ -2,7 +2,7 @@
 // reacts to the same service calls as HA, and drifts values over time.
 // Lets you build and try a site before it is connected to Home Assistant.
 
-import { num } from '../util.js';
+import { num, paused } from '../util.js';
 
 export function createMockAdapter(site) {
   let store;
@@ -188,7 +188,8 @@ export function createMockAdapter(site) {
       store = s;
       store.replace(seed());
       onStatus('mock');
-      setInterval(tick, 4000);
+      // Test data rests with the page, as Home Assistant's changes wait for the next frame.
+      setInterval(() => { if (!paused()) tick(); }, 4000);
     },
 
     async call(domain, service, data = {}) {

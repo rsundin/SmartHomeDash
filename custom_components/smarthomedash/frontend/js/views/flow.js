@@ -116,6 +116,7 @@ export function createFlow({ site, store, ov, size: [W, H] }) {
     const extra = sv('tspan', { class: 'ov-flow-extra' });
     const text = sv('text', { 'text-anchor': 'middle', y: 6 }, word, value, extra);
     const gg = sv('g', { class: `ov-flow-tag ${cls}` }, rect, text);
+    let shown = null;
     const fit = (textWidth) => {
       const width = textWidth + 24;
       rect.setAttribute('x', (-width / 2).toFixed(1));
@@ -126,6 +127,10 @@ export function createFlow({ site, store, ov, size: [W, H] }) {
     return {
       g: gg,
       set(w, v, x2 = '') {
+        // Unchanged text needs no new measurement (which makes the browser lay out the page).
+        const key = `${w}|${v}|${x2}`;
+        if (key === shown) return;
+        shown = key;
         word.textContent = w ? `${w} ` : '';
         value.textContent = v;
         extra.textContent = x2 ? ` · ${x2}` : '';
