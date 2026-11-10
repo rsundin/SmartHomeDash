@@ -17,6 +17,7 @@
 
 import { el, storage, syncPause } from '../util.js';
 import { t } from '../i18n.js';
+import { nameOf } from '../entities.js';
 
 const LITE_KEY = 'shd:lite';
 
@@ -164,7 +165,7 @@ export function createWall({ site, store, adapter, goHome, kiosk, enterKiosk, si
     closeBell();
     wake();
     const seconds = Math.max(5, Number(b.seconds ?? 60));
-    const name = b.name ?? store.get(b.camera)?.attributes?.friendly_name ?? '';
+    const name = b.name ?? nameOf(b.camera, { store, site }, '');
     const img = el('img', { class: 'bell-cam', alt: t('wall.camera', { name }) });
     let stills = null;
     // A live picture where the camera allows it; otherwise a new still every two seconds.

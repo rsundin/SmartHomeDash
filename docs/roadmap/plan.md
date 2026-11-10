@@ -50,7 +50,7 @@ The community's top complaint is slow dashboards [R22][R23]. Work through Claude
 - **Files:** `frontend/js/main.js`, `store.js`, `views/*.js`, `css/style.css`, `tests/browser/perf.test.js`, `tests/fixtures/perf-site.js`.
 - **Done when:** a perf test asserts the budgets in CI. A short "Performance" section in `docs/setup.md` lists what light mode turns off.
 
-### Q3: Names as Home Assistant shows them (2026.11 naming). Status: todo. Size: S
+### Q3: Names as Home Assistant shows them (2026.11 naming). Status: done (v0.8.8). Size: S
 - **Why:** HA 2026.11 shows "device name + entity name" and is deprecating `friendly_name` [R4]. The dashboard reads `attributes.friendly_name` in about two dozen places.
 - **What:**
   - One `nameOf(id)` helper in `entities.js` with this order:

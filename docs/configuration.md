@@ -22,7 +22,18 @@ Everything except `name` and at least one floor plan is optional. A card whose e
 | `climates` | list | Climate devices that are not a room, such as a heat pump: `{ "entity": "climate.heat_pump", "name": "Heat pump" }`. Shown in the heating card |
 | `scenes` | list | Buttons for scenes or scripts: `{ "entity": "script.we_are_here", "name": "We're here" }` |
 | `wall_screen` | object | Doorbell camera, idle mode and light mode for wall screens, see [Wall screens](#wall-screens) |
-| `mock` | object | Test data only, for example sunrise and sunset times |
+| `mock` | object | Test data only, for example sunrise and sunset times. `mock.devices` gives test entities a device, named the Home Assistant 2026.11 way: `[{ "id": "kitchen_hub", "name": "Kitchen", "entities": { "light.kitchen_ceiling": "Ceiling" } }]` shows that light as "Kitchen Ceiling" (`null` for the device's name alone) |
+
+### Names
+
+The dashboard names an entity the way Home Assistant shows it, in this order:
+
+1. a `name` given to it in site.json (a lamp in a room, a climate device, a scene, a doorbell),
+2. Home Assistant's entity registry: the entity's own name after its device's name ("Kitchen Ceiling"), or the device's name alone when the entity has none, as Home Assistant does since 2026.11,
+3. the state's `friendly_name`,
+4. the entity id.
+
+Rooms, buildings and floor plans linked to Home Assistant areas and floors take their names from those.
 
 ## overview
 

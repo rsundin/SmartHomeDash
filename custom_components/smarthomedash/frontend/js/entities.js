@@ -3,6 +3,41 @@ import { num } from './util.js';
 
 export const isOn = (s) => s?.state === 'on';
 
+// The name to show for an entity, the way Home Assistant shows it (2026.11 naming:
+// device name plus entity name, with friendly_name on its way out). In this order:
+//   1. a name set for it in site.json (site.index.labels)
+//   2. the entity registry: its own name, combined with its device's name the way
+//      Home Assistant does, or the device's name alone when the entity has none
+//   3. the state's friendly_name
+//   4. `fallback`, which defaults to the entity id
+// ctx: { store, site, areas }. `areas` (from areas.js resolve) holds the registries
+// and defaults to site.areas.
+export function nameOf(id, { store, site, areas = site?.areas } = {}, fallback = id) {
+  if (!id) return fallback;
+  return site?.index?.labels?.get(id)
+    ?? registryName(areas, id)
+    ?? store?.get(id)?.attributes?.friendly_name
+    ?? fallback;
+}
+
+// Device name + entity name from the registries, or null when they say nothing.
+// Works with both shapes Home Assistant hands out: the panel's hass.entities (name is
+// already the user's or the integration's name) and the websocket entity registry
+// (name is the user's override, original_name the integration's).
+export function registryName(areas, id) {
+  const e = areas?.entityReg?.get(id);
+  if (!e) return null;
+  const own = e.name || e.original_name || null;
+  const d = e.device_id ? areas.deviceReg?.get(e.device_id) : null;
+  const device = d ? d.name_by_user || d.name || null : null;
+  if (!device) return own;
+  if (!own) return e.has_entity_name === false ? null : device;
+  // Older integrations name the entity in full ("Kitchen ceiling light"); so does a
+  // name that already starts with the device's.
+  if (e.has_entity_name === false || own.toLowerCase().startsWith(device.toLowerCase())) return own;
+  return `${device} ${own}`;
+}
+
 // 0..1, 0 when off or unavailable
 export function level(s) {
   if (!isOn(s)) return 0;

@@ -22,6 +22,7 @@ import { createZoom } from './ui/zoom.js';
 import { createWall, liteMode } from './ui/wall.js';
 import { loadAreas, applyAreaNames, noAreas, linkByName, autoPlace } from './areas.js';
 import { assignSensors, warnings, warningIds } from './status.js';
+import { nameOf as entityName } from './entities.js';
 
 // The online demo sets data-demo on <body> (see .github/workflows/pages.yml).
 const DEMO = document.body?.dataset.demo === 'true';
@@ -225,7 +226,7 @@ export async function start(opts) {
   side.replaceWith(createSide({ site, store, adapter, openRoom }));
 
   // ---- warnings: alarms and open windows open their room; the rest unfold a list
-  const nameOf = (id) => store.get(id)?.attributes?.friendly_name ?? site.index.names.get(id) ?? id;
+  const nameOf = (id) => entityName(id, { store, site }, site.index.names.get(id) ?? id);
   // Rebuilt only when the warnings themselves change, not on every lamp or temperature.
   let shownWarnings = null;
   store.watch(warningIds(site), () => {

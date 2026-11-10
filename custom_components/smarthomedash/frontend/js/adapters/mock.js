@@ -17,6 +17,13 @@ export function createMockAdapter(site) {
   };
 
   const E = site.energy || {};
+  // Test devices, named the 2026.11 way: site.mock.devices =
+  // [{ id, name, name_by_user?, area_id?, entities: { entity_id: own name, or null for the device's name } }]
+  const mockDevices = site.mock?.devices ?? [];
+  const onDevice = new Map();
+  for (const d of mockDevices) {
+    for (const [id, own] of Object.entries(d.entities ?? {})) onDevice.set(id, { device_id: d.id, device: d.name_by_user || d.name, own });
+  }
   const sunTimes = site.mock?.sun ?? { rise: '07:30', set: '15:50' };
 
   function sunState() {
@@ -112,6 +119,11 @@ export function createMockAdapter(site) {
     }
     list.push(sunState());
     for (const sc of site.scenes) list.push(S(sc.entity, sc.entity.startsWith('script.') ? 'off' : 'scening', { friendly_name: sc.name }));
+    // Entities on a test device get the friendly_name Home Assistant composes: device + entity.
+    for (const s of list) {
+      const d = onDevice.get(s.entity_id);
+      if (d) s.attributes.friendly_name = d.own ? `${d.device} ${d.own}` : d.device;
+    }
     return list;
   }
 
@@ -248,7 +260,21 @@ export function createMockAdapter(site) {
       }
       // One test floor per floor plan, or site.mock.floors: [{ floor_id, name, level }].
       const floors = site.mock?.floors ?? site.floorplans.map((p, i) => ({ floor_id: `floor_${p.id}`, name: p.name, level: i }));
-      return { areas, entities, devices: [], floors };
+      // Registry entries for every entity, as the websocket's entity registry lists them:
+      // a full name from older integrations, or for an entity on a test device its own
+      // name next to the device's.
+      const byId = new Map(entities.map((e) => [e.entity_id, e]));
+      for (const s of store.all()) {
+        const d = onDevice.get(s.entity_id);
+        const reg = d
+          ? { device_id: d.device_id, name: null, original_name: d.own, has_entity_name: true }
+          : { name: null, original_name: s.attributes?.friendly_name ?? null, has_entity_name: false };
+        const e = byId.get(s.entity_id);
+        if (e) Object.assign(e, reg, { device_id: reg.device_id ?? e.device_id });
+        else entities.push({ entity_id: s.entity_id, area_id: null, device_id: null, ...reg });
+      }
+      const devices = mockDevices.map(({ id, name, name_by_user = null, area_id = null }) => ({ id, name, name_by_user, area_id }));
+      return { areas, entities, devices, floors };
     },
 
     async history(entityId, hours = 24) {

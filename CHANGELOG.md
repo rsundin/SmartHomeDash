@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.8.8
+
+Names as Home Assistant shows them, ready for the 2026.11 naming change.
+
+- Devices, sensors and lamps are named the way Home Assistant names them: the entity's own name after its device's name ("Kitchen Ceiling"), or the device's name alone, from Home Assistant's registry. `friendly_name`, which Home Assistant is phasing out, is only a fallback now. A name set in site.json still wins. This covers the room panel, warnings, placement mode, the setup guide and the doorbell window
+- Test data can give entities a device (`mock.devices`) to try the new names. See *Names* in `docs/configuration.md`
+
 ## 0.8.7
 
 Faster on large homes and old tablets, with a performance budget the tests check.
