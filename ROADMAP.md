@@ -4,7 +4,7 @@ What is planned next, roughly in order. Plans change; ideas and votes are welcom
 
 ## 0.9: Foundation
 
-- **Automated tests** in the repo and CI, covering the backend and the dashboard in a browser at five screen sizes.
+- **Automated tests** in the repo and CI, covering the backend and the dashboard in a browser at five screen sizes. Done in 0.8.6.
 - **Performance budget** measured on a large test home with a slowed-down CPU, so old wall tablets stay smooth.
 - **Names as Home Assistant shows them**, following the 2026.11 naming change.
 - **Electricity prices at 15 minutes**, as Nord Pool publishes them since October 2025, in the chart and the cheapest hours.
