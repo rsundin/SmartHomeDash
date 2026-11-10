@@ -15,7 +15,7 @@ if [[ "$part" == all || "$part" == backend ]]; then
   for f in $(find custom_components/smarthomedash/frontend -name '*.js'); do
     node --input-type=module --check < "$f" || { echo "Syntax error in $f"; exit 1; }
   done
-  for f in tests/browser/*.js; do node --check "$f"; done
+  for f in tests/browser/*.js tests/fixtures/*.js; do node --check "$f"; done
   for f in $(git ls-files '*.json'); do python3 -m json.tool "$f" >/dev/null || { echo "Invalid JSON: $f"; exit 1; }; done
   echo "== Backend tests"
   python3 -m unittest discover -s tests/backend -t tests/backend

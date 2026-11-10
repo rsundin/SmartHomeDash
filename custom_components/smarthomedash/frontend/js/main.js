@@ -6,7 +6,7 @@
 // - Home Assistant panel (panel.js): start(opts) with an adapter built on the
 //   panel's `hass` object and a loader for the authenticated site files.
 
-import { el, storage, wait, reducedMotion, press } from './util.js';
+import { el, storage, wait, reducedMotion, press, paused, syncPause } from './util.js';
 import { Store } from './store.js';
 import { loadSite } from './site.js';
 import { createHaAdapter, haLogin } from './adapters/ha.js';
@@ -108,8 +108,11 @@ export async function start(opts) {
     clock.dateTime = d.toISOString();
   };
   tickClock();
-  const clockTimer = setInterval(tickClock, 15000);
+  // The clock rests with the page (hidden, or under the night dim) and catches up after.
+  const clockTimer = setInterval(() => { if (!paused()) tickClock(); }, 15000);
   run.signal.addEventListener('abort', () => clearInterval(clockTimer));
+  document.addEventListener('shd:resume', tickClock, { signal: run.signal });
+  document.addEventListener('visibilitychange', syncPause, { signal: run.signal });
   // Kiosk mode: only this dashboard on a wall screen or tablet. Hides the dashboard's own
   // buttons (and, in the panel, Home Assistant's sidebar) and goes full screen.
   // Hold the clock for two seconds to leave it.
@@ -204,19 +207,32 @@ export async function start(opts) {
   wallScreen.addEventListener?.('change', applyFit);
   applyFit();
 
-  for (const plan of site.floorplans) {
+  // Floor plans are built when first shown, so a big home starts with a small page.
+  // Placement mode builds them all: it looks for items across every plan.
+  const planById = new Map(site.floorplans.map((p) => [p.id, p]));
+  const buildPlan = (planId) => {
+    if (plans.has(planId)) return plans.get(planId);
+    const plan = planById.get(planId);
+    if (!plan) return null;
     const fp = createFloorplan({ site, plan, store, adapter, onRoom: (room) => { panel.open(room); fp.select(room.id); } });
     plans.set(plan.id, fp);
     zoom.layer.append(fp.el);
     editor?.attach(fp.svg, { label: t('app.editorPlan', { name: plan.name, unit: plan.unit || 'mm' }), round: plan.unit === 'px' ? 1 : 10, plan });
-  }
+    return fp;
+  };
+  if (editor) site.floorplans.forEach((p) => buildPlan(p.id));
   panel.el.addEventListener('close', () => plans.forEach((p) => p.select(null)));
   side.replaceWith(createSide({ site, store, adapter, openRoom }));
 
   // ---- warnings: alarms and open windows open their room; the rest unfold a list
   const nameOf = (id) => store.get(id)?.attributes?.friendly_name ?? site.index.names.get(id) ?? id;
+  // Rebuilt only when the warnings themselves change, not on every lamp or temperature.
+  let shownWarnings = null;
   store.watch(warningIds(site), () => {
     const list = warnings(site, store, nameOf);
+    const key = JSON.stringify(list.map((w) => [w.level, w.text, w.items]));
+    if (key === shownWarnings) return;
+    shownWarnings = key;
     const unfolded = new Set([...alerts.querySelectorAll('details[open]')].map((d) => d.dataset.key));
     alerts.hidden = !list.length;
     alerts.replaceChildren(...list.map((w) => (w.items
@@ -259,21 +275,23 @@ export async function start(opts) {
   }
 
   async function showPlan(planId, roomId) {
-    const fp = plans.get(planId);
-    if (!fp) return;
+    if (!planById.has(planId)) return;
     if (view !== `plan:${planId}`) {
       const b = site.overview?.buildings.find((x) => x.floorplan === planId);
       if (view === 'overview' && b && !reducedMotion()) {
         overview.lift(b.id);
         await wait(520);
       }
+      const fp = buildPlan(planId);
+      // A plan built just now starts hidden, so it fades in like the others.
+      if (!fp.el.classList.contains('is-active')) void fp.el.offsetWidth;
       plans.forEach((p) => p.el.classList.toggle('is-active', p === fp));
       overview?.el.classList.remove('is-active');
       backBtn.hidden = !overview;
       hint.textContent = withZoomHint(t('app.hintPlan'));
       mark(`plan:${planId}`);
     }
-    if (roomId) { const room = site.index.rooms.get(roomId); panel.open(room); fp.select(roomId); }
+    if (roomId) { const room = site.index.rooms.get(roomId); panel.open(room); plans.get(planId)?.select(roomId); }
   }
 
   // ---- day / night on the overview
@@ -338,7 +356,7 @@ export async function start(opts) {
   if (canSetup && !editing && (empty || (site.raw.setup_pending && !storage.get(SETUP_LATER, false)))) openSetup();
 
   const resume = editor?.initialView;
-  if (resume?.startsWith('plan:') && plans.has(resume.slice(5))) { if (overview) showOverview(); await showPlan(resume.slice(5)); }
+  if (resume?.startsWith('plan:') && planById.has(resume.slice(5))) { if (overview) showOverview(); await showPlan(resume.slice(5)); }
   else if (overview) showOverview();
   else showPlan(site.floorplans[0]?.id);
 
@@ -355,6 +373,11 @@ export async function start(opts) {
   if (wall && adapter.kind === 'mock' && params.has('ring') && bell?.entity) {
     setTimeout(() => { const s = store.get(bell.entity); if (s) store.update({ ...s, state: bell.entity.startsWith('binary_sensor.') ? 'on' : new Date().toISOString() }); }, 1500);
   }
+
+  syncPause();
+
+  // The first frame after the dashboard is built: the performance test's "first render".
+  requestAnimationFrame(() => performance.mark?.('shd:rendered'));
 
   // Start in kiosk mode from ?kiosk or when this device was left in it. Full screen
   // needs a tap, so it follows on the first touch.

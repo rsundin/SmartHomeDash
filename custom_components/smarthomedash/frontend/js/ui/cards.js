@@ -203,7 +203,8 @@ function heatCard({ site, store, openRoom }) {
     for (const { r, val, li } of items) {
       const v = roomTemp(store, r);
       const c = r.climate ? climate(store, r.climate) : null;
-      val.textContent = `${fmt(v, 1, site.locale)}°${c?.target != null && c.mode !== 'off' ? ` / ${fmt(c.target, 1, site.locale)}°` : ''}`;
+      const text = `${fmt(v, 1, site.locale)}°${c?.target != null && c.mode !== 'off' ? ` / ${fmt(c.target, 1, site.locale)}°` : ''}`;
+      if (val.textContent !== text) val.textContent = text;
       const h = heating(store, r);
       if (h) warming++;
       li.classList.toggle('is-heating', h);

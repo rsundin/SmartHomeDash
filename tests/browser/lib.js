@@ -65,7 +65,8 @@ function setup() {
 
 // A page in its own context. Console errors and uncaught exceptions are collected in
 // page.errors; `check(page)` asserts there were none.
-async function open(env, url, { width = 1280, height = 800, touch = false, storage = null } = {}) {
+// `prepare(page)` runs before the page loads: routes, CPU throttling, init scripts.
+async function open(env, url, { width = 1280, height = 800, touch = false, storage = null, prepare = null } = {}) {
   const context = await env.browser.newContext({ viewport: { width, height }, hasTouch: touch, isMobile: false });
   if (storage) {
     await context.addInitScript((items) => {
@@ -81,6 +82,7 @@ async function open(env, url, { width = 1280, height = 800, touch = false, stora
   page.on('console', (m) => { if (m.type() === 'error') page.errors.push(`console: ${m.text()}`); });
   page.on('pageerror', (e) => page.errors.push(`exception: ${e.message}`));
   page.on('requestfailed', (r) => page.errors.push(`request failed: ${r.url()}`));
+  if (prepare) await prepare(page);
   await page.goto(env.server.url + url);
   return page;
 }

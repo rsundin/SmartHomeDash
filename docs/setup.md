@@ -160,6 +160,21 @@ Hold the clock for two seconds to leave kiosk mode; the sidebar comes back. A de
 
 **Older tablets.** If the picture stutters, tap **Kiosk mode** on the tablet and set **Light mode on this device** to On, or add `?lite` to the address (`http://homeassistant.local:8123/home?kiosk&lite`): light mode drops blur, blending and animation. The tablet remembers it. Auto turns it on by itself for slow devices.
 
+### Performance
+
+The dashboard is measured on a large test home (3 floor plans, 40 rooms, 120 lamps, 60 sensors) in Chromium slowed down four times, like an old wall tablet. It has to start in under 2 seconds with under 4,000 elements on the overview, and never freeze the screen for more than 100 ms while states change. To stay there:
+
+- Floor plans are built the first time you open them, not at start.
+- Changes from Home Assistant are drawn once per screen refresh, however many arrive at once.
+- While the page is hidden (another tab, a switched-off screen) or the night dim is on, animations and the dashboard's own timers rest, and nothing is redrawn until it shows again.
+
+**Light mode** turns off, on top of that:
+
+- blur and all other filters, including the evening darkening of the pictures (a plain dark layer does it instead),
+- blending of light with the picture (lamps, windows and solar are drawn over it),
+- every animation and transition: the energy flow dots, the solar shimmer, pulsing alarms, rain and snow, the roof lift,
+- the window glow, the facade wash of wall lamps and the weather veil.
+
 In landscape at 1024 pixels or wider the dashboard fills the screen without scrolling. On a phone, pinch with two fingers to zoom into the picture or a floor plan, and drag to move around; **Reset zoom** goes back. iPad Safari has no full screen for web pages; use the companion app, or *Add to Home Screen*, for the most screen space.
 
 ## Troubleshooting

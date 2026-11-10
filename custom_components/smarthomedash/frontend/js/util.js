@@ -69,9 +69,14 @@ export function num(v) {
   return Number.isFinite(n) ? n : null;
 }
 
+// Number formats are slow to create, so each locale and precision is made once.
+const formats = new Map();
 export function fmt(v, digits = 1, locale = 'sv-SE') {
   if (v == null || !Number.isFinite(v)) return '–';
-  return v.toLocaleString(locale, { minimumFractionDigits: digits, maximumFractionDigits: digits });
+  const key = `${locale}|${digits}`;
+  let f = formats.get(key);
+  if (!f) formats.set(key, (f = new Intl.NumberFormat(locale, { minimumFractionDigits: digits, maximumFractionDigits: digits })));
+  return f.format(v);
 }
 
 export function hhmm(iso, locale = 'sv-SE') {
@@ -79,6 +84,23 @@ export function hhmm(iso, locale = 'sv-SE') {
   const d = new Date(iso);
   if (isNaN(d)) return '–';
   return d.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' });
+}
+
+// Animations and timers rest while the page is hidden or the night dim covers it
+// (body.is-dimmed, see ui/wall.js). Light mode stops the SVG animations for good.
+export const paused = () => document.hidden || !!document.body?.classList.contains('is-dimmed');
+
+export function syncPause() {
+  const body = document.body;
+  if (!body) return;
+  const was = body.classList.contains('is-paused');
+  const now = paused();
+  body.classList.toggle('is-paused', now);
+  const still = now || body.classList.contains('is-lite');
+  for (const svg of document.querySelectorAll('svg.ov-upper')) {
+    if (still) svg.pauseAnimations?.(); else svg.unpauseAnimations?.();
+  }
+  if (was && !now) document.dispatchEvent(new Event('shd:resume'));
 }
 
 export const wait = (ms) => new Promise((r) => setTimeout(r, ms));

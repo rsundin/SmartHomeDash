@@ -18,7 +18,8 @@
     harness.html?kiosk                start in kiosk mode
 
   For the tests it exposes:
-    window.store                  the dashboard's store: store.update({...}) sets a state
+    window.store                  the dashboard's store: store.update({...}) sets a state; the
+                                  page redraws on the next frame (store.flush() does it now)
     window.harness.saved          every config saved through the panel's saveSite
     window.harness.uploads        names of pictures uploaded through uploadFile
     window.harness.starts         how many times the dashboard has started

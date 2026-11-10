@@ -15,7 +15,7 @@
 // address. Auto follows "lite": true for every screen, and otherwise turns it on for
 // devices with two cores or 2 GB of memory or less.
 
-import { el, storage } from '../util.js';
+import { el, storage, syncPause } from '../util.js';
 import { t } from '../i18n.js';
 
 const LITE_KEY = 'shd:lite';
@@ -87,7 +87,7 @@ export function createWall({ site, store, adapter, goHome, kiosk, enterKiosk, si
   const idle = cfg.idle ?? {};
   const bells = [].concat(cfg.doorbell ?? []).filter((b) => b?.entity && b?.camera);
   const timers = [];
-  signal.addEventListener('abort', () => { timers.forEach(clearInterval); closeBell(); dimmer.remove(); sheet.remove(); });
+  signal.addEventListener('abort', () => { timers.forEach(clearInterval); closeBell(); dimmer.remove(); sheet.remove(); dim(false); });
 
   // ---------- idle
   let last = Date.now();
@@ -102,24 +102,31 @@ export function createWall({ site, store, adapter, goHome, kiosk, enterKiosk, si
   dimmer.addEventListener('pointerdown', (e) => { e.preventDefault(); e.stopPropagation(); wake(); });
   dimmer.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); });
 
+  // The dim also pauses animations and timers underneath it (syncPause in util.js).
+  function dim(on) {
+    dimmer.hidden = !on;
+    if (document.body.classList.contains('is-dimmed') === on) return;
+    document.body.classList.toggle('is-dimmed', on);
+    syncPause();
+  }
   const touched = () => { last = Date.now(); away = false; if (!dimmer.hidden) wake(); };
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { closeBell(); closeSheet(); } }, { signal });
   for (const type of ['pointerdown', 'keydown', 'wheel']) document.addEventListener(type, touched, { capture: true, passive: true, signal });
 
   function wake() {
     last = Date.now();
-    dimmer.hidden = true;
+    dim(false);
   }
   const night = () => inWindow(new Date(), idle.dim_from, idle.dim_to);
   function check() {
-    if (!kiosk() || bell) { dimmer.hidden = true; return; }
+    if (!kiosk() || bell) { dim(false); return; }
     const quiet = Date.now() - last;
     if (backAfter > 0 && quiet >= backAfter && !away) { away = true; goHome(); }
     const dimAfter = backAfter > 0 ? backAfter : 120000;
     if (night() && quiet >= dimAfter) {
       dimClock.textContent = new Date().toLocaleTimeString(site.locale, { hour: '2-digit', minute: '2-digit' });
-      dimmer.hidden = false;
-    } else if (!night()) dimmer.hidden = true;
+      dim(true);
+    } else if (!night()) dim(false);
   }
   timers.push(setInterval(check, 5000));
   // A motion sensor wakes the dimmed screen.
@@ -209,6 +216,7 @@ export function createWall({ site, store, adapter, goHome, kiosk, enterKiosk, si
       onclick: () => {
         storage.set(LITE_KEY, v);
         document.body.classList.toggle('is-lite', liteMode(site, v));
+        syncPause();
         renderSeg();
       },
     }, v === 'auto' ? t('wall.liteAuto', { state: t(liteAuto(site) ? 'wall.on' : 'wall.off') }) : t(v === 'on' ? 'wall.liteOn' : 'wall.liteOff'))));
