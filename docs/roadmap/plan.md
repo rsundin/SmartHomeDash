@@ -109,7 +109,7 @@ Setup effort is the main barrier for every floor plan project [R5][R6][R11]. Sma
 - **Files:** `ui/` menu and `ui/setup.js`, `i18n.js`, `custom_components/smarthomedash/diagnostics.py`, `.github/ISSUE_TEMPLATE/`, `README.md`, `ROADMAP.md`, `docs/setup.md`.
 - **Done when:** a tap on **Report a problem** opens a prefilled issue with no entity ids or names in it (browser test checks the URL); diagnostics download with tokens and entity ids redacted (backend test); Discussions is on and linked.
 
-### S2: Editor comforts. Status: todo. Size: M
+### S2: Editor comforts. Status: done (v0.8.15). Size: M
 - **Why:** Precise placement and editing are a recurring wish [R6][R12]. NeonPlan's editor sets the bar [R9].
 - **What:**
   - Undo and redo, kept in the setup guide and in placement mode until saved.

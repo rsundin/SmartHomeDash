@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.8.15
+
+Editing rooms and lamps without starting over.
+
+- **Undo** and **Redo** in the setup guide, also Ctrl/Cmd+Z and Ctrl/Cmd+Shift+Z outside text fields. Everything changed since the guide opened can be stepped back until it is saved; typing in one field counts as one step, and undoing back to the start lets the guide close without asking
+- **Undo** and **Redo** in placement mode too, kept with the draft in the browser across the restarts placement mode makes, and cleared when the draft is saved to Home Assistant or thrown away
+- **Edit shape** next to each room under *Floor plans* and each building under *Overview picture*: drag a corner, drag the dot on an edge to add a corner, press and hold (or right-click) a corner to remove it, drag inside to move the whole shape. A room moved as a whole takes its lamps and name label along, and lamps left outside new corners move inside. The editor has its own undo and redo, and Cancel
+- **Snap to other shapes**, on by default and remembered per screen: a corner lands on a nearby corner or edge of another room or building, when editing and when drawing a new one; a moved shape snaps by its nearest corner
+- Arrow keys nudge the selected corner or shape in the editor, and the selected lamp in placement mode; Shift moves ten times as far. A nudged lamp is saved when the keys rest, and can go into the next room
+- Disabled buttons look disabled
+
 ## 0.8.14
 
 Report a problem from the dashboard, without giving away anything about your home.

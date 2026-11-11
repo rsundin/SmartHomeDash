@@ -617,6 +617,15 @@ details.alert .alert-action { margin: 4px 0 2px; font-size: 13px; }
 @keyframes wx-snow { to { background-position: -114px 388px, 140px 211px, -32px 169px; } }
 @media (prefers-reduced-motion: reduce) { .ov-wx::after { animation: none !important; } }
 .draw-pick { display: flex; gap: 6px; align-items: center; }
+.chip:disabled { opacity: 0.45; cursor: default; border-color: var(--line); }
+/* Shape editing (ui/shape.js): corners to drag, a dot on each edge to add one. */
+.shape-svg { cursor: default; touch-action: none; outline: none; }
+.shape-body { fill: rgba(255, 178, 74, 0.2); stroke: var(--glow); stroke-linejoin: round; cursor: move; }
+.shape-body.is-selected { fill: rgba(255, 178, 74, 0.32); }
+.shape-corner { fill: var(--glow-core); stroke: var(--bg); cursor: grab; }
+.shape-corner.is-selected { fill: var(--accent); }
+.shape-mid { fill: var(--glow); opacity: 0.75; cursor: copy; }
+.shape-msg { min-width: 8em; }
 
 /* placement mode: drag lamps */
 .is-editing [data-drag] { cursor: grab; touch-action: none; }
