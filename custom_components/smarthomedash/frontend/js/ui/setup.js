@@ -15,6 +15,7 @@ import { el, sv, pts, svgPoint, centroid, bbox, inside } from '../util.js';
 import { t } from '../i18n.js';
 import { readPower, kwText, MIN_KW } from '../power.js';
 import { nameOf } from '../entities.js';
+import { noteProblem } from './report.js';
 import { noAreas, areaName, floorName, fillRoomFromArea, matchRoomsByName, quickStart, fitTilesToPicture } from '../areas.js';
 
 const STEPS = ['basics', 'overview', 'plans', 'energy', 'buttons', 'wall', 'lights'];
@@ -33,7 +34,7 @@ All lights are OFF: no lit windows, no outdoor lamps, no glow anywhere.
 Photorealistic. No text, no people.`;
 const GUIDE_URL = 'https://github.com/rsundin/SmartHomeDash/blob/main/docs/overview-picture.md';
 
-export function createSetup({ site, store, saveSite, uploadFile, reload, openPlacement, onClose = () => {} }) {
+export function createSetup({ site, store, saveSite, uploadFile, reload, openPlacement, openReport = null, onClose = () => {} }) {
   const cfg = structuredClone(site.raw);
   cfg.floorplans ??= [];
   cfg.energy ??= {};
@@ -67,6 +68,7 @@ export function createSetup({ site, store, saveSite, uploadFile, reload, openPla
       status.textContent = t('editor.saved');
       setTimeout(reload, 500);
     } catch (e) {
+      noteProblem(e.message);
       status.textContent = t('editor.saveFailed', { msg: e.message });
       saveBtn.disabled = false;
     }
@@ -86,7 +88,8 @@ export function createSetup({ site, store, saveSite, uploadFile, reload, openPla
     nav.replaceChildren(...steps.map((s, i) => el('button', {
       type: 'button', class: `setup-step${s === step ? ' is-active' : ''}`, 'aria-current': String(s === step),
       onclick: () => { step = s; render(); },
-    }, el('span', { class: 'setup-num' }, String(i + 1)), t(s === 'overview' && !cfg.overview ? 'setup.step.overviewOptional' : `setup.step.${s}`))));
+    }, el('span', { class: 'setup-num' }, String(i + 1)), t(s === 'overview' && !cfg.overview ? 'setup.step.overviewOptional' : `setup.step.${s}`))),
+    openReport ? el('button', { class: 'chip setup-report', type: 'button', onclick: openReport }, t('report.button')) : null);
     body.replaceChildren(...{ basics, overview, plans, energy, buttons, wall, lights }[step]());
     body.scrollTop = 0;
   }

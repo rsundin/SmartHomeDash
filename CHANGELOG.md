@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.8.14
+
+Report a problem from the dashboard, without giving away anything about your home.
+
+- **?** in the top bar, and **Report a problem** below the setup guide's steps, show the text that would go into a GitHub issue: SmartHomeDash and Home Assistant versions, how the dashboard is opened, browser, screen size, kiosk and light mode, language, counts of floor plans, rooms and devices by kind, the warnings by kind and count, and the last save Home Assistant refused. Never entity ids, room or area names, addresses or pictures. The text can be changed before **Open the issue on GitHub** opens the bug report form with it filled in. Hidden in kiosk mode
+- Home Assistant **Download diagnostics** for SmartHomeDash (Settings → Devices & services → SmartHomeDash → ⋮): versions, the dashboard's options with its name, folder and address redacted, whether an update token is set (not the token), and for its site folder the number and size of pictures, whether site.json is valid, and counts of plans, rooms, lamps, thermostats, sensors, scenes and devices that Home Assistant does not know
+- Issue templates: the bug report has fields for what the dashboard fills in, for the device (wall tablet, phone, computer) and for the diagnostics file; a new feature request template; questions and ideas are pointed to GitHub Discussions
+- README has a *Help, questions and ideas* section, and ROADMAP points ideas and votes to Discussions
+
 ## 0.8.13
 
 A calmer placement mode, outdoor lamps that find their area, and steadier tests.

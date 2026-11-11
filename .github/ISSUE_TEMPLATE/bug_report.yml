@@ -5,7 +5,8 @@ body:
   - type: markdown
     attributes:
       value: |
-        Thanks for reporting. **Do not paste access tokens, passwords, addresses or pictures of your home you would not want public.**
+        Thanks for reporting. Issues are public: **do not paste access tokens, passwords, addresses or pictures of your home you would not want public.**
+        The quickest way here is **Report a problem** (the **?** button) in the dashboard: it fills in the versions and the details below for you. Questions and ideas are welcome in [Discussions](https://github.com/rsundin/SmartHomeDash/discussions).
   - type: textarea
     id: what
     attributes:
@@ -20,20 +21,38 @@ body:
     id: version
     attributes:
       label: SmartHomeDash version
-      placeholder: "0.4.0"
+      placeholder: "0.8.14"
     validations:
       required: true
   - type: input
     id: ha
     attributes:
       label: Home Assistant version
+      placeholder: "2026.11.1"
     validations:
       required: true
   - type: dropdown
-    id: browser
+    id: device
     attributes:
       label: Where do you open the dashboard?
-      options: [Browser on a computer, Companion app on a tablet or phone, Browser on a tablet, Wall screen or kiosk]
+      multiple: true
+      options:
+        - Wall tablet or kiosk screen
+        - Phone (Companion app)
+        - Phone (browser)
+        - Tablet (Companion app or browser)
+        - Browser on a computer
+  - type: textarea
+    id: dashboard
+    attributes:
+      label: From the dashboard
+      description: Filled in by **Report a problem** in the dashboard. Versions, browser, screen, modes and counts; no names of rooms or devices.
+      render: text
+  - type: textarea
+    id: diagnostics
+    attributes:
+      label: Diagnostics
+      description: Settings → Devices & services → SmartHomeDash → ⋮ → **Download diagnostics**, then drag the file here. It holds counts and sizes only.
   - type: textarea
     id: logs
     attributes:

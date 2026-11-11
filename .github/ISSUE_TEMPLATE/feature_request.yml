@@ -1,0 +1,36 @@
+name: Feature request
+description: A concrete change you would like, ready to be planned
+labels: [enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Still an idea, or want to see what others think first? Start in [Discussions → Ideas](https://github.com/rsundin/SmartHomeDash/discussions/categories/ideas), where others can vote. Planned work is in [ROADMAP.md](https://github.com/rsundin/SmartHomeDash/blob/main/ROADMAP.md).
+        Issues are public: leave out names, addresses and pictures of your home you would not want public.
+  - type: textarea
+    id: problem
+    attributes:
+      label: What do you want to do that you cannot today?
+      description: The situation at home, not the solution. "At night I want to see which outdoor lamps are on without opening every building."
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: How could it work?
+  - type: dropdown
+    id: device
+    attributes:
+      label: Where would you use it?
+      multiple: true
+      options:
+        - Wall tablet or kiosk screen
+        - Phone
+        - Tablet
+        - Browser on a computer
+        - The setup guide or placement mode
+  - type: textarea
+    id: more
+    attributes:
+      label: Anything else
+      description: Other dashboards that do it well, sketches, screenshots with private details removed.

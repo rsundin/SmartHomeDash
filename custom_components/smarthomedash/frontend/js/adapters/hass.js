@@ -43,6 +43,11 @@ export function createHassAdapter(initialHass) {
       return r?.response ?? null;
     },
 
+    // Home Assistant's version, for a problem report.
+    haVersion() {
+      return hass?.config?.version ?? null;
+    },
+
     // The config entry an entity belongs to, which some actions need.
     async configEntry(entityId) {
       return (await hass.callWS({ type: 'config/entity_registry/get', entity_id: entityId }))?.config_entry_id ?? null;

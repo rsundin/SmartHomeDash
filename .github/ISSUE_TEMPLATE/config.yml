@@ -1,5 +1,11 @@
 blank_issues_enabled: true
 contact_links:
+  - name: Ask a question
+    url: https://github.com/rsundin/SmartHomeDash/discussions/categories/q-a
+    about: Setting something up, or not sure it is a bug? Ask in Discussions.
+  - name: Share an idea or your dashboard
+    url: https://github.com/rsundin/SmartHomeDash/discussions
+    about: Ideas, votes and pictures of your own dashboard (Ideas, Show and tell).
   - name: Report a security problem
     url: https://github.com/rsundin/SmartHomeDash/security/advisories/new
     about: Please report security problems privately, not as an issue.

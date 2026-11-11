@@ -1,6 +1,6 @@
 # Roadmap
 
-What is planned next, roughly in order. Plans change; ideas and votes are welcome in [issues](https://github.com/rsundin/SmartHomeDash/issues).
+What is planned next, roughly in order. Plans change; ideas and votes are welcome in [Discussions](https://github.com/rsundin/SmartHomeDash/discussions), and problems in [issues](https://github.com/rsundin/SmartHomeDash/issues) (the dashboard's **?** button fills one in).
 
 ## 0.9: Foundation
 
@@ -13,7 +13,7 @@ What is planned next, roughly in order. Plans change; ideas and votes are welcom
 ## 1.0: Nearly zero setup
 
 - **Quick start from Home Assistant**: a floor plan per floor with a tile per area, working before you draw anything. Done in 0.8.12.
-- **Report a problem and get help**: a *Report a problem* button that fills in a GitHub issue without details about your home, Home Assistant diagnostics, and GitHub Discussions for questions and ideas.
+- **Report a problem and get help**: a *Report a problem* button that fills in a GitHub issue without details about your home, Home Assistant diagnostics, and GitHub Discussions for questions and ideas. Done in 0.8.14.
 - **Editor comforts**: undo, move corners, snap, nudge.
 - **Export, import and restore points** for a whole dashboard.
 - **A card for any dashboard** (`custom:smarthomedash-card`).

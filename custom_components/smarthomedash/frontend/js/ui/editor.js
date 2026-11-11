@@ -15,6 +15,7 @@ import { t } from '../i18n.js';
 import { areaOf, areaName } from '../areas.js';
 import { nameOf as entityName } from '../entities.js';
 import { configEntities, missingEntities } from '../status.js';
+import { noteProblem } from './report.js';
 
 // Lights first, then temperature: what the dashboard is mostly for. Switches can be
 // placed as lamps too, but most are not lamps (plugs, heaters, settings), so they get
@@ -391,6 +392,7 @@ export function createEditor({ site, store, saveSite = null, reload = () => loca
       status.textContent = t('editor.saved');
       setTimeout(reload, 600);
     } catch (e) {
+      noteProblem(e.message);
       status.textContent = t('editor.saveFailed', { msg: e.message });
     }
   }
