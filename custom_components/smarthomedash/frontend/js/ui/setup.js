@@ -7,6 +7,7 @@
 //   Buttons     scenes and scripts shown as buttons
 //   Wall screen doorbell camera, idle mode, light mode
 //   Lights      hands over to placement mode
+//   Backup      export and import as .zip, restore points (ui/backup.js; panel only)
 //
 // Works on a copy of the config; "Save" writes it to Home Assistant and restarts
 // the dashboard, "Close" throws the changes away. Pictures are uploaded at once.
@@ -18,9 +19,10 @@ import { t } from '../i18n.js';
 import { readPower, kwText, MIN_KW } from '../power.js';
 import { nameOf } from '../entities.js';
 import { noteProblem } from './report.js';
+import { backupStep } from './backup.js';
 import { noAreas, areaName, floorName, fillRoomFromArea, matchRoomsByName, quickStart, fitTilesToPicture } from '../areas.js';
 
-const STEPS = ['basics', 'overview', 'plans', 'energy', 'buttons', 'wall', 'lights'];
+const STEPS = ['basics', 'overview', 'plans', 'energy', 'buttons', 'wall', 'lights', 'backup'];
 
 // Prompts for making the overview pictures from a map screenshot with an image model.
 // English on purpose: image models follow it most consistently. Kept in step with
@@ -36,7 +38,7 @@ All lights are OFF: no lit windows, no outdoor lamps, no glow anywhere.
 Photorealistic. No text, no people.`;
 const GUIDE_URL = 'https://github.com/rsundin/SmartHomeDash/blob/main/docs/overview-picture.md';
 
-export function createSetup({ site, store, saveSite, uploadFile, reload, openPlacement, openReport = null, onClose = () => {} }) {
+export function createSetup({ site, store, saveSite, uploadFile, reload, openPlacement, openReport = null, backup = null, onClose = () => {} }) {
   const cfg = structuredClone(site.raw);
   cfg.floorplans ??= [];
   cfg.energy ??= {};
@@ -135,13 +137,14 @@ export function createSetup({ site, store, saveSite, uploadFile, reload, openPla
 
   function render() {
     // Without an overview picture (an apartment) that step is optional and comes after the plans.
-    const steps = cfg.overview ? STEPS : ['basics', 'plans', 'overview', 'energy', 'buttons', 'wall', 'lights'];
+    const steps = (cfg.overview ? STEPS : ['basics', 'plans', 'overview', 'energy', 'buttons', 'wall', 'lights', 'backup'])
+      .filter((s) => s !== 'backup' || backup);
     nav.replaceChildren(...steps.map((s, i) => el('button', {
       type: 'button', class: `setup-step${s === step ? ' is-active' : ''}`, 'aria-current': String(s === step),
       onclick: () => { step = s; render(); },
     }, el('span', { class: 'setup-num' }, String(i + 1)), t(s === 'overview' && !cfg.overview ? 'setup.step.overviewOptional' : `setup.step.${s}`))),
     openReport ? el('button', { class: 'chip setup-report', type: 'button', onclick: openReport }, t('report.button')) : null);
-    body.replaceChildren(...{ basics, overview, plans, energy, buttons, wall, lights }[step]());
+    body.replaceChildren(...{ basics, overview, plans, energy, buttons, wall, lights, backup: backupView }[step]());
     body.scrollTop = 0;
   }
 
@@ -765,6 +768,11 @@ export function createSetup({ site, store, saveSite, uploadFile, reload, openPla
         } }, t(dirty ? 'setup.saveAndPlace' : 'setup.openPlacement'))
         : el('p', { class: 'muted small' }, t('setup.lightsNeedPictures')),
     ];
+  }
+
+  // ---------- 8. backup: export, import, restore points
+  function backupView() {
+    return backupStep({ backup, locale: site.locale, status, reload, unsaved: () => dirty });
   }
 
   // ---------- polygon drawing on a picture

@@ -120,7 +120,7 @@ Setup effort is the main barrier for every floor plan project [R5][R6][R11]. Sma
 - **Files:** `ui/setup.js` (`draw`), `ui/editor.js`, shared helpers in `util.js`.
 - **Done when:** browser tests cover undo/redo, corner drag and snap.
 
-### S3: Export, import and restore points. Status: todo. Size: M
+### S3: Export, import and restore points. Status: done (v0.8.16). Size: M
 - **Why:** Backups and moving between installations come up often [R9][R18]. Only one `.bak` is kept today.
 - **What:**
   - Download the dashboard (site.json and pictures) as one `.zip` from the setup guide (admins).

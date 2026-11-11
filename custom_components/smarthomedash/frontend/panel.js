@@ -8,6 +8,7 @@
 const BASE = new URL('.', import.meta.url).href;
 const VERSION = new URL(import.meta.url).searchParams.get('v') || '';
 const API = '/api/smarthomedash/sites';
+const BACKUP = '/api/smarthomedash/backup';
 
 // Kiosk mode in Home Assistant: hide HA's sidebar on this device (the same setting as
 // HA's own "hide sidebar", stored per browser) and put the whole window in full screen.
@@ -141,6 +142,34 @@ class SmartHomeDashPanel extends HTMLElement {
             method: 'PUT', headers: { 'Content-Type': blob.type || 'application/octet-stream' }, body: blob,
           });
           if (!res.ok) throw new Error(await failure(res));
+        } : null,
+        // Export, import and restore points in the setup guide (admins only).
+        backup: hass.user?.is_admin ? {
+          exportZip: async () => {
+            const res = await this._hass.fetchWithAuth(`${BACKUP}/${siteId}/export`);
+            if (!res.ok) throw new Error(await failure(res));
+            const name = /filename="([^"]+)"/.exec(res.headers.get('Content-Disposition') ?? '')?.[1] ?? `smarthomedash-${siteId}.zip`;
+            return { blob: await res.blob(), name };
+          },
+          importZip: async (file) => {
+            const res = await this._hass.fetchWithAuth(`${BACKUP}/${siteId}/import`, {
+              method: 'POST', headers: { 'Content-Type': 'application/zip' }, body: file,
+            });
+            if (!res.ok) throw new Error(await failure(res));
+            return res.json();
+          },
+          versions: async () => {
+            const res = await this._hass.fetchWithAuth(`${BACKUP}/${siteId}/versions`);
+            if (!res.ok) throw new Error(await failure(res));
+            return res.json();
+          },
+          restore: async (version) => {
+            const res = await this._hass.fetchWithAuth(`${BACKUP}/${siteId}/restore`, {
+              method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ version }),
+            });
+            if (!res.ok) throw new Error(await failure(res));
+            return res.json();
+          },
         } : null,
         // Installs the latest version from GitHub (smarthomedash.update, admins only).
         // Only offered when the update action exists (a configured repository or token).

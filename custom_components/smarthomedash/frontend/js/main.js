@@ -52,6 +52,7 @@ if (!window.SHD_PANEL) {
  * @param {object} [opts.adapter]    data adapter; standalone picks one itself
  * @param {object} [opts.loader]     site file loader (panel: authenticated)
  * @param {Function} [opts.saveSite] saves the edited site config (panel: to HA)
+ * @param {object} [opts.backup] export, import and restore points (panel, admins; ui/backup.js)
  * @param {Function} [opts.reload]   restarts the dashboard after an edit
  * @param {Function} [opts.navigateEdit] (on) => switch placement mode on/off (panel, admins)
  * @param {Function} [opts.uploadFile] (name, blob) => upload a picture to the site (panel, admins)
@@ -350,6 +351,7 @@ export async function start(opts) {
       site, store, saveSite: opts.saveSite, uploadFile: opts.uploadFile, reload: opts.reload,
       openPlacement: () => opts.navigateEdit(true),
       openReport: () => report.open(),
+      backup: opts.backup,
       onClose: () => storage.set(SETUP_LATER, true),
     });
     document.body.append(setup.el);

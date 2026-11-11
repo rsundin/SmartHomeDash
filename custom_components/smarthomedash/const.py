@@ -5,6 +5,7 @@ import re
 DOMAIN = "smarthomedash"
 FRONTEND_URL = "/smarthomedash/frontend"
 SITES_URL = "/api/smarthomedash/sites"
+BACKUP_URL = "/api/smarthomedash/backup"
 PANEL_ELEMENT = "smarthomedash-panel"
 
 SITE_ID = re.compile(r"^[a-z0-9_-]+$", re.IGNORECASE)
@@ -13,6 +14,9 @@ UPLOAD_NAME = re.compile(r"^[a-z0-9][a-z0-9_.-]*\.(jpg|jpeg|png|webp)$", re.IGNO
 
 MAX_SITE_JSON = 2 * 1024 * 1024
 MAX_UPLOAD = 25 * 1024 * 1024
+MAX_IMPORT = 100 * 1024 * 1024    # a whole dashboard as .zip, and its unpacked size
+MAX_IMPORT_FILES = 200
+KEEP_VERSIONS = 10                # site.json.1 (newest) … site.json.10
 
 CONF_SITE = "site"
 CONF_TITLE = "title"

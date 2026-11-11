@@ -140,7 +140,7 @@ class SitesViewTest(unittest.TestCase):
         res = self.put("site.json", json.dumps({"floorplans": [{"id": "a"}]}).encode())
         self.assertEqual(res.status, 200, res.body)
         self.assertEqual(json.loads(self.config.read_text())["floorplans"][0]["id"], "a")
-        self.assertEqual(json.loads((self.root / "home" / "site.json.bak").read_text()), {"floorplans": []})
+        self.assertEqual(json.loads((self.root / "home" / "site.json.1").read_text()), {"floorplans": []})
 
     def test_non_admin_cannot_save(self):
         res = self.put("site.json", b'{"floorplans": []}', admin=False)
@@ -232,7 +232,7 @@ class SitesViewTest(unittest.TestCase):
         self.assertFalse((self.root / "home" / "roof.jpg").exists())
 
     def test_only_config_and_pictures_can_be_written(self):
-        for name in ("evil.html", "panel.js", "site.json.bak", "x.svg", "sub/roof.jpg", ".hidden.jpg"):
+        for name in ("evil.html", "panel.js", "site.json.bak", "site.json.1", "x.svg", "sub/roof.jpg", ".hidden.jpg"):
             with self.subTest(name=name):
                 self.assertIn(self.put(name, JPEG).status, (404, 405))
         self.assertEqual(sorted(p.name for p in (self.root / "home").iterdir()), ["site.json"])
@@ -265,8 +265,26 @@ class WriteAtomicTest(unittest.TestCase):
             views.write_atomic(path, b"1", True)
             views.write_atomic(path, b"2", True)
             self.assertEqual(path.read_bytes(), b"2")
-            self.assertEqual(path.with_suffix(".json.bak").read_bytes(), b"1")
-            self.assertEqual(sorted(p.name for p in path.parent.iterdir()), ["site.json", "site.json.bak"])
+            self.assertEqual(path.with_suffix(".json.1").read_bytes(), b"1")
+            self.assertEqual(sorted(p.name for p in path.parent.iterdir()), ["site.json", "site.json.1"])
+
+    def test_keeps_the_last_ten_versions(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "site.json"
+            for i in range(15):
+                views.write_atomic(path, str(i).encode(), True)
+            self.assertEqual(path.read_bytes(), b"14")
+            self.assertEqual([path.with_name(f"site.json.{n}").read_bytes() for n in range(1, 11)],
+                             [str(i).encode() for i in range(13, 3, -1)])
+            self.assertFalse(path.with_name("site.json.11").exists())
+
+    def test_saving_the_same_file_adds_no_version(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "site.json"
+            views.write_atomic(path, b"1", True)
+            views.write_atomic(path, b"2", True)
+            views.write_atomic(path, b"2", True)
+            self.assertEqual(sorted(p.name for p in path.parent.iterdir()), ["site.json", "site.json.1"])
 
 
 if __name__ == "__main__":

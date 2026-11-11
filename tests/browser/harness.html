@@ -16,6 +16,7 @@
     harness.html?site=example-house   which site (sites/<id>/)
     harness.html?edit                 start in placement mode
     harness.html?kiosk                start in kiosk mode
+    harness.html?nobackup             without export, import and restore (like a non-admin)
 
   For the tests it exposes:
     window.store                  the dashboard's store: store.update({...}) sets a state; the
@@ -25,6 +26,9 @@
     window.harness.starts         how many times the dashboard has started
     window.harness.ready          a promise for the current start
     window.harness.navigateEdit   switch placement mode on or off, restarting in place
+    window.harness.backup         export/import/restore: exports (count), imports (file names),
+                                  restores (versions), versions (the list the guide shows);
+                                  an import of a file named bad*.zip fails like Home Assistant
 -->
 <script type="module">
 window.SHD_PANEL = true; // main.js must not start the standalone page by itself
@@ -39,6 +43,24 @@ const params = new URLSearchParams(location.search);
 const siteId = params.get('site') || 'example-house';
 const root = document.getElementById('app');
 const harness = window.harness = { saved: [], uploads: [], starts: 0, editing: params.has('edit'), ready: null };
+const DAY = 24 * 3600 * 1000;
+harness.backup = {
+  exports: 0, imports: [], restores: [],
+  versions: [
+    { version: 1, saved: Date.UTC(2026, 10, 10, 18, 30), bytes: 4000, name: 'Testhuset', floorplans: 2, rooms: 9 },
+    { version: 2, saved: Date.UTC(2026, 10, 10, 18, 30) - DAY, bytes: 3000, name: 'Testhuset', floorplans: 1, rooms: 4 },
+  ],
+};
+const backup = params.has('nobackup') ? null : {
+  async exportZip() { harness.backup.exports++; return { blob: new Blob(['PK'], { type: 'application/zip' }), name: `smarthomedash-${siteId}-test.zip` }; },
+  async importZip(file) {
+    if (file.name.startsWith('bad')) throw new Error('Nothing was imported: evil.html is not site.json or a jpg, png or webp picture');
+    harness.backup.imports.push(file.name);
+    return { imported: true, pictures: 0 };
+  },
+  async versions() { return { versions: harness.backup.versions, keep: 10 }; },
+  async restore(n) { harness.backup.restores.push(n); return { restored: n }; },
+};
 
 // Site files, as the panel loads them through Home Assistant's API: a saved config
 // replaces the file until the page is reloaded.
@@ -76,6 +98,7 @@ async function boot() {
       loader,
       saveSite: async (raw) => { harness.saved.push(structuredClone(raw)); },
       uploadFile: async (name) => { harness.uploads.push(name); },
+      backup,
       reload: () => (harness.ready = boot()),
       navigateEdit: (on) => { harness.editing = on; harness.ready = boot(); },
     });
