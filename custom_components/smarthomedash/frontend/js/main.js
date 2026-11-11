@@ -20,6 +20,7 @@ import { createEditor } from './ui/editor.js';
 import { createSetup } from './ui/setup.js';
 import { createZoom } from './ui/zoom.js';
 import { createWall, liteMode } from './ui/wall.js';
+import { createReport } from './ui/report.js';
 import { loadAreas, applyAreaNames, noAreas, linkByName, autoPlace } from './areas.js';
 import { assignSensors, warnings, warningIds, configEntities } from './status.js';
 import { nameOf as entityName } from './entities.js';
@@ -102,6 +103,9 @@ export async function start(opts) {
   const viewNav = el('nav', { class: 'views', 'aria-label': t('app.views') });
   const nightBtn = el('button', { class: 'chip', type: 'button', title: t('app.nightTitle') });
   const settings = createSettings({ site, source });
+  // Report a problem: a prefilled GitHub issue, read before it leaves (ui/report.js).
+  const report = createReport({ site, store, adapter, source });
+  const helpBtn = el('button', { class: 'chip chip-help', type: 'button', title: t('report.button'), 'aria-label': t('report.button'), onclick: () => report.open() }, '?');
   const clock = el('time', { class: 'clock' });
   const tickClock = () => {
     const d = new Date();
@@ -137,7 +141,8 @@ export async function start(opts) {
     el('div', { class: 'top-actions' }, clock, source === 'panel' ? null : status, site.overview || site.floorplans.length ? nightBtn : null, editing ? null : kioskBtn,
       opts.navigateEdit && !editing ? el('button', { class: 'chip', type: 'button', onclick: () => opts.navigateEdit(true) }, t('app.edit')) : null,
       canSetup && !editing ? el('button', { class: 'chip', type: 'button', onclick: () => openSetup() }, t('app.setup')) : null,
-      source === 'panel' || DEMO ? null : el('button', { class: 'chip', type: 'button', onclick: () => settings.open() }, t('app.connection'))));
+      source === 'panel' || DEMO ? null : el('button', { class: 'chip', type: 'button', onclick: () => settings.open() }, t('app.connection')),
+      helpBtn));
   keepAwake();
 
   // ---- stage
@@ -155,7 +160,7 @@ export async function start(opts) {
   const side = el('div');
   const main = el('main', { class: 'layout' }, stageWrap, side);
   const alerts = el('div', { class: 'alerts', hidden: true, role: 'status', 'aria-live': 'polite' });
-  app.replaceChildren(header, alerts, main, panel.el, settings.el);
+  app.replaceChildren(header, alerts, main, panel.el, settings.el, report.el);
 
   // The online demo (GitHub Pages): say what it is and where to get it.
   if (DEMO) {
@@ -334,6 +339,7 @@ export async function start(opts) {
   document.addEventListener('keydown', (e) => {
     if (e.key !== 'Escape') return;
     if (!settings.el.hidden) settings.el.hidden = true;
+    else if (!report.el.hidden) report.close();
     else if (panel.room) panel.close();
     else if (view !== 'overview' && overview) showOverview();
   }, { signal: run.signal });
@@ -343,6 +349,7 @@ export async function start(opts) {
     const setup = createSetup({
       site, store, saveSite: opts.saveSite, uploadFile: opts.uploadFile, reload: opts.reload,
       openPlacement: () => opts.navigateEdit(true),
+      openReport: () => report.open(),
       onClose: () => storage.set(SETUP_LATER, true),
     });
     document.body.append(setup.el);
@@ -371,6 +378,7 @@ export async function start(opts) {
   // Wall screens: the doorbell camera, and back to the start view (dimmed at night) when idle.
   const home = () => {
     settings.el.hidden = true;
+    report.close();
     panel.close();
     if (overview) showOverview(); else if (site.floorplans[0]) showPlan(site.floorplans[0].id);
     zoom.reset();

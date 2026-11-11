@@ -347,6 +347,10 @@ input[type='range'] { width: 100%; accent-color: var(--glow); }
 .sheet { position: fixed; inset: 0; z-index: 30; background: rgba(4, 9, 7, 0.6); display: grid; place-items: center; padding: 16px; }
 .sheet-card { width: min(460px, 100%); background: var(--surface-solid); border: 1px solid var(--line); border-radius: 12px; padding: 18px; display: grid; gap: 10px; }
 .settings-form { display: grid; gap: 8px; }
+.report .sheet-card { width: min(560px, 100%); max-height: calc(100dvh - 32px); overflow-y: auto; }
+.report-text { width: 100%; background: var(--bg); color: var(--ink); border: 1px solid var(--line); border-radius: 6px; padding: 9px 10px; font: 12px/1.45 var(--f-mono); resize: vertical; }
+.report a.chip { text-decoration: none; }
+.chip-help { min-width: 34px; padding-inline: 10px; font-weight: 700; }
 .settings-form label { font: 600 11.5px var(--f-display); letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); margin-top: 4px; }
 .settings-form input { background: var(--bg); color: var(--ink); border: 1px solid var(--line); border-radius: 6px; padding: 9px 10px; font: 14px var(--f-mono); width: 100%; }
 
@@ -466,6 +470,7 @@ input[type='range'] { width: 100%; accent-color: var(--glow); }
   font: 500 14px var(--f-display); letter-spacing: 0.03em;
 }
 .setup-step:hover { color: var(--ink); }
+.setup-report { margin-top: 14px; align-self: flex-start; }
 .setup-step.is-active { color: var(--ink); background: var(--surface-solid); border-color: var(--line); }
 .setup-num { width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; font: 600 12px var(--f-mono); border: 1px solid var(--line); flex: none; }
 .setup-step.is-active .setup-num { background: var(--accent); color: var(--bg); border-color: var(--accent); }
@@ -474,6 +479,7 @@ input[type='range'] { width: 100%; accent-color: var(--glow); }
   .setup-main { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); }
   .setup-nav { flex-direction: row; overflow-x: auto; scrollbar-width: none; }
   .setup-step { flex: none; white-space: nowrap; }
+  .setup-report { margin: 0 0 0 8px; flex: none; white-space: nowrap; }
 }
 .setup-body { overflow-y: auto; min-height: 0; display: grid; gap: 18px; align-content: start; max-width: 860px; padding-right: 4px; }
 .setup-intro { margin: 0; max-width: 65ch; color: var(--muted); }

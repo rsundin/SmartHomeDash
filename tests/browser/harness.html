@@ -60,6 +60,7 @@ async function boot() {
   const realInterval = window.setInterval;
   const adapter = {
     ...mock,
+    haVersion: async () => '2026.11.0', // as the panel reads it from hass.config
     async connect(store, onStatus) {
       window.store = store;
       window.setInterval = (fn, ms) => { const id = realInterval(fn, ms); timers.push(id); return id; };

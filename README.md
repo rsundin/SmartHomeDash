@@ -121,6 +121,11 @@ See [SECURITY.md](SECURITY.md) for how access is handled and how to report a pro
 
 Next up: automated tests and a speed budget for old tablets, 15-minute electricity prices, a quick start from your Home Assistant areas, a card for any dashboard, more languages, people and appliances on the picture, and the house as a wall-screen screensaver. See [ROADMAP.md](ROADMAP.md).
 
+## Help, questions and ideas
+
+- **Something wrong?** Tap **?** in the dashboard (or **Report a problem** in the setup guide). It shows the text first, then opens a GitHub issue filled in with versions, browser, screen and counts, never the names of your rooms or devices. Administrators can attach Home Assistant's *Download diagnostics* for SmartHomeDash too (Settings → Devices & services → SmartHomeDash → ⋮), which holds counts and sizes only.
+- **Questions, ideas and pictures of your dashboard** are welcome in [Discussions](https://github.com/rsundin/SmartHomeDash/discussions): Q&A, Ideas (with votes) and Show and tell.
+
 ## Support
 
 SmartHomeDash is free and open source. If it brightens your wall, you can support its development through [GitHub Sponsors](https://github.com/sponsors/rsundin) or [Buy Me a Coffee](https://buymeacoffee.com/rsundin).

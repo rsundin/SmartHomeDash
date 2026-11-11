@@ -98,7 +98,7 @@ Setup effort is the main barrier for every floor plan project [R5][R6][R11]. Sma
 - **Files:** `ui/setup.js`, `areas.js`, `views/floorplan.js` (plan without picture: neutral tile style), `site.js`.
 - **Done when:** a fresh install with HA floors and areas shows a working plan in under a minute with no drawing. Tested on a mock with 2 floors and 9 areas.
 
-### S7: Report a problem and get help. Status: todo. Size: S. Next after 0.8.13 (placed here so it is picked before S2)
+### S7: Report a problem and get help. Status: done (v0.8.14). Size: S. Next after 0.8.13 (placed here so it is picked before S2)
 - **Why:** Problems in real homes should reach the repo with what is needed to solve them, without users having to know where to go or leaking details about their home. A bug report template exists but nothing in the dashboard points to it, and there is no place for questions or ideas that are not bugs.
 - **What:**
   - **Report a problem** in the dashboard menu and the setup guide: opens a new GitHub issue with the bug template filled in with SmartHomeDash version, Home Assistant version, browser, screen size, kiosk or light mode, and the config check messages (Q5), never entity ids, names or pictures. The user sees the text before it leaves.

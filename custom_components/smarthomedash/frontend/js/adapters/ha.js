@@ -81,6 +81,11 @@ export function createHaAdapter({ url, token }) {
       return send({ type: 'call_service', domain, service, service_data: data, return_response: true }).then((r) => r?.response ?? null);
     },
 
+    // Home Assistant's version, for a problem report.
+    haVersion() {
+      return send({ type: 'get_config' }).then((r) => r?.version ?? null, () => null);
+    },
+
     // The config entry an entity belongs to, which some actions need.
     configEntry(entityId) {
       return send({ type: 'config/entity_registry/get', entity_id: entityId }).then((r) => r?.config_entry_id ?? null);

@@ -119,8 +119,20 @@ _module("homeassistant.components.http", HomeAssistantView=HomeAssistantView)
 _anything("homeassistant.components.frontend")
 _anything("homeassistant.components.panel_custom")
 _anything("homeassistant.components.persistent_notification")
+
+
+def async_redact_data(data, to_redact):
+    """Home Assistant's redaction: the values of the named keys, at any depth."""
+    if isinstance(data, list):
+        return [async_redact_data(v, to_redact) for v in data]
+    if not isinstance(data, dict):
+        return data
+    return {k: "**REDACTED**" if k in to_redact else async_redact_data(v, to_redact) for k, v in data.items()}
+
+
+_module("homeassistant.components.diagnostics", async_redact_data=async_redact_data)
 _module("homeassistant.config_entries", ConfigEntry=object, ConfigFlow=object, OptionsFlow=object)
-_module("homeassistant.const", EVENT_PANELS_UPDATED="panels_updated")
+_module("homeassistant.const", EVENT_PANELS_UPDATED="panels_updated", __version__="2026.11.0")
 _module("homeassistant.helpers")
 _anything("homeassistant.helpers.config_validation")
 _anything("homeassistant.helpers.service")
