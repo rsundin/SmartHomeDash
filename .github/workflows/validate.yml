@@ -48,8 +48,17 @@ jobs:
         with:
           node-version: 22
       # The backend tests need only Python's standard library (3.12+, as on ubuntu-latest).
+      # The system packages come from the Ubuntu mirrors, which sometimes fail to
+      # resolve on the runners; try three times before giving up.
       - name: Install Playwright and Chromium
+        timeout-minutes: 15
         run: |
           npm install --no-save --no-package-lock playwright@1.63.0
-          npx playwright install --with-deps chromium
+          for i in 1 2 3; do
+            npx playwright install --with-deps chromium && exit 0
+            echo "Install attempt $i failed; retrying in $((i * 20)) s"
+            sleep $((i * 20))
+            sudo apt-get update -q || true
+          done
+          exit 1
       - run: tests/run.sh
