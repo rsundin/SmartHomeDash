@@ -42,7 +42,7 @@ Keep the example to try the dashboard out, place your own lights in it, or repla
 
 ## 3. Run the setup guide
 
-Open the dashboard. On the first visit the setup guide opens by itself; later it is under **Inställningar** / **Setup** in the header (administrators only). Work through the steps on the left, then **Save**.
+Open the dashboard. On the first visit the setup guide opens by itself; later it is under **Inställningar** / **Setup** in the header (administrators only). Work through the steps on the left, then **Save**. **Undo** and **Redo** at the top (or Ctrl/Cmd+Z and Ctrl/Cmd+Shift+Z) step through everything changed since the guide opened, until you save.
 
 ### Basics
 
@@ -68,6 +68,13 @@ Optional for an apartment: without it the dashboard opens on the floor plan. **R
 2. **Draw a room** for every room: click the corners, pick its Home Assistant area in the bar, **Done**.
 3. **Pick the room's Home Assistant area.** The room takes the area's name and its lights, thermostat and temperature sensor. The lights are set out in the middle of the room; move them to their real spots in placement mode. Rooms already named like an area can be linked all at once with **Link rooms to areas with the same name**. Without areas, type the room's name instead and place everything by hand.
 4. **Pick the building on the overview picture** that opens the plan. Tapping that building lifts its roof and shows the plan. The same link can be set under **Overview picture**, where each building says which plan it opens. With a single building and a single plan they are linked by themselves.
+
+**Edit shape** next to a room (and next to a building under **Overview picture**) opens it on the picture to adjust:
+- drag a corner to move it; drag the small dot in the middle of an edge to add a corner there; press and hold a corner, or right-click it, to remove it (a shape keeps at least three);
+- drag inside the shape to move all of it. A room takes its lamps and its name label along;
+- click a corner or the shape, then nudge it with the arrow keys, ten times as far with Shift;
+- **Snap to other shapes** (on by default, remembered on the screen) puts a corner on a nearby corner or edge of the other rooms, so walls line up. It works when drawing a new room too;
+- **Undo** and **Redo** work inside the editor; **Cancel** leaves the shape as it was.
 
 Rooms do not need to be exact. A room is used to find which room you tap in, to tint it by temperature and to light up windows.
 
@@ -107,7 +114,9 @@ Opens placement mode (also available as **Placera** / **Place** in the header):
 1. Pick a light, switch, thermostat or temperature sensor in the list. Unplaced ones are listed first, with their Home Assistant area; the search also finds entities by area.
 2. Tap where it is. On a floor plan the room is found from the tap: a light is placed at that spot, a thermostat or sensor is linked to the room. On the overview picture a light becomes an outdoor lamp; tap again to add more fixtures switched by the same entity. Outdoor lamps in the same Home Assistant area share one switch in the lights card.
 3. To move something already placed, drag the lamp to its new spot; on a floor plan it can go into another room. On the overview picture each fixture of an outdoor lamp moves on its own. Tap a lamp to see which one it is: a tag over it shows its name and entity id, and it is selected in the list.
-4. **Save to Home Assistant.**
+4. Fine-tune a selected lamp with the arrow keys (Shift moves ten times as far); it is saved when you stop pressing.
+5. **Undo** and **Redo** (or Ctrl/Cmd+Z and Ctrl/Cmd+Shift+Z) step back through the changes in placement mode until you save or throw the draft away.
+6. **Save to Home Assistant.**
 
 New outdoor lamps are drawn as wall lamps. To make one a flood or deck light, change its `type` to `ground` in `site.json` (see [configuration.md](configuration.md)).
 

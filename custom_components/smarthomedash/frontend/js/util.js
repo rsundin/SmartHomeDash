@@ -160,3 +160,77 @@ export function svgPoint(svg, e) {
 
 let uid = 0;
 export const nextId = (prefix) => `${prefix}-${++uid}`;
+
+// ---------- shape editing (setup guide and placement mode)
+
+// The point on segment a–b nearest to p.
+function nearestOnSegment([px, py], [ax, ay], [bx, by]) {
+  const dx = bx - ax, dy = by - ay;
+  const len = dx * dx + dy * dy;
+  const k = len ? clamp(((px - ax) * dx + (py - ay) * dy) / len, 0, 1) : 0;
+  return [ax + k * dx, ay + k * dy];
+}
+
+// Snap a point to the nearest corner of the other shapes within r, or else to the
+// nearest point on one of their edges within r. Returns { at, to } where `to` is
+// 'corner', 'edge' or null (not snapped, `at` is p).
+export function snapPoint(p, polys, r) {
+  let best = null, dist = r;
+  for (const poly of polys) for (const q of poly) {
+    const d = Math.hypot(q[0] - p[0], q[1] - p[1]);
+    if (d <= dist) { dist = d; best = q; }
+  }
+  if (best) return { at: [best[0], best[1]], to: 'corner' };
+  dist = r;
+  for (const poly of polys) {
+    for (let i = 0; i < poly.length; i++) {
+      const q = nearestOnSegment(p, poly[i], poly[(i + 1) % poly.length]);
+      const d = Math.hypot(q[0] - p[0], q[1] - p[1]);
+      if (d <= dist) { dist = d; best = q; }
+    }
+  }
+  return best ? { at: best, to: 'edge' } : { at: p, to: null };
+}
+
+// For a whole shape being moved: the smallest shift that puts one of its corners on a
+// corner of another shape, within r. [0, 0] when nothing is that close.
+export function snapShift(poly, polys, r) {
+  let best = [0, 0], dist = r;
+  for (const c of poly) for (const other of polys) for (const q of other) {
+    const d = Math.hypot(q[0] - c[0], q[1] - c[1]);
+    if (d <= dist) { dist = d; best = [q[0] - c[0], q[1] - c[1]]; }
+  }
+  return best;
+}
+
+// Undo and redo over snapshots. `push(state)` records the state as it was before a
+// change; `undo(now)` and `redo(now)` take the current state and return the one to go
+// back to (or null). States are kept as given, so pass copies or JSON strings.
+export function createHistory({ limit = 50, undo = [], redo = [] } = {}) {
+  const h = {
+    undo: [...undo], redo: [...redo],
+    push(state) { h.undo.push(state); if (h.undo.length > limit) h.undo.shift(); h.redo = []; },
+    back(now) { if (!h.undo.length) return null; h.redo.push(now); return h.undo.pop(); },
+    forward(now) { if (!h.redo.length) return null; h.undo.push(now); return h.redo.pop(); },
+    clear() { h.undo = []; h.redo = []; },
+  };
+  return h;
+}
+
+// Keyboard shortcuts for undo and redo: Ctrl/Cmd+Z, Ctrl/Cmd+Shift+Z and Ctrl+Y.
+// Text fields keep their own undo.
+export const typing = (e) => !!e.target?.closest?.('input, textarea, select, [contenteditable="true"]');
+export function undoKey(e) {
+  if (!(e.ctrlKey || e.metaKey) || e.altKey || typing(e)) return null;
+  const k = e.key.toLowerCase();
+  if (k === 'z') return e.shiftKey ? 'redo' : 'undo';
+  if (k === 'y' && !e.shiftKey) return 'redo';
+  return null;
+}
+// Arrow key as a step [dx, dy]; Shift moves ten steps.
+export function arrowStep(e, step = 1) {
+  const d = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] }[e.key];
+  if (!d || e.ctrlKey || e.metaKey || e.altKey || typing(e)) return null;
+  const n = step * (e.shiftKey ? 10 : 1);
+  return [d[0] * n, d[1] * n];
+}

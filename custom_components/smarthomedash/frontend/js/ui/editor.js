@@ -8,8 +8,10 @@
 //
 // Changes are kept as a draft in this browser and applied by reloading the page.
 // "Copy site.json" puts the result on the clipboard to paste into the real file.
+// Undo and Redo (also Ctrl/Cmd+Z, Shift+Z) step back through the draft until it is
+// saved or thrown away. Arrow keys nudge the selected lamp; Shift moves it further.
 
-import { el, sv, svgPoint, inside, storage } from '../util.js';
+import { el, sv, svgPoint, inside, storage, createHistory, undoKey, arrowStep } from '../util.js';
 import { draftKey, missingFilterKey } from '../site.js';
 import { t } from '../i18n.js';
 import { areaOf, areaName } from '../areas.js';
@@ -33,6 +35,15 @@ export function createEditor({ site, store, saveSite = null, reload = () => loca
   const raw = site.raw;
   const viewKey = `shd:${site.id}:editview`;
   const selKey = `shd:${site.id}:editsel`;
+  const histKey = `shd:${site.id}:edithistory`;
+  // Each change reloads the page, so the history lives in this browser with the draft.
+  // It belongs to the config it was recorded on: if that is not what loaded (saved from
+  // the setup guide, or the draft was thrown away), it starts over.
+  const loaded = JSON.stringify(raw);
+  const kept = storage.get(histKey);
+  const history = createHistory({ limit: 20, ...(kept?.at === loaded ? kept : {}) });
+  const keepHistory = (at) => storage.set(histKey, history.undo.length || history.redo.length ? { at, undo: history.undo, redo: history.redo } : null);
+  if (kept && kept.at !== loaded) storage.set(histKey, null);
   let mode = 'place';
   let selected = null;
   let filter = '';
@@ -94,7 +105,15 @@ export function createEditor({ site, store, saveSite = null, reload = () => loca
   const nameOf = (id) => entityName(id, { store, site }, site.index.names.get(id) ?? id);
   const kindOf = (id) => placeKind(KINDS.find((k) => k.match(store.get(id) ?? { entity_id: id, attributes: {} }))?.id);
 
+  let recorded = false; // one step per load: every change restarts the page
   function save(message) {
+    if (!recorded) history.push(JSON.parse(loaded));
+    recorded = true;
+    keepHistory(JSON.stringify(raw));
+    store_(message);
+  }
+  // Writes the draft as it is now and restarts on it.
+  function store_(message) {
     storage.set(draftKey(site.id), raw);
     storage.set(viewKey, currentView());
     // Keep the selection and the message across the reload, so the moved lamp stays marked.
@@ -109,7 +128,7 @@ export function createEditor({ site, store, saveSite = null, reload = () => loca
     const kind = kindOf(id);
     const rawPlan = (raw.floorplans ?? []).find((p) => p.id === plan.id);
     const room = (rawPlan?.rooms ?? []).find((r) => inside(at, r.area));
-    if (!room) { status.textContent = t('editor.outsideRooms'); return; }
+    if (!room) { status.textContent = t('editor.outsideRooms'); return false; }
     selected = id;
     const existing = (room.lights ?? []).find((l) => l.entity === id);
     unplace(id);
@@ -122,6 +141,7 @@ export function createEditor({ site, store, saveSite = null, reload = () => loca
       room.temperature = id;
     }
     save(t('editor.placedIn', { name: nameOf(id), room: room.name }));
+    return true;
   }
 
   // ---------- place on the overview (outdoor lamp)
@@ -158,6 +178,8 @@ export function createEditor({ site, store, saveSite = null, reload = () => loca
       el('button', { class: 'chip', type: 'button', onclick: () => { points = []; renderDraw(); } }, t('editor.clear'))));
 
   const draftRow = el('div', { class: 'row' },
+    el('button', { class: 'chip editor-undo', type: 'button', disabled: !history.undo.length, onclick: () => undo() }, t('history.undo')),
+    el('button', { class: 'chip editor-redo', type: 'button', disabled: !history.redo.length, onclick: () => redo() }, t('history.redo')),
     saveSite ? el('button', { class: 'chip chip-primary', type: 'button', onclick: () => saveToHa() }, t('editor.saveHa')) : null,
     el('button', { class: `chip${saveSite ? '' : ' chip-primary'}`, type: 'button', onclick: () => copyText(JSON.stringify(raw, null, 2), t('editor.copiedJson')) }, t('editor.copyJson')),
     el('button', { class: 'chip', type: 'button', onclick: download }, t('editor.download')),
@@ -381,14 +403,74 @@ export function createEditor({ site, store, saveSite = null, reload = () => loca
   }
   function discard() {
     storage.set(draftKey(site.id), null);
+    storage.set(histKey, null);
     reload();
   }
+
+  // ---------- undo and redo
+  function travel(to, message) {
+    if (!to) return;
+    for (const k of Object.keys(raw)) delete raw[k];
+    Object.assign(raw, to);
+    keepHistory(JSON.stringify(raw));
+    store_(message);
+  }
+  function undo() { travel(history.back(JSON.parse(loaded)), t('history.undone')); }
+  function redo() { travel(history.forward(JSON.parse(loaded)), t('history.redone')); }
+
+  // ---------- arrow keys nudge the selected lamp
+  // The lamp moves on screen at once; the draft is written when the keys rest.
+  let nudge = null;
+  function lampSpot(id) {
+    for (const plan of raw.floorplans ?? []) {
+      for (const room of plan.rooms ?? []) {
+        const light = (room.lights ?? []).find((l) => l.entity === id && l.at);
+        if (light) return { plan, light, step: plan.unit === 'px' ? 1 : 10 };
+      }
+    }
+    const zone = (raw.overview?.zones ?? []).find((z) => (z.lights ?? []).includes(id));
+    return zone?.lamps?.length === 1 ? { zone, lamp: zone.lamps[0], step: 1 } : null;
+  }
+  function nudgeLamp(e) {
+    if (mode !== 'place' || !selected) return false;
+    const spot = lampSpot(selected);
+    const node = spot && lampNode(selected);
+    const d = spot && node ? arrowStep(e, spot.step) : null;
+    if (!d) return false;
+    nudge ??= { id: selected, spot, node, d: [0, 0] };
+    nudge.d = [nudge.d[0] + d[0], nudge.d[1] + d[1]];
+    nudge.node.setAttribute('transform', `translate(${nudge.d[0]} ${nudge.d[1]})`);
+    clearTimeout(nudge.timer);
+    nudge.timer = setTimeout(applyNudge, 700);
+    return true;
+  }
+  function applyNudge() {
+    const nudge0 = nudge;
+    const { id, spot, d } = nudge0;
+    nudge = null;
+    if (spot.light) {
+      const at = [spot.light.at[0] + d[0], spot.light.at[1] + d[1]];
+      if (!placeInPlan(spot.plan, at, id)) nudge0.node.removeAttribute('transform');
+    } else {
+      spot.lamp.at = [spot.lamp.at[0] + d[0], spot.lamp.at[1] + d[1]];
+      save(t('editor.moved', { name: spot.zone.name }));
+    }
+  }
+  const onKey = (e) => {
+    if (!root.isConnected) { document.removeEventListener('keydown', onKey); return; }
+    if (document.querySelector('.setup, .draw')) return;
+    const u = undoKey(e);
+    if (u) { e.preventDefault(); if (u === 'undo') undo(); else redo(); return; }
+    if (nudgeLamp(e)) e.preventDefault();
+  };
+  document.addEventListener('keydown', onKey);
   // In the Home Assistant panel the config can be written straight back (admins only).
   async function saveToHa() {
     status.textContent = t('editor.saving');
     try {
       await saveSite(raw);
       storage.set(draftKey(site.id), null);
+      storage.set(histKey, null);
       status.textContent = t('editor.saved');
       setTimeout(reload, 600);
     } catch (e) {

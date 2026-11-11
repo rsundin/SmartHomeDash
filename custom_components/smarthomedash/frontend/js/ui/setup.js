@@ -10,8 +10,10 @@
 //
 // Works on a copy of the config; "Save" writes it to Home Assistant and restarts
 // the dashboard, "Close" throws the changes away. Pictures are uploaded at once.
+// Undo and Redo (also Ctrl/Cmd+Z, Shift+Z) step through the changes until saved.
 
-import { el, sv, pts, svgPoint, centroid, bbox, inside } from '../util.js';
+import { el, sv, pts, svgPoint, centroid, bbox, inside, snapPoint, createHistory, undoKey } from '../util.js';
+import { editShape, snapToggle, snapOn, snapRadius } from './shape.js';
 import { t } from '../i18n.js';
 import { readPower, kwText, MIN_KW } from '../power.js';
 import { nameOf } from '../entities.js';
@@ -49,14 +51,63 @@ export function createSetup({ site, store, saveSite, uploadFile, reload, openPla
   const body = el('div', { class: 'setup-body' });
   const status = el('p', { class: 'small setup-status', role: 'status' });
   const saveBtn = el('button', { class: 'chip chip-primary', type: 'button', onclick: save }, t('setup.save'));
+  const undoBtn = el('button', { class: 'chip setup-undo', type: 'button', disabled: true, onclick: () => undo() }, t('history.undo'));
+  const redoBtn = el('button', { class: 'chip setup-redo', type: 'button', disabled: true, onclick: () => redo() }, t('history.redo'));
   const root = el('div', { class: 'setup', role: 'dialog', 'aria-label': t('setup.title') },
     el('header', { class: 'setup-head' },
       el('div', {}, el('p', { class: 'eyebrow' }, t('setup.eyebrow')), el('h2', { class: 'panel-title' }, t('setup.title'))),
-      el('div', { class: 'row' }, status, saveBtn,
+      el('div', { class: 'row' }, status, undoBtn, redoBtn, saveBtn,
         el('button', { class: 'chip', type: 'button', onclick: close }, t('setup.close')))),
     el('div', { class: 'setup-main' }, nav, body));
 
-  const changed = () => { dirty = true; status.textContent = t('setup.unsaved'); };
+  // ---------- undo and redo
+  // A snapshot of the config is taken after each change. Typing in one field is one
+  // step, not one per letter: `key` names the field, and the same key in a row merges.
+  const history = createHistory({ limit: 50 });
+  let last = JSON.stringify(cfg);
+  const saved = last;
+  let lastKey = null;
+  function commit(key = null) {
+    const now = JSON.stringify(cfg);
+    if (now === last) return;
+    if (!key || key !== lastKey) history.push(last);
+    else history.redo = [];
+    last = now;
+    lastKey = key;
+    showHistory();
+  }
+  function showHistory() {
+    undoBtn.disabled = !history.undo.length;
+    redoBtn.disabled = !history.redo.length;
+    dirty = last !== saved;
+  }
+  function restore(json, message) {
+    for (const k of Object.keys(cfg)) delete cfg[k];
+    Object.assign(cfg, JSON.parse(json));
+    last = json;
+    lastKey = null;
+    showHistory();
+    render();
+    status.textContent = message;
+  }
+  function undo() { const s = history.back(JSON.stringify(cfg)); if (s) restore(s, t('history.undone')); }
+  function redo() { const s = history.forward(JSON.stringify(cfg)); if (s) restore(s, t('history.redone')); }
+  const onKey = (e) => {
+    if (!root.isConnected) { document.removeEventListener('keydown', onKey); return; }
+    if (root.querySelector('.draw')) return; // drawing and shape editing have their own
+    const u = undoKey(e);
+    if (!u) return;
+    e.preventDefault();
+    if (u === 'undo') undo(); else redo();
+  };
+  document.addEventListener('keydown', onKey);
+
+  // Changes are recorded once the handler that made them has finished.
+  const changed = (key = null) => {
+    dirty = true;
+    status.textContent = t('setup.unsaved');
+    queueMicrotask(() => commit(key));
+  };
 
   async function save() {
     delete cfg.setup_pending;
@@ -75,10 +126,10 @@ export function createSetup({ site, store, saveSite, uploadFile, reload, openPla
   }
   // With unsaved changes, Close asks what to do with clear buttons instead of closing.
   function close() {
-    if (!dirty) { root.remove(); onClose(); return; }
+    if (!dirty) { root.remove(); document.removeEventListener('keydown', onKey); onClose(); return; }
     status.replaceChildren(
       el('span', {}, t('setup.closeConfirm')), ' ',
-      el('button', { class: 'chip chip-danger', type: 'button', onclick: () => { root.remove(); onClose(); } }, t('setup.discard')), ' ',
+      el('button', { class: 'chip chip-danger', type: 'button', onclick: () => { root.remove(); document.removeEventListener('keydown', onKey); onClose(); } }, t('setup.discard')), ' ',
       el('button', { class: 'chip chip-primary', type: 'button', onclick: save }, t('setup.save')));
   }
 
@@ -104,7 +155,7 @@ export function createSetup({ site, store, saveSite, uploadFile, reload, openPla
   const exampleNote = (key) => el('p', { class: 'setup-note' }, t(key));
   const input = (value, onInput, attrs = {}) => {
     const n = el('input', { class: 'setup-input', value: value ?? '', ...attrs });
-    n.addEventListener('input', () => { onInput(n.value); changed(); });
+    n.addEventListener('input', () => { onInput(n.value); changed(n); });
     return n;
   };
   const select = (options, value, onChange, attrs = {}) => {
@@ -245,6 +296,10 @@ export function createSetup({ site, store, saveSite, uploadFile, reload, openPla
       cfg.floorplans.length
         ? select([['', t('setup.opensNoPlan')], ...cfg.floorplans.map((p) => [p.id, t('setup.opensPlan', { name: p.name })])], b.floorplan, (v) => { if (v) b.floorplan = v; else delete b.floorplan; }, { 'aria-label': t('setup.floorPlan') })
         : el('span', { class: 'muted small' }, t('setup.noPlansYet')),
+      b.area?.length > 2 ? shapeButton(t('setup.editShapeOf', { name: b.name }), {
+        src: picture(ov.image), size: ov.size, points: b.area, kind: 'building',
+        shapes: overviewShapes().filter((s) => s.points !== b.area),
+      }, (poly) => { b.area = poly; status.textContent = t('setup.shapeSaved', { name: b.name }); }) : null,
       el('button', { class: 'chip chip-danger', type: 'button', onclick: () => { ov.buildings.splice(i, 1); changed(); render(); } }, t('setup.remove')))));
     out.push(section(t('setup.buildings'), el('p', { class: 'muted small' }, t('setup.buildingsHelp')), bList,
       drawButton(t('setup.drawBuilding'), { src: picture(ov.image), size: ov.size, shapes: overviewShapes(), pick: areaPick() }, (poly, areaId) => {
@@ -360,6 +415,10 @@ export function createSetup({ site, store, saveSite, uploadFile, reload, openPla
           : input(r.name, (v) => { r.name = v; }, { 'aria-label': t('setup.name') }),
         el('span', { class: 'muted small' }, roomSummary(r)),
         r.redraw && src && size ? drawButton(t('setup.redrawRoom', { room: r.name }), { src, size, shapes: (plan.rooms ?? []).filter((x) => x !== r && !x.redraw).map((x) => ({ points: x.area, label: x.name, kind: 'room' })) }, (poly) => redrawRoom(r, poly)) : null,
+        !r.redraw && src && size && r.area?.length > 2 ? shapeButton(t('setup.editShapeOf', { name: r.name }), {
+          src, size, points: r.area, kind: 'room', step: plan.unit === 'px' ? 1 : 10,
+          shapes: (plan.rooms ?? []).filter((x) => x !== r && !x.redraw && x.area?.length > 2).map((x) => ({ points: x.area, label: x.name, kind: 'room' })),
+        }, (poly, shift) => reshapeRoom(r, poly, shift)) : null,
         r.ha_area ? el('button', { class: 'chip', type: 'button', onclick: () => fill(r) }, t('setup.fetchFromArea')) : null,
         el('button', { class: 'chip chip-danger', type: 'button', onclick: () => { plan.rooms.splice(i, 1); changed(); render(); } }, t('setup.remove')))));
       out.push(section(plan.name,
@@ -450,7 +509,23 @@ export function createSetup({ site, store, saveSite, uploadFile, reload, openPla
     room.area = poly;
     delete room.redraw;
     delete room.label;
-    // Lights placed on the old tile move into the room as drawn.
+    lightsInside(room, poly);
+    status.textContent = t('setup.redrawn', { room: room.name });
+  }
+  // A room moved as a whole takes its lamps and its name along; a lamp left outside
+  // the new corners moves in.
+  function reshapeRoom(room, poly, [dx, dy] = [0, 0]) {
+    room.area = poly;
+    if (dx || dy) {
+      for (const l of room.lights ?? []) if (l.at) l.at = [l.at[0] + dx, l.at[1] + dy];
+      if (Array.isArray(room.label)) room.label = [room.label[0] + dx, room.label[1] + dy];
+    }
+    if (Array.isArray(room.label) && !inside(room.label, poly)) delete room.label;
+    lightsInside(room, poly);
+    status.textContent = t('setup.shapeSaved', { name: room.name });
+  }
+  // Lights outside the room's corners (placed on an old tile or shape) move into it.
+  function lightsInside(room, poly) {
     const out = (room.lights ?? []).filter((l) => l.at && !inside(l.at, poly));
     if (out.length) {
       const [cx, cy] = centroid(poly);
@@ -461,7 +536,6 @@ export function createSetup({ site, store, saveSite, uploadFile, reload, openPla
         l.at = [Math.round(cx + Math.cos(a) * r), Math.round(cy + Math.sin(a) * r)];
       });
     }
-    status.textContent = t('setup.redrawn', { room: room.name });
   }
 
   // Which building on the overview picture opens this plan, lifting its roof when tapped.
@@ -698,6 +772,13 @@ export function createSetup({ site, store, saveSite, uploadFile, reload, openPla
     return el('button', { class: 'chip', type: 'button', onclick: () => draw({ ...opts, title: label }, (poly, picked) => { onDone(poly, picked); changed(); render(); }) }, label);
   }
 
+  // Move a shape's corners, add and remove corners, or move all of it (ui/shape.js).
+  function shapeButton(label, opts, onDone) {
+    return el('button', { class: 'chip setup-shape', type: 'button', 'aria-label': label, onclick: () => {
+      root.append(editShape({ ...opts, title: label }, (poly, shift) => { onDone(poly, shift); changed(); render(); }));
+    } }, t('setup.editShape'));
+  }
+
   function draw({ src, size: [w, h], shapes, title, point = false, pick = null }, onDone) {
     // pick = { label, options: [[value, text]] }: chosen while drawing, handed to onDone.
     const picker = pick ? select(pick.options, '', () => {}, { 'aria-label': pick.label }) : null;
@@ -723,14 +804,17 @@ export function createSetup({ site, store, saveSite, uploadFile, reload, openPla
     svgEl.addEventListener('click', (e) => {
       const p = svgPoint(svgEl, e);
       if (p.x < 0 || p.y < 0 || p.x > w || p.y > h) return;
-      points.push([Math.round(p.x), Math.round(p.y)]);
+      // With Snap on, a corner lands on a nearby corner or edge of what is already drawn.
+      const at = snapOn() ? snapPoint([p.x, p.y], shapes.map((s) => s.points).filter((q) => q?.length > 2), snapRadius(svgEl)).at : [p.x, p.y];
+      points.push([Math.round(at[0]), Math.round(at[1])]);
       if (point) { overlay.remove(); onDone(points, picker?.value); return; }
       redraw();
     });
     const overlay = el('div', { class: 'draw' },
       el('div', { class: 'draw-bar' },
         el('div', {}, el('strong', {}, title), el('p', { class: 'muted small' }, t(point ? 'setup.pointHelp' : 'setup.drawHelp'))),
-        el('div', { class: 'row' }, picker ? el('label', { class: 'draw-pick' }, el('span', { class: 'small muted' }, pick.label), picker) : null, count,
+        el('div', { class: 'row' }, picker ? el('label', { class: 'draw-pick' }, el('span', { class: 'small muted' }, pick.label), picker) : null,
+          point ? null : snapToggle(), count,
           el('button', { class: 'chip', type: 'button', onclick: () => { points.pop(); redraw(); } }, t('editor.undo')),
           el('button', { class: 'chip', type: 'button', onclick: () => overlay.remove() }, t('setup.cancel')),
           doneBtn)),
