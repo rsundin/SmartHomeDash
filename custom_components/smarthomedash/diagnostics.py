@@ -18,7 +18,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import __version__ as HA_VERSION
 from homeassistant.core import HomeAssistant
 
-from .const import CONF_SITE, DOMAIN, MAX_SITE_JSON
+from .const import CONF_SITE, DOMAIN, KEEP_VERSIONS, MAX_SITE_JSON
 
 TO_REDACT = {"title", "site", "url_path", "github_token", "token", "name"}
 ENTITY = re.compile(r"^[a-z_]+\.[a-z0-9_]+$")
@@ -64,7 +64,8 @@ def _site_summary(sites_dir: Path, site_id: str | None) -> dict[str, Any]:
         "folder_exists": True,
         "pictures": len(pictures),
         "pictures_bytes": sum(p.stat().st_size for p in pictures),
-        "backup": (folder / "site.json.bak").is_file(),
+        "backup": (folder / "site.json.1").is_file() or (folder / "site.json.bak").is_file(),
+        "versions": sum((folder / f"site.json.{n}").is_file() for n in range(1, KEEP_VERSIONS + 1)),
     }
     path = folder / "site.json"
     if not path.is_file():

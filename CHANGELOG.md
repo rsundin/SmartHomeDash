@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.8.16
+
+Backups and moving a dashboard: export, import and restore points.
+
+- **Backup** is a new last step in the setup guide, for administrators in the Home Assistant panel
+- **Download .zip** exports the dashboard as one file: site.json and every picture in its folder
+- **Choose .zip …** imports such a file into this dashboard, after confirming. Home Assistant checks the whole file before writing anything: only site.json (with the same check as a save) and jpg, png or webp pictures by content, no names that lead out of the folder, and limits of 100 MB unpacked, 25 MB per picture and 200 files. A .zip of the dashboard's folder itself works too. To move a dashboard to another Home Assistant, add a new dashboard there and import into it
+- **Restore points**: every save now keeps the last 10 versions of site.json (`site.json.1` the newest, to `site.json.10`) instead of a single `site.json.bak`. The guide lists them with when each was saved and how many floor plans and rooms it has, and **Restore** brings one back after confirming. An import or a restore keeps the replaced settings as a restore point, so it can be undone the same way. Saving the same file twice adds no version
+- Diagnostics count the kept versions
+- SECURITY.md describes the new endpoints and their checks
+
 ## 0.8.15
 
 Editing rooms and lamps without starting over.

@@ -15,7 +15,7 @@ What is planned next, roughly in order. Plans change; ideas and votes are welcom
 - **Quick start from Home Assistant**: a floor plan per floor with a tile per area, working before you draw anything. Done in 0.8.12.
 - **Report a problem and get help**: a *Report a problem* button that fills in a GitHub issue without details about your home, Home Assistant diagnostics, and GitHub Discussions for questions and ideas. Done in 0.8.14.
 - **Editor comforts**: undo and redo, move and add corners, snap to other rooms, move a whole room, nudge with the arrow keys. Done in 0.8.15.
-- **Export, import and restore points** for a whole dashboard.
+- **Export, import and restore points** for a whole dashboard. Done in 0.8.16.
 - **A card for any dashboard** (`custom:smarthomedash-card`).
 - **More languages**: German, Norwegian, Danish, Finnish, Dutch.
 - **The default HACS list.**

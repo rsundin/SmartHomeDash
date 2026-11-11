@@ -120,6 +120,14 @@ Opens placement mode (also available as **Placera** / **Place** in the header):
 
 New outdoor lamps are drawn as wall lamps. To make one a flood or deck light, change its `type` to `ground` in `site.json` (see [configuration.md](configuration.md)).
 
+### Backup
+
+The last step, for administrators in the Home Assistant panel:
+
+- **Export**: **Download .zip** saves the dashboard as one file: `site.json` and every picture in its folder. Entity ids are in it, so keep it to yourself.
+- **Import**: **Choose .zip …** reads a file exported from SmartHomeDash into this dashboard, after you confirm. It replaces the settings and adds the pictures; pictures already there with other names stay. To move a dashboard to another Home Assistant, or copy it, add a new dashboard there (step 2) and import into it. Home Assistant checks the whole file first and imports nothing if any part fails: only `site.json` and jpg, png or webp pictures (checked by content), at most 100 MB unpacked, 25 MB per picture and 200 files, and no names that lead out of the dashboard's folder.
+- **Restore points**: every save keeps the version it replaced, up to the last 10 (`site.json.1` is the newest, up to `site.json.10`). Each is listed with when it was saved and how many floor plans and rooms it has; **Restore** makes it the current one, after you confirm. An import or a restore keeps the settings it replaced as a restore point too, so it can be undone the same way. Pictures are not part of a restore point.
+
 ## Tips for the pictures
 
 **Overview from a drone photo.** Fly high enough to have the whole property in view, camera tilted down about 45°. Daylight with soft shadows works best.
@@ -203,6 +211,8 @@ In landscape at 1024 pixels or wider the dashboard fills the screen without scro
 **A warning says devices no longer exist in Home Assistant.** An entity in site.json was renamed or removed in Home Assistant. Unfold the warning to see which, and where each is used. **Show in placement mode** lists only those; place one again under its new name, or remove it from the dashboard.
 
 **Saving says "site.json was not saved".** The file failed Home Assistant's check, and the message says which part, such as a room outline that is not a list of number pairs. The file on disk is unchanged. Fix that part in placement mode or in the file.
+
+**An import says "Nothing was imported".** The message names the file in the .zip that failed, for example a file that is not a picture, or a `site.json` that fails the check above. Nothing in the dashboard changed. Export from SmartHomeDash again, or remove that file from the .zip.
 
 **The sidebar entry is missing after a restart.** Check *Settings → System → Logs* for messages from `smarthomedash`.
 

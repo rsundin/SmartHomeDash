@@ -21,6 +21,8 @@ What it registers:
   in Home Assistant; it holds no data about any home.
 - /api/smarthomedash/sites/<site>/<file>  the site's config and pictures, for
   logged-in users only; admins can save the config and upload pictures.
+- /api/smarthomedash/backup/<site>/...  export as .zip, import a .zip, and the
+  kept versions of site.json with restore (admins only).
 - One sidebar panel per dashboard, loading the code in an iframe and handing it the
   logged-in `hass` object, so no access token is needed.
 - The `smarthomedash.update` action (admins), installing the latest version from
@@ -60,7 +62,7 @@ from .const import (
     SITE_ID,
     URL_PATH,
 )
-from .views import FrontendView, SitesView, write_atomic
+from .views import BackupView, FrontendView, SitesView, write_atomic
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -205,6 +207,7 @@ async def _async_setup_shared(hass: HomeAssistant, conf: dict) -> dict:
     }
     hass.http.register_view(FrontendView(hass, root / "frontend"))
     hass.http.register_view(SitesView(hass, sites_dir))
+    hass.http.register_view(BackupView(hass, sites_dir))
     # Installations through HACS update through HACS. The update action is only for
     # setups that point at a repository themselves (a private fork, a token).
     if conf.get("github_token") or conf.get("repository"):
