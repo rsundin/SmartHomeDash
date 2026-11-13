@@ -115,13 +115,14 @@ The community's top complaint is slow dashboards [R22][R23]. Work through Claude
 - **What:** Reproduce with CDP touch events and with Playwright `tap()`. Trace the drag flag and pointer bookkeeping in `ui/zoom.js` (`drag.on`, `pointers`, `isPrimary`, the click suppression in capture). Fix the cause rather than the timing, and add a unit-level test of the gesture state machine where possible.
 - **Done when:** the test passes 20 runs in a row locally and in CI, with no added waits; any real cause found is in the CHANGELOG.
 
-### Q7: Tests against a real Home Assistant. Status: todo. Size: M. Depends: Q1
+### Q7: Tests against a real Home Assistant. Status: done (v0.8.19). Size: M. Depends: Q1
 - **Why:** The backend tests use stand-ins for Home Assistant. The config flow, options flow, panel registration and sidebar rename, diagnostics, the update action and the views have never run under Home Assistant itself.
 - **What:**
   - Add `pytest-homeassistant-custom-component` tests in `tests/ha/` that set up the integration from YAML and from a config entry.
   - Cover: panel registered and renamed, the views with authenticated and unauthenticated clients (`hass_client`, `hass_client_no_auth`), admin-only writes with a non-admin user, the starter site, diagnostics redaction and unloading.
   - A CI job pinned to the oldest supported (`hacs.json` minimum) and the newest Home Assistant.
 - **Done when:** the job runs on every pull request and is required on main; it would have caught a broken config flow import.
+- **Result (0.8.19):** 17 tests, on Home Assistant 2026.10.4 and 2025.6.3. 2025.6 is the oldest version on which all pass: **Configure** fails before 2024.12 (`OptionsFlow.config_entry`), and the update action cannot be registered before 2025.6 (`supports_response` on admin services). Open for the owner: raise the `hacs.json` minimum from 2024.8.0, and make the job required in branch protection.
 
 ### Q8: Split the setup guide and the strings. Status: todo. Size: M
 - **Why:** `ui/setup.js` (837 lines, with very long lines) and `i18n.js` (1,053 lines) are the largest files, and every task touches them. S5 will add five languages to `i18n.js`.

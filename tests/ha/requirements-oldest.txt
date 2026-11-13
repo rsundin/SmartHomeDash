@@ -1,0 +1,7 @@
+# The oldest Home Assistant on which every test in tests/ha passes: 2025.6.3
+# (plugin 0.13.254). Needs Python 3.13. The last lines hold back libraries that have
+# since dropped what this Home Assistant version uses.
+pytest-homeassistant-custom-component==0.13.254
+home-assistant-frontend==20250531.4
+pycares<5
+josepy<2

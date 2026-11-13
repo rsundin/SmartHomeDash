@@ -15,14 +15,15 @@ New to the project, or a new model picking it up? Read `docs/roadmap/kickoff.md`
 - `custom_components/smarthomedash/`: `__init__.py` (setup, panels, starter site, optional `smarthomedash.update`), `config_flow.py`, `views.py` (FrontendView public/no-cache, SitesView auth), `updater.py`, `const.py`.
 - `frontend/panel.js`: panel element in HA's iframe; gets `hass`, kiosk via `hass-dock-sidebar`.
 - `frontend/js/`: `main.js` startup, `site.js` config loading, `areas.js` Home Assistant areas, `glow.js` lamp colours, `status.js` sensors and warnings, `views/flow.js` energy flow, `views/` overview + floor plan, `ui/setup.js` setup guide, `ui/editor.js` placement, `ui/shape.js` shape editing (corners, snap, undo), `ui/zoom.js` pinch zoom, `ui/wall.js` doorbell camera, idle mode and light mode, `adapters/` (hass, ha token, mock test data).
-- `tests/`: `run.sh`, `backend/` (unittest), `browser/` (node:test + Playwright, `harness.html`), `fixtures/` (generated test sites).
+- `tests/`: `run.sh`, `backend/` (unittest), `browser/` (node:test + Playwright, `harness.html`), `fixtures/` (generated test sites), `ha/` (pytest under a real Home Assistant; not part of `run.sh`).
 - `index.html` + `sites/`: standalone dev page on test data (`python3 -m http.server`, `?site=example-apartment`, `#edit`, `?kiosk`). New JS files must be added to MODULES in `index.html`.
 - Config format: `docs/configuration.md`. User guide: `docs/setup.md`.
 
 ## Checks before pushing
 - Run `tests/run.sh` and make it pass before every push. It checks syntax (Python, frontend JS read as ES modules, JSON), runs the backend tests (`tests/backend/`: paths, size limits, admin-only writes, the site.json check; standard library only, with stand-ins for Home Assistant and aiohttp) and the browser tests (`tests/browser/`, Playwright on Chromium against `python3 -m http.server`: both examples at five screen sizes, kiosk, rooms and lamps, night mode, pinch zoom, placement drag and list, undo/redo, corner drag and snap, setup guide, quick start from Home Assistant floors and areas, warnings, devices missing in Home Assistant, energy flow, entity names, electricity prices, and the performance budget in `perf.test.js` on the large site from `tests/fixtures/perf-site.js`). `tests/run.sh backend` or `tests/run.sh browser` runs one part.
+- Changes to the Python side also run under Home Assistant itself: `pip install -r tests/ha/requirements.txt` (Python 3.14; `requirements-oldest.txt` needs 3.13) in a virtual environment, then `pytest tests/ha`. It covers setup from YAML and the UI, the config and options flows, panels, the views with and without a login and as a non-administrator, diagnostics and unloading. CI runs both versions (job **Home Assistant**).
 - New behaviour gets a test. Browser tests that need the panel use `tests/browser/harness.html`: the panel code with test data, `window.store` to set states, and restarts in place like the HA panel.
-- CI (hassfest, HACS, JavaScript syntax, Tests) is required on main.
+- CI (hassfest, HACS, JavaScript syntax, Tests) is required on main. Home Assistant (newest, oldest) runs too and becomes required once the owner adds it to branch protection.
 
 ## Roadmap
 - Planned work is in `docs/roadmap/plan.md`: milestones with task ids (Q1, S2, H3 …), status, size, dependencies and **Done when** criteria. Pick the first `todo` task whose dependencies are done unless told otherwise, follow "How to work this plan" there, and mark the task `done (vX.Y.Z)` when it ships. `ROADMAP.md` is the public summary; keep both in step.
