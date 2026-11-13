@@ -210,6 +210,11 @@ async def test_site_files_need_a_login(hass: HomeAssistant, entry, hass_client_n
     resp = await client.get("/smarthomedash/frontend/panel.js")
     assert resp.status == HTTPStatus.OK
     assert "no-cache" in resp.headers.get("Cache-Control", "")
+    # The texts are fetched as JSON, one file per language (frontend/i18n/).
+    for code in ("en", "sv"):
+        resp = await client.get(f"/smarthomedash/frontend/i18n/{code}.json")
+        assert resp.status == HTTPStatus.OK
+        assert "app.startFailed" in json.loads(await resp.text())
     assert (await client.get("/smarthomedash/frontend/../manifest.json")).status in (HTTPStatus.NOT_FOUND, HTTPStatus.FORBIDDEN)
 
 
