@@ -6,7 +6,7 @@ Plan for about an hour, most of it spent on the pictures.
 
 ## What you need
 
-- Home Assistant 2024.8 or newer, with an administrator account.
+- Home Assistant 2025.6 or newer, with an administrator account.
 - Home Assistant's **Marketplace** (2026.11 and newer; [HACS](https://hacs.xyz) before that), or SSH or Samba access to copy files.
 - **An overview picture** of the property from above. A drone photo taken at an angle works best; without a drone, [make one from a 3D map](overview-picture.md). Any size is fine; about 1200 to 2500 pixels wide keeps it sharp without being slow.
 - **A floor plan picture** per building or storey: a scanned drawing, an estate agent's plan or a realistic render seen from above, cropped to the outer walls.

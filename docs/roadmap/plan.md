@@ -122,7 +122,7 @@ The community's top complaint is slow dashboards [R22][R23]. Work through Claude
   - Cover: panel registered and renamed, the views with authenticated and unauthenticated clients (`hass_client`, `hass_client_no_auth`), admin-only writes with a non-admin user, the starter site, diagnostics redaction and unloading.
   - A CI job pinned to the oldest supported (`hacs.json` minimum) and the newest Home Assistant.
 - **Done when:** the job runs on every pull request and is required on main; it would have caught a broken config flow import.
-- **Result (0.8.19):** 17 tests, on Home Assistant 2026.10.4 and 2025.6.3. 2025.6 is the oldest version on which all pass: **Configure** fails before 2024.12 (`OptionsFlow.config_entry`), and the update action cannot be registered before 2025.6 (`supports_response` on admin services). Open for the owner: raise the `hacs.json` minimum from 2024.8.0, and make the job required in branch protection.
+- **Result (0.8.19):** 17 tests, on Home Assistant 2026.10.4 and 2025.6.3. 2025.6 is the oldest version on which all pass: **Configure** fails before 2024.12 (`OptionsFlow.config_entry`), and the update action cannot be registered before 2025.6 (`supports_response` on admin services). The owner raised the `hacs.json` minimum from 2024.8.0 to 2025.6.0 with this. Open for the owner: make the job required in branch protection.
 
 ### Q8: Split the setup guide and the strings. Status: todo. Size: M
 - **Why:** `ui/setup.js` (837 lines, with very long lines) and `i18n.js` (1,053 lines) are the largest files, and every task touches them. S5 will add five languages to `i18n.js`.
