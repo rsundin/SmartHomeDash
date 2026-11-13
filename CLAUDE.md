@@ -2,6 +2,8 @@
 
 A picture-based Home Assistant dashboard, shipped as a custom integration (HACS custom repository).
 
+New to the project, or a new model picking it up? Read `docs/roadmap/kickoff.md` first: setup, the code on one page, how to work, and briefs for the next tasks.
+
 ## Rules
 - Repo text, code, comments and docs in English. Dashboard UI strings live in `frontend/js/i18n.js` (Swedish default, English).
 - Never commit data about a real home: photos, entity ids, room names, IPs, tokens. Real sites live in `<config>/smarthomedash/sites/` on the user's Home Assistant, not here. Examples in `custom_components/smarthomedash/example/` are fictional.
