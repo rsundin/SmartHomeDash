@@ -1,6 +1,6 @@
 # Roadmap plan
 
-The working plan behind [ROADMAP.md](../../ROADMAP.md), written for Claude Code and contributors. Each task can be picked up on its own. The findings and sources behind the plan are in [research-2026-11.md](research-2026-11.md); references like [R9] point to its source list. Where the project stands is in [status-2026-11.md](status-2026-11.md).
+The working plan behind [ROADMAP.md](../../ROADMAP.md), written for Claude Code and contributors. Each task can be picked up on its own. The findings and sources behind the plan are in [research-2026-11.md](research-2026-11.md); references like [R9] point to its source list. Where the project stands is in [status-2026-11.md](status-2026-11.md). Starting fresh? Read [kickoff.md](kickoff.md) first.
 
 ## Next up (order set 13 November 2026)
 
