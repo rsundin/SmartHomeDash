@@ -95,6 +95,21 @@ describe('dashboard', () => {
     const touch = (type, pts) => cdp.send('Input.dispatchTouchEvent', {
       type, touchPoints: pts.map(([x, y], id) => ({ x, y, id, radiusX: 2, radiusY: 2, force: 1 })),
     });
+    // Record whether each touchmove was consumed, split by zoomed or not (read after the
+    // dashboard's own handlers, at the window).
+    await page.evaluate(() => {
+      window.__moves = { zoomed: new Set(), unzoomed: new Set() };
+      const zoomed = () => document.querySelector('.stage').classList.contains('is-zoomed');
+      window.addEventListener('touchmove', (e) => {
+        const set = window.__moves[zoomed() || e.touches.length > 1 ? 'zoomed' : 'unzoomed'];
+        if (e.cancelable) set.add(e.defaultPrevented); // the browser's own scroll sends moves nobody can consume
+      }, { passive: true });
+    });
+    // One finger on the picture at its normal size is left to the page (it may scroll).
+    await touch('touchStart', [[cx, cy]]);
+    for (let i = 1; i <= 4; i++) await touch('touchMove', [[cx, cy - i * 20]]);
+    await touch('touchEnd', []);
+
     await touch('touchStart', [[cx - 20, cy], [cx + 20, cy]]);
     for (let i = 1; i <= 8; i++) await touch('touchMove', [[cx - 20 - i * 12, cy], [cx + 20 + i * 12, cy]]);
     await touch('touchEnd', []);
@@ -112,9 +127,11 @@ describe('dashboard', () => {
     assert.notEqual(await page.locator('.zoom-layer').evaluate((n) => n.style.transform), t0, 'drag pans');
     assert.equal(await page.getAttribute('.stage', 'data-view'), 'overview', 'a drag is not a tap');
 
-    // Let the drag's last events land first: a tap milliseconds after a drag on a loaded
-    // test machine was sometimes lost (about one full run in three), which no finger does.
-    await page.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => setTimeout(resolve, 50))));
+    // The drag was the dashboard's own: the browser got no touchmove to scroll with. A fast
+    // drag that lifts would otherwise start a fling in the browser, which swallows the
+    // next tap. No wait before the tap: it must work right after the finger lifts.
+    assert.deepEqual(await page.evaluate(() => ({ zoomed: [...window.__moves.zoomed], unzoomed: [...window.__moves.unzoomed] })), { zoomed: [true], unzoomed: [false] },
+      'touchmoves are consumed while zoomed or pinching, and left to the page otherwise');
     await page.locator('.zoom-reset').tap();
     await page.waitForFunction(() => !document.querySelector('.stage').classList.contains('is-zoomed'));
     check(page);

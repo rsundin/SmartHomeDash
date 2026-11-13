@@ -110,7 +110,7 @@ The community's top complaint is slow dashboards [R22][R23]. Work through Claude
   - The setup guide's "Update" texts and `smarthomedash.update` docs refer to the Marketplace instead of HACS.
 - **Done when:** every mention of HACS menus is replaced or marked "before 2026.11"; a fresh install following the README works on Home Assistant 2026.11 (owner checks once).
 
-### Q6: The lost tap after a drag. Status: todo. Size: S
+### Q6: The lost tap after a drag. Status: done (v0.8.18). Size: S
 - **Why:** The browser test "pinch zoom with two fingers, and a tap still works after" passes in CI but failed 3 of 3 runs on a second machine: the tap on **Reset zoom** right after a one-finger drag never arrives. 0.8.13 added a wait and called it timing, but a lost tap may be real on slow tablets (see status-2026-11.md).
 - **What:** Reproduce with CDP touch events and with Playwright `tap()`. Trace the drag flag and pointer bookkeeping in `ui/zoom.js` (`drag.on`, `pointers`, `isPrimary`, the click suppression in capture). Fix the cause rather than the timing, and add a unit-level test of the gesture state machine where possible.
 - **Done when:** the test passes 20 runs in a row locally and in CI, with no added waits; any real cause found is in the CHANGELOG.
