@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.8.19
+
+Tests against a real Home Assistant, and three faults they found.
+
+- **Adding a dashboard with the default name "Home" works again.** Home Assistant has a page of its own at `/home` (and `/light`, `/climate`, `/security`), so the name suggested by the form was refused with "address already in use". When no address is typed and the one made from the name is taken, `-dash` is added (`/home-dash`). An address you type yourself is still refused if it is taken. The YAML example in the README uses `my-home`
+- **Export, versions, import and restore answer "administrators only" on every Home Assistant version.** On Home Assistant 2024.12 and older, a user who is not an administrator got an internal error (500) from these addresses instead of the refusal. Nothing was exported or written, but the check depended on a detail of the web library
+- **New tests in `tests/ha/`** run the integration under Home Assistant itself (`pytest-homeassistant-custom-component`): setup from YAML and from the UI, the starter site for a house and an apartment, the config flow and its refusals, options (rename in place, reload for the rest), the views without a login, as an administrator and as another user, the sidebar following a name saved in the setup guide, diagnostics without anything that names the home, and unload, reload and removal. CI runs them on Home Assistant 2026.10.4 and on 2025.6.3
+- **Home Assistant 2025.6 or newer is now required** (was 2024.8). The tests show that the older versions never worked fully: **Configure** on the integration fails before 2024.12, and setups with `github_token` or `repository` in YAML do not start before 2025.6
 ## 0.8.18
 
 A tap right after flicking the zoomed picture is no longer lost.

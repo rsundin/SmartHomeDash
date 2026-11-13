@@ -45,7 +45,12 @@ python3 -m http.server 8000     # then http://localhost:8000/
 #   ?site=example-apartment   ?kiosk   ?lite   ?ring (doorbell)   #edit (placement mode)
 ```
 
-**Known issue:** "pinch zoom with two fingers, and a tap still works after" may fail on your machine although it passes in CI. That is task Q6. Do not add waits to hide it.
+Tests under a real Home Assistant are separate, since they need their own Python packages:
+
+```bash
+python3.14 -m venv .venv-ha && .venv-ha/bin/pip install -r tests/ha/requirements.txt
+.venv-ha/bin/pytest tests/ha        # 17 tests, about 2 s
+```
 
 ## 4. The code in one page
 

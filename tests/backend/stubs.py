@@ -62,6 +62,11 @@ class Response:
     def json(self):
         return json.loads(self.body)
 
+    def __len__(self):
+        # Like aiohttp's response, a mapping with nothing stored in it: it is falsy on
+        # older aiohttp, so `if response:` is not a way to ask whether there is one.
+        return 0
+
 
 class FileResponse(Response):
     def __init__(self, path, headers: dict | None = None):

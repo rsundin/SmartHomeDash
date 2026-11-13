@@ -6,7 +6,7 @@ Plan for about an hour, most of it spent on the pictures.
 
 ## What you need
 
-- Home Assistant 2024.8 or newer, with an administrator account.
+- Home Assistant 2025.6 or newer, with an administrator account.
 - Home Assistant's **Marketplace** (2026.11 and newer; [HACS](https://hacs.xyz) before that), or SSH or Samba access to copy files.
 - **An overview picture** of the property from above. A drone photo taken at an angle works best; without a drone, [make one from a 3D map](overview-picture.md). Any size is fine; about 1200 to 2500 pixels wide keeps it sharp without being slow.
 - **A floor plan picture** per building or storey: a scanned drawing, an estate agent's plan or a realistic render seen from above, cropped to the outer walls.
@@ -31,7 +31,7 @@ Copy `custom_components/smarthomedash` from this repository to `<config>/custom_
 ## 2. Add a dashboard
 
 1. **Settings → Devices & services → Add integration → SmartHomeDash.**
-2. Give it a name (shown in the sidebar; renaming it later in the setup guide or under the integration's **Configure** renames the sidebar entry too), choose **House** or **Apartment**, an icon and optionally an address.
+2. Give it a name (shown in the sidebar; renaming it later in the setup guide or under the integration's **Configure** renames the sidebar entry too), choose **House** or **Apartment**, an icon and optionally an address. Without one, the address is made from the name; if Home Assistant already uses it for a page of its own (as with *Home*), `-dash` is added.
 3. The dashboard appears in the sidebar. Add the integration again for another home.
 
 Each dashboard has its own folder, `<config>/smarthomedash/sites/<name>/`, holding its config and pictures. These files are only served to logged-in users. Removing the integration entry removes the panel but keeps the folder.

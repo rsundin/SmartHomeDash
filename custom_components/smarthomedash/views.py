@@ -497,7 +497,7 @@ class BackupView(HomeAssistantView):
 
     async def get(self, request: web.Request, site: str, action: str) -> web.StreamResponse:
         folder, refused = self._folder(request, site)
-        if refused:
+        if refused is not None:  # an aiohttp response can be falsy (it is a mapping)
             return refused
         if action == "versions":
             versions = await self._hass.async_add_executor_job(list_versions, folder)
@@ -518,7 +518,7 @@ class BackupView(HomeAssistantView):
 
     async def post(self, request: web.Request, site: str, action: str) -> web.Response:
         folder, refused = self._folder(request, site)
-        if refused:
+        if refused is not None:  # an aiohttp response can be falsy (it is a mapping)
             return refused
         if action == "import":
             return await self._import(request, site, folder)

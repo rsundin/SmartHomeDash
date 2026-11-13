@@ -74,7 +74,7 @@ smarthomedash:
     - site: home               # folder under <config>/smarthomedash/sites/
       title: Home
       icon: mdi:home-lightbulb
-      url_path: home
+      url_path: my-home
 ```
 
 ## Updating
