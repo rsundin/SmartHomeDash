@@ -24,7 +24,7 @@ A picture-based Home Assistant dashboard, shipped as a custom integration (HACS 
 
 ## Roadmap
 - Planned work is in `docs/roadmap/plan.md`: milestones with task ids (Q1, S2, H3 …), status, size, dependencies and **Done when** criteria. Pick the first `todo` task whose dependencies are done unless told otherwise, follow "How to work this plan" there, and mark the task `done (vX.Y.Z)` when it ships. `ROADMAP.md` is the public summary; keep both in step.
-- The research behind it, with sources, is `docs/roadmap/research-2026-11.md`.
+- The research behind it, with sources, is `docs/roadmap/research-2026-11.md`; the latest status report is `docs/roadmap/status-2026-11.md`. The plan's **Next up** list sets the order until the owner changes it.
 
 ## Releasing
 1. Bump `version` in `custom_components/smarthomedash/manifest.json` and add a section to `CHANGELOG.md`.

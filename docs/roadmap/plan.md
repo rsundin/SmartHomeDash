@@ -1,6 +1,23 @@
 # Roadmap plan
 
-The working plan behind [ROADMAP.md](../../ROADMAP.md), written for Claude Code and contributors. Each task can be picked up on its own. The findings and sources behind the plan are in [research-2026-11.md](research-2026-11.md); references like [R9] point to its source list.
+The working plan behind [ROADMAP.md](../../ROADMAP.md), written for Claude Code and contributors. Each task can be picked up on its own. The findings and sources behind the plan are in [research-2026-11.md](research-2026-11.md); references like [R9] point to its source list. Where the project stands is in [status-2026-11.md](status-2026-11.md).
+
+## Next up (order set 13 November 2026)
+
+Take these in order. They take precedence over "first `todo` in the file" until the owner changes the list.
+
+1. **M1** Install docs and metadata for the Marketplace (HACS moved into Home Assistant)
+2. **Q6** The lost tap after a drag (the pinch zoom test fails outside CI)
+3. **Q7** Tests against a real Home Assistant
+4. **Q8** Split `setup.js` and the strings, before S5 adds languages
+5. **S4** A card for any dashboard
+6. **S5** More languages
+7. **S6** A Marketplace listing
+8. **A1** Accessibility and large text
+9. **G1** Launch: show the project to the community
+10. **F1** Summer house mode, then **F2** warm-up before arrival
+11. **W2** Screen profiles and guest mode, then **W1** the house as screensaver
+12. **H2**, **H1**, **H3**, **H4**, **H5**, **H6**, **E1**, then the rest in file order
 
 ## How to work this plan
 
@@ -83,6 +100,37 @@ The community's top complaint is slow dashboards [R22][R23]. Work through Claude
 - **Files:** `status.js`, `main.js`, `ui/editor.js`, `views.py`.
 - **Done when:** tests cover a missing entity and a malformed site.json.
 
+### M1: Install docs and metadata for the Marketplace. Status: todo. Size: S
+- **Why:** Since Home Assistant 2026.11, HACS is the built-in **Marketplace** (Settings → Marketplace). A separate HACS install is blocked, and custom repositories are added with **Add from link** after a GitHub sign-in [R27][R4]. README and `docs/setup.md` still describe HACS menus that no longer exist, at the moment new users arrive.
+- **What:**
+  - Rewrite install steps in README and `docs/setup.md`: Marketplace → Add from link → repository URL → install, which goes straight into the setup flow.
+  - Keep a short note for Home Assistant before 2026.11 (HACS custom repositories).
+  - Check that `hacs.json`, `manifest.json` and the release notes give the Marketplace what it shows: minimum Home Assistant version, a clear description, brand images (`brand/` in the integration; also in home-assistant/brands under S6).
+  - Mention in README that the Marketplace shows a community-code notice, and what SmartHomeDash accesses (SECURITY.md).
+  - The setup guide's "Update" texts and `smarthomedash.update` docs refer to the Marketplace instead of HACS.
+- **Done when:** every mention of HACS menus is replaced or marked "before 2026.11"; a fresh install following the README works on Home Assistant 2026.11 (owner checks once).
+
+### Q6: The lost tap after a drag. Status: todo. Size: S
+- **Why:** The browser test "pinch zoom with two fingers, and a tap still works after" passes in CI but failed 3 of 3 runs on a second machine: the tap on **Reset zoom** right after a one-finger drag never arrives. 0.8.13 added a wait and called it timing, but a lost tap may be real on slow tablets (see status-2026-11.md).
+- **What:** Reproduce with CDP touch events and with Playwright `tap()`. Trace the drag flag and pointer bookkeeping in `ui/zoom.js` (`drag.on`, `pointers`, `isPrimary`, the click suppression in capture). Fix the cause rather than the timing, and add a unit-level test of the gesture state machine where possible.
+- **Done when:** the test passes 20 runs in a row locally and in CI, with no added waits; any real cause found is in the CHANGELOG.
+
+### Q7: Tests against a real Home Assistant. Status: todo. Size: M. Depends: Q1
+- **Why:** The backend tests use stand-ins for Home Assistant. The config flow, options flow, panel registration and sidebar rename, diagnostics, the update action and the views have never run under Home Assistant itself.
+- **What:**
+  - Add `pytest-homeassistant-custom-component` tests in `tests/ha/` that set up the integration from YAML and from a config entry.
+  - Cover: panel registered and renamed, the views with authenticated and unauthenticated clients (`hass_client`, `hass_client_no_auth`), admin-only writes with a non-admin user, the starter site, diagnostics redaction and unloading.
+  - A CI job pinned to the oldest supported (`hacs.json` minimum) and the newest Home Assistant.
+- **Done when:** the job runs on every pull request and is required on main; it would have caught a broken config flow import.
+
+### Q8: Split the setup guide and the strings. Status: todo. Size: M
+- **Why:** `ui/setup.js` (837 lines, with very long lines) and `i18n.js` (1,053 lines) are the largest files, and every task touches them. S5 will add five languages to `i18n.js`.
+- **What:**
+  - Move each setup step into `ui/setup/<step>.js` with a small shared module for `draw`, fields and undo.
+  - Move strings into `frontend/i18n/sv.json` and `en.json`, loaded by `i18n.js`, with a check that both have the same keys. This is the first half of S5.
+  - No behaviour change.
+- **Done when:** all tests pass unchanged; no setup file is over 400 lines; `index.html` MODULES and CLAUDE.md layout are updated.
+
 ---
 
 ## 1.0: Nearly zero setup
@@ -149,9 +197,29 @@ Setup effort is the main barrier for every floor plan project [R5][R6][R11]. Sma
   - `docs/translating.md` for contributors.
 - **Done when:** a key-coverage test runs in CI, and every language renders without missing keys on both examples.
 
-### S6: The default HACS list. Status: todo. Size: S. Depends: Q1, S5
-- **What:** Submit the icon to home-assistant/brands; remove `ignore: brands` from the HACS check; submit to hacs/default. This needs the owner to open pull requests from their account, so prepare the files and the text.
-- **Done when:** the HACS check passes without ignores, and the owner has the submission text.
+### S6: A listing in the Home Assistant Marketplace. Status: todo. Size: S. Depends: M1, S5
+- **Why:** Since 2026.11 the default HACS list is what the built-in Marketplace shows [R27]. Being listed means people can find SmartHomeDash without a link.
+- **What:**
+  - Submit the icon to home-assistant/brands and remove `ignore: brands` from the HACS check.
+  - Follow the current Marketplace inclusion process (formerly hacs/default; check the docs at the time). It needs the owner to open pull requests from their account, so prepare the files and the text.
+- **Done when:** the HACS check passes without ignores, and the owner has the submission text and steps.
+
+### A1: Accessibility and large text. Status: todo. Size: M
+- **Why:** Users ask for bigger text, keyboard navigation and graphs a screen reader can read [R39][R40]. A wall screen for the whole family includes older parents and guests.
+- **What:**
+  - A **Text size** setting per screen (normal, large, extra large) that scales labels, cards, the room panel and touch targets, remembered per device.
+  - Keyboard: every room, lamp, building and button reachable with Tab in a sensible order, Enter and Space act, Escape closes, and focus is visible.
+  - Screen readers: lamps, rooms and buildings have names and states (`aria-label`, `aria-pressed`); the price chart and the temperature graph have a text summary.
+  - Contrast checked for text on the picture (labels, flow tags, badges) in day and evening.
+- **Done when:** an automated accessibility check (axe-core in the browser tests) passes on both examples, a keyboard-only test opens a room and switches a lamp, and large text has no overflow at 390 px wide.
+
+### G1: Launch: show the project to the community. Status: todo. Size: S. Depends: S6
+- **Why:** At 0.8.16 the repository has no stars and one issue. Ready-made dashboards with a clear look are what people look for now [R30].
+- **What:**
+  - A short screen recording (GIF or WebP) for the README: lights switching on the picture at dusk, the roof lifting, a room panel. Recorded from the demo with test data.
+  - Draft posts for the owner to publish: a Home Assistant Community thread (Dashboards / Share your projects) and r/homeassistant, pointing to the demo, the Marketplace and Discussions.
+  - A "Show and tell" Discussion with how to share your own dashboard without private details.
+- **Done when:** the recording is in the README, and the owner has the post texts.
 
 ---
 
@@ -196,6 +264,19 @@ Competitors show people, openings, media, appliances, cameras and power where th
 ### H6: Climate overlays. Status: todo. Size: S
 - **What:** The floor plan tint switches between temperature (today), humidity and CO₂ where sensors exist, from a small control on the plan. Thresholds follow common comfort ranges and can be set in site.json.
 
+### E1: Solar forecast beside the flow. Status: todo. Size: S
+- **Why:** Solar forecast cards and battery planners sit next to live flow on many energy dashboards [R36][R37].
+- **What:** If a forecast entity exists (Forecast.Solar or Solcast, picked in the guide's Energy step), the energy card shows today's expected production against what has come so far, with a small curve. The solar label on the picture says "6.2 kW · 18 of 24 kWh expected".
+- **Done when:** mock forecast attributes for both integrations render, and the card hides the forecast when none is set.
+
+### E2: Car charging plan. Status: todo. Size: S. Depends: E1
+- **What:** With a car battery level entity, the car end of the flow shows the level. The cheapest window from the price card is offered as "Charge 01:15–04:15 for 0.42 kr/kWh on average", read-only. It uses the charger's own planned window if the charger integration exposes one.
+
+### E3: Capacity peak (optional). Status: todo. Size: S
+- **Why:** The 2027 requirement for capacity tariffs was stopped, but the 30–50 Swedish grid companies that already charge by peak keep doing so [R35].
+- **What:** Off by default. The guide's Energy step sets the rule (hourly average, number of peaks per month, day or night hours). The energy card then shows this hour's average so far against the month's peaks, and a warning appears when the hour is on its way to a new peak.
+- **Done when:** unit tests cover the averaging and the monthly peaks; off means nothing changes.
+
 ---
 
 ## 1.2: Wall screens as an ambient display
@@ -206,11 +287,11 @@ Competitors show people, openings, media, appliances, cameras and power where th
   - After the idle time in kiosk mode, an ambient mode shows the overview full screen: big clock, outdoor temperature, the next calendar event (optional `calendar.*`), and warnings.
   - No buttons; a touch returns to the dashboard.
   - At night it hands over to the existing dim.
-  - Optional photo-frame mode cycling a media source folder.
+  - Optional photo-frame mode cycling a media source folder, with the house returning every few pictures. Photo frames are one of the features that set ready-made dashboard apps apart [R30].
 - **Done when:** tests cover entering and leaving ambient mode, warnings shown in it, and light mode without animation.
 
 ### W2: Screen profiles and guest mode. Status: todo. Size: M
-- **Why:** Tablets that show only their own floor work well [R21]. Floor3DX limits locks, garage doors and alarms for guests [R7].
+- **Why:** Tablets that show only their own floor work well [R21]. Floor3DX limits locks, garage doors and alarms for guests [R7]. Guest access is missing in most dashboard apps [R30], so this sets SmartHomeDash apart.
 - **What:**
   - Named screen profiles in the guide (for example "Hall", "Kitchen", "Guest room"), chosen with `?screen=hall` or on the device.
   - Each profile sets the start view (overview, a floor or a room), idle behaviour and allowed actions.
@@ -228,13 +309,47 @@ Competitors show people, openings, media, appliances, cameras and power where th
 ### W5: Alarm panel. Status: todo. Size: S
 - **What:** The state of an `alarm_control_panel` in the header and in ambient mode. Arming and disarming with the panel's code on screen is off by default; when on, guest profiles still cannot disarm.
 
+### W6: Paper mode for e-ink screens. Status: todo (exploratory). Size: M
+- **Why:** E-ink status boards and old Kindles are a popular low-power way to show home status [R33][R34].
+- **What:** `?paper` renders a black-and-white, high-contrast, no-animation view: the overview with lit lamps marked, warnings, temperatures, today's price summary and the next event. It reloads itself every few minutes. It works in a simple browser through the token adapter. A static image endpoint for TRMNL-style devices is a possible follow-up, but it needs a renderer and is out of scope here.
+- **Done when:** the view passes a test in a 600×800 viewport with JavaScript timers only for the reload, and the owner tries it on one e-ink device.
+
+---
+
+## 1.3: The summer house and both homes
+
+The owner's own case: a summer house watched from the apartment, frost and leaks in winter, warm it up before arriving. Holiday-home monitoring is about frost, humidity, intrusion and history [R38].
+
+### F1: Summer house mode. Status: todo. Size: M. Depends: W2
+- **What:**
+  - A **Closed house** state for a dashboard (a switch in the header for admins, or following an `input_boolean` or HA's away state).
+  - While closed, the overview leads with what matters when nobody is there: lowest indoor temperature and where, heating mode (frost or comfort), humidity, leaks and smoke, doors and locks, power and connectivity (the last time Home Assistant heard from key devices), and the last time someone was there (from presence or doors).
+  - Frost and damp thresholds are set in the guide, and warnings use them.
+  - The lights card and scenes step back.
+- **Done when:** tests on the example house cover closed and open states, the frost warning, and the "last visit" text.
+
+### F2: Warm up before arrival. Status: todo. Size: S. Depends: F1
+- **What:**
+  - An **Arriving** action: choose a time, and the dashboard sets the heating to comfort early enough to reach the target, estimated from the rooms' recent heating rate in history (shown as "Start heating at 13:40 to reach 21° by 18:00").
+  - It runs as a Home Assistant automation or script that the guide creates or points to. The dashboard keeps no timers of its own.
+- **Done when:** the estimate is unit-tested on recorded curves, and the action is visible only to admins.
+
+### F3: Both homes at a glance. Status: todo (exploratory). Size: L
+- **What:**
+  - Tiles for each dashboard on this Home Assistant (the apartment and the summer house as separate sites), with warnings across them.
+  - Optionally, a second Home Assistant reached with a long-lived token stored in Home Assistant, not in the browser.
+  - Read-only summary; tapping opens that dashboard.
+- **Done when:** two sites on one Home Assistant show side by side with their warnings; the remote option has a security review in SECURITY.md before it ships.
+
 ---
 
 ## Later and ideas
 
 - **Day timeline:** scrub through today on the picture (lights, doors, heating, people) using the history API, to answer "what happened while we were away".
 - **Heating schedules in the room panel:** through HA schedule helpers or the Scheduler integration, edited per room.
-- **Several homes overview:** tiles for each dashboard, with warnings across homes (for example the summer house and the apartment).
+- **A daily summary written by AI:** with Home Assistant's AI Task set up, a few sentences on the wall screen ("Quiet night, 21° inside, the heat pump ran 6 hours, cheapest power 02–05") [R32]. Off by default, local models first.
+- **Camera events with AI summaries** in the camera window, from LLM Vision's timeline when installed [R31].
+- **A community section** for Home Assistant's section picker (2026.11), in addition to the card [R4].
 - **Sunlight through windows** following the sun's position, as a subtle effect on the overview.
 
 ## Not planned

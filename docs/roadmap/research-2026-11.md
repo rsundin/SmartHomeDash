@@ -79,3 +79,35 @@ Projects in this space include WallMode, SeHomeWall, WallPanel, Fully Kiosk setu
 24. [WTH do I still need to be a rocket scientist to get things done in HA](https://community.home-assistant.io/t/wth-do-i-still-need-to-be-a-rocket-scientist-to-get-things-done-in-ha/809898?page=10)
 25. [Home Assistant dashboard examples (HomeShift)](https://joinhomeshift.com/home-assistant-dashboard-examples)
 26. [Person Location Card – room-level and general location](https://community.home-assistant.io/t/person-location-card-room-level-general-location/1001105)
+
+## Second pass, 13 November 2026
+
+New since the first pass, with SmartHomeDash at 0.8.16 (see [status-2026-11.md](status-2026-11.md)):
+
+- **HACS became the Home Assistant Marketplace in 2026.11.** It sits under Settings → Marketplace and lists integrations, cards, themes and templates. A separate HACS install is blocked. A custom repository is added with "Add from link" after a GitHub device sign-in. Project pages show installs, stars, the minimum Home Assistant version and brand images, and installing goes straight into the integration's setup [R27][R4].
+- **Home Assistant's dashboards aim at the whole family:** a calmer default Overview, areas driving climate and energy, personal themes per user profile [R28][R29]. 2026.11 added community sections, an alert badge with a pulse and copy-paste of sections [R4].
+- **Ready-made apps over DIY cards:** GlassHome, Magic Frame (photo frame mode), Tunet (energy and EV). The review notes guest access is missing in most of them. It is written by GlassHome's maker [R30].
+- **AI on the dashboard:** LLM Vision's timeline and preview cards summarise camera events, and people show LLM-written weather and daily briefings [R31][R32]. Home Assistant ships an MCP server for AI assistants [R41].
+- **Low-power displays:** TRMNL and other e-ink boards show the family calendar and home status, refreshed on a schedule [R33][R34].
+- **Swedish capacity fees:** the requirement for all grid companies to introduce capacity tariffs from 2027 was stopped in March 2026. About 30–50 companies that already have them are unaffected [R35].
+- **Energy planning:** solar forecast cards and battery planners such as Predbat and EMHASS sit next to live flow [R36][R37].
+- **Summer houses:** frost near pipes, heat, humidity, intrusion and an event history are the core of holiday-home monitoring [R38].
+- **Accessibility:** requests for bigger text, keyboard navigation and screen-reader-readable graphs [R39][R40].
+
+### Sources, second pass
+
+27. [HACS is now the Home Assistant Marketplace (Frenck)](https://frenck.dev/hacs-is-now-the-home-assistant-marketplace/)
+28. [Home Assistant 2026.2: Home, sweet overview](https://www.home-assistant.io/blog/2026/02/04/release-20262/)
+29. [Home Assistant's new dashboard finally makes sense for the whole family (XDA)](https://www.xda-developers.com/home-assistant-february-update-2026/)
+30. [Best Home Assistant Dashboards (2026), GlassHome](https://glasshome.app/blog/best-home-assistant-dashboards/)
+31. [LLM Vision timeline and preview cards](https://llmvision.org/card/)
+32. [A weather report on the dashboard with a local LLM (XDA)](https://www.xda-developers.com/weather-report-on-home-assistant-dashboard-with-local-llm/)
+33. [TRMNL e-ink dashboard review (HomeTechHacker)](https://hometechhacker.com/trmnl-og-e-ink-dashboard-review-a-focused-battery-powered-family-status-board/)
+34. [Best e-ink displays for Home Assistant (ComputingForGeeks)](https://computingforgeeks.com/best-e-ink-display-home-assistant/)
+35. [Regeringen stoppar kritiserad effektavgift på el (TV4/TT, 13 March 2026)](https://www.tv4.se/artikel/tt-260313-elkostnader1-a11d2879/regeringen-stoppar-kritiserad-effektavgift-pa-el)
+36. [Solar Weather Card (community thread)](https://community.home-assistant.io/t/solar-weather-card/1005846)
+37. [Predbat documentation](https://springfall2008.github.io/batpred)
+38. [Tryggt fritidshus, Telldus](https://telldus.com/en/blogs/news/trygg-sommarberedskap)
+39. [WTH: bigger text sizes in Lovelace (community thread)](https://community.home-assistant.io/t/wth-old-people-50ish-need-bigger-text-sizes-in-lovelace/477181)
+40. [Accessibility in Home Assistant (community thread)](https://community.home-assistant.io/t/accessibility-in-home-assistant/795460)
+41. [Model Context Protocol Server integration](https://www.home-assistant.io/integrations/mcp_server/)

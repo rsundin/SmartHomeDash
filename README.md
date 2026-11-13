@@ -119,7 +119,7 @@ See [SECURITY.md](SECURITY.md) for how access is handled and how to report a pro
 
 ## Roadmap
 
-Next up: automated tests and a speed budget for old tablets, 15-minute electricity prices, a quick start from your Home Assistant areas, a card for any dashboard, more languages, people and appliances on the picture, and the house as a wall-screen screensaver. See [ROADMAP.md](ROADMAP.md).
+Next up: install docs for Home Assistant's new Marketplace, a card for any dashboard, more languages, accessibility, people and appliances on the picture, the house as a wall-screen screensaver, and a summer house mode. See [ROADMAP.md](ROADMAP.md).
 
 ## Help, questions and ideas
 

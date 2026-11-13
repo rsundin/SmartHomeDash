@@ -9,6 +9,9 @@ What is planned next, roughly in order. Plans change; ideas and votes are welcom
 - **Names as Home Assistant shows them**, following the 2026.11 naming change. Done in 0.8.8.
 - **Electricity prices at 15 minutes**, as Nord Pool publishes them since October 2025, in the chart and the cheapest hours. Done in 0.8.10.
 - **Clear messages** when site.json refers to devices that no longer exist, and a check of site.json before it is saved. Done in 0.8.11.
+- **Install docs for the Marketplace**, which replaced HACS in Home Assistant 2026.11.
+- **A steadier pinch zoom** after a drag, and **tests against a real Home Assistant** in CI.
+- **A tidier codebase** for what comes next: the setup guide in one file per step, the texts in one file per language.
 
 ## 1.0: Nearly zero setup
 
@@ -18,7 +21,9 @@ What is planned next, roughly in order. Plans change; ideas and votes are welcom
 - **Export, import and restore points** for a whole dashboard. Done in 0.8.16.
 - **A card for any dashboard** (`custom:smarthomedash-card`).
 - **More languages**: German, Norwegian, Danish, Finnish, Dutch.
-- **The default HACS list.**
+- **A listing in Home Assistant's Marketplace**, so SmartHomeDash can be found without a link.
+- **Accessibility and large text**: text size per screen, keyboard use, screen reader names.
+- **Launch**: a short recording in the README and a post on the Home Assistant forum.
 
 ## 1.1: More of the home on the picture
 
@@ -28,6 +33,7 @@ What is planned next, roughly in order. Plans change; ideas and votes are welcom
 - **Cameras on the picture**, with motion and a tap for the live view.
 - **Power per room** as an energy view of the floor plan.
 - **Humidity and CO₂** as alternatives to the temperature tint.
+- **Solar forecast** beside the live flow, a **car charging plan** from the cheapest hours, and an optional **capacity peak** tracker for grid companies that charge by peak.
 
 ## 1.2: Wall screens as an ambient display
 
@@ -36,15 +42,23 @@ What is planned next, roughly in order. Plans change; ideas and votes are welcom
 - **Family strip**: calendar, to-do, waste collection.
 - **Voice from the wall** through Assist (exploratory).
 - **Alarm panel** state, with arming off by default.
+- **Paper mode** for e-ink screens (exploratory).
+
+## 1.3: The summer house and both homes
+
+- **Summer house mode**: when the house is closed, the overview leads with frost, damp, leaks, locks, power and the last visit.
+- **Warm up before arrival**: heating starts in time to be warm when you get there.
+- **Both homes at a glance**, with warnings from each (exploratory).
 
 ## Later
 
-- A timeline to scrub through today on the picture, heating schedules per room, an overview of several homes, sunlight through windows.
+- A timeline to scrub through today on the picture, heating schedules per room, sunlight through windows, a daily summary written by AI (off by default), camera events with AI summaries, a community section for Home Assistant's dashboards.
 
-The working plan with tasks and acceptance criteria is [docs/roadmap/plan.md](docs/roadmap/plan.md); the research behind it is [docs/roadmap/research-2026-11.md](docs/roadmap/research-2026-11.md).
+The working plan with tasks and acceptance criteria is [docs/roadmap/plan.md](docs/roadmap/plan.md), where the project stands is [docs/roadmap/status-2026-11.md](docs/roadmap/status-2026-11.md), and the research behind it is [docs/roadmap/research-2026-11.md](docs/roadmap/research-2026-11.md).
 
 ## Done
 
+- 0.8.6 to 0.8.16: tests, performance budget, Home Assistant naming, quarter-hour prices, config check, quick start, report a problem, editor comforts, backup and restore points
 - 0.8.0: wall screens: doorbell camera, idle mode with night dimming and motion wake, light mode for older tablets
 - 0.7.0: energy flow, dusk and weather on the picture, blinds and curtains, cheapest electricity hours; rooms pick up their area's entities by themselves
 - 0.6.0: doors, windows, locks, presence and alarms per room; warnings; floors from Home Assistant
