@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.8.17
+
+Install docs for the Marketplace, which replaced HACS in Home Assistant 2026.11.
+
+- README and the setup guide (`docs/setup.md`) install through **Settings → Marketplace → Add from link** with the repository's address. Setup starts right away; a restart is still needed after updates. Both mention the community-code notice and the GitHub sign-in that *Add from link* asks for, and point to SECURITY.md for what SmartHomeDash can reach
+- The HACS steps stay as a one-line note for Home Assistant before 2026.11
+- Updating refers to the Marketplace; `smarthomedash.update` is for setups without it
+- A test fails if README or the setup guide describe the old HACS menus outside that note
 ## 0.8.16
 
 Backups and moving a dashboard: export, import and restore points.

@@ -100,7 +100,7 @@ The community's top complaint is slow dashboards [R22][R23]. Work through Claude
 - **Files:** `status.js`, `main.js`, `ui/editor.js`, `views.py`.
 - **Done when:** tests cover a missing entity and a malformed site.json.
 
-### M1: Install docs and metadata for the Marketplace. Status: todo. Size: S
+### M1: Install docs and metadata for the Marketplace. Status: done (v0.8.17). Size: S
 - **Why:** Since Home Assistant 2026.11, HACS is the built-in **Marketplace** (Settings → Marketplace). A separate HACS install is blocked, and custom repositories are added with **Add from link** after a GitHub sign-in [R27][R4]. README and `docs/setup.md` still describe HACS menus that no longer exist, at the moment new users arrive.
 - **What:**
   - Rewrite install steps in README and `docs/setup.md`: Marketplace → Add from link → repository URL → install, which goes straight into the setup flow.

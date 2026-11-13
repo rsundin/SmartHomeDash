@@ -9,7 +9,7 @@ What is planned next, roughly in order. Plans change; ideas and votes are welcom
 - **Names as Home Assistant shows them**, following the 2026.11 naming change. Done in 0.8.8.
 - **Electricity prices at 15 minutes**, as Nord Pool publishes them since October 2025, in the chart and the cheapest hours. Done in 0.8.10.
 - **Clear messages** when site.json refers to devices that no longer exist, and a check of site.json before it is saved. Done in 0.8.11.
-- **Install docs for the Marketplace**, which replaced HACS in Home Assistant 2026.11.
+- **Install docs for the Marketplace**, which replaced HACS in Home Assistant 2026.11. Done in 0.8.17.
 - **A steadier pinch zoom** after a drag, and **tests against a real Home Assistant** in CI.
 - **A tidier codebase** for what comes next: the setup guide in one file per step, the texts in one file per language.
 
