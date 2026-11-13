@@ -83,6 +83,15 @@ export function createZoom(stage) {
     }
   }, { passive: false, capture: true });
 
+  // The browser must not turn these fingers into a scroll of its own. `touch-action`
+  // keeps the page still, but Chromium still starts a fling when a fast drag lifts, and
+  // while that fling runs it swallows the next tap ("tap stops the fling"): a tap on
+  // Reset zoom or a lamp right after flicking the picture was lost. A consumed
+  // touchmove never becomes a scroll, so no fling starts.
+  stage.addEventListener('touchmove', (e) => {
+    if (e.cancelable && (s > 1 || e.touches.length > 1)) e.preventDefault();
+  }, { passive: false, capture: true });
+
   const end = (e) => {
     if (!pointers.delete(e.pointerId)) return;
     if (s < 1.05) set(1, 0, 0, true);

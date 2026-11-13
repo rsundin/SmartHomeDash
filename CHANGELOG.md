@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.8.18
+
+A tap right after flicking the zoomed picture is no longer lost.
+
+- **The cause was real, not test timing:** with the picture zoomed in, a fast one-finger drag that lifts while still moving made the browser (Chromium: Chrome on Android, the companion app, Fully Kiosk) start a fling of its own, although the page does not scroll. While a fling runs, the browser swallows the next tap to "stop the fling", so a tap on **Reset zoom**, a lamp or a room within a moment after the flick did nothing. A drag that came to rest before lifting was never affected
+- The dashboard now consumes the finger movement itself while the picture is zoomed or pinched, so the browser never starts a scroll or fling there. One finger on the picture at normal size still scrolls the page as before
+- The pinch zoom test taps straight after the drag again, without the wait 0.8.13 added, and checks that movements are consumed only while zoomed or pinching. It passed 20 runs in a row; before the fix about 1 run in 25 lost the tap on the test machine
 ## 0.8.17
 
 Install docs for the Marketplace, which replaced HACS in Home Assistant 2026.11.
