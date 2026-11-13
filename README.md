@@ -46,6 +46,7 @@ Then **Settings → Devices & services → Add integration → SmartHomeDash**, 
 | Energy flow | One line per flow, from the sun, battery or grid to the house, car, battery or grid, in the colour of the source, with the kilowatts on it, plus a plain sentence in the energy card |
 | Dusk and weather | The day picture fades into the evening one as the sun sets; cloud, fog, rain and snow on the picture |
 | Cards | Weather, power now, energy today, hourly electricity price with the cheapest hours ahead, outdoor and indoor lights, scenes and scripts, heating per room |
+| Card for other dashboards | `custom:smarthomedash-card` shows the overview, a floor plan or a room inside any Home Assistant dashboard, with the room panel, lamps and heating working in the card. See [the card](docs/setup.md#the-card) |
 
 ## Wall screens and tablets
 
@@ -121,7 +122,7 @@ See [SECURITY.md](SECURITY.md) for how access is handled and how to report a pro
 
 ## Roadmap
 
-Next up: install docs for Home Assistant's new Marketplace, a card for any dashboard, more languages, accessibility, people and appliances on the picture, the house as a wall-screen screensaver, and a summer house mode. See [ROADMAP.md](ROADMAP.md).
+Next up: install docs for Home Assistant's new Marketplace, more languages, accessibility, people and appliances on the picture, the house as a wall-screen screensaver, and a summer house mode. See [ROADMAP.md](ROADMAP.md).
 
 ## Help, questions and ideas
 

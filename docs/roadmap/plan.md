@@ -178,7 +178,7 @@ Setup effort is the main barrier for every floor plan project [R5][R6][R11]. Sma
 - **Files:** `views.py` (new endpoints, admin only), `ui/setup.js`, `docs/setup.md`, `SECURITY.md` (new surface).
 - **Done when:** backend tests cover zip traversal, oversize and non-image entries. A round trip export/import reproduces the dashboard.
 
-### S4: A card for any dashboard. Status: todo. Size: L. Depends: Q2
+### S4: A card for any dashboard. Status: done (v0.8.21). Size: L. Depends: Q2
 - **Why:** NeonPlan and the energy cards work inside existing dashboards [R9][R14]. HA 2026.6 lets custom cards suggest themselves in the card picker [R3].
 - **What:**
   - `custom:smarthomedash-card` showing the overview, one floor plan or one room of a chosen dashboard, with a visual editor (dashboard, view, height).

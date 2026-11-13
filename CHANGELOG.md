@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.8.21
+
+The picture as a card in any Home Assistant dashboard.
+
+- **New card: `custom:smarthomedash-card`.** Shows the overview, one floor plan or one room of a SmartHomeDash dashboard inside any other dashboard. It comes with the integration and is added to every dashboard by itself: find it under **Add card**, pick the dashboard and what to show. Reload the browser page once after updating
+- **Only the picture.** No header, energy cards or warnings. Tapping a building opens its floor plan, tapping a room opens the room panel inside the card, and lamps and heating work as in the dashboard. A card for a floor plan or a room stays there
+- **Sized by the dashboard.** In a sections view the card takes the size you drag it to (full width and six rows to start with). In other views it is 400 px high, or the **Height** you set
+- **Suggested in the card picker** (Home Assistant 2026.6 and newer): picking a lamp or a thermostat that is in a room of a dashboard suggests a card for that room
+- **The same code as the dashboard.** The card runs the dashboard in a frame of its own, as the sidebar panel does, so its styles and fonts cannot disturb Home Assistant's and nothing in the dashboard itself changed. Site files still come through Home Assistant's login; the card cannot change anything in the setup
+- A dashboard that cannot be found now says "Cannot find …/site.json" also when the texts had not arrived yet (it could show the bare key `site.notFound`)
+- New tests: the card in a stand-in Home Assistant dashboard on a phone and a desktop, the three kinds of view, lamps through Home Assistant's services, the editor, the suggestions, and under a real Home Assistant that the card's files are served and its module is added once
+
 ## 0.8.20
 
 A tidier codebase for what comes next. Nothing looks or works differently.

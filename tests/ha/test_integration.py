@@ -52,6 +52,25 @@ async def test_setup_from_yaml(hass: HomeAssistant, sites_in_tmp) -> None:
     assert not hass.services.has_service(DOMAIN, "update")
 
 
+async def test_the_card_is_loaded_with_every_dashboard(hass: HomeAssistant, entry, hass_client_no_auth) -> None:
+    """`custom:smarthomedash-card` needs no resource added by hand: its module is among the
+    frontend's extra modules, once however many dashboards are set up, and is served."""
+    second = MockConfigEntry(domain=DOMAIN, title="Second", unique_id="second", data={
+        "site": "second", "title": "Second", "url_path": "second", "layout": "apartment"})
+    second.add_to_hass(hass)
+    assert await hass.config_entries.async_setup(second.entry_id)
+    await hass.async_block_till_done()
+
+    urls = [u for u in hass.data[frontend.DATA_EXTRA_MODULE_URL].urls if "smarthomedash" in u]
+    assert len(urls) == 1
+    assert urls[0].startswith("/smarthomedash/frontend/card.js?v=")
+
+    client = await hass_client_no_auth()
+    for name in ("card.js", "card.html", "card-frame.js"):
+        assert (await client.get(f"/smarthomedash/frontend/{name}")).status == HTTPStatus.OK
+    assert "text/html" in (await client.get("/smarthomedash/frontend/card.html")).headers["Content-Type"]
+
+
 async def test_update_action_only_with_a_repository_or_token(hass: HomeAssistant) -> None:
     assert await async_setup_component(hass, DOMAIN, {DOMAIN: {"repository": "someone/fork"}})
     await hass.async_block_till_done()

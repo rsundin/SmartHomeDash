@@ -25,6 +25,7 @@ What it registers:
   kept versions of site.json with restore (admins only).
 - One sidebar panel per dashboard, loading the code in an iframe and handing it the
   logged-in `hass` object, so no access token is needed.
+- A card for other dashboards (`custom:smarthomedash-card`), added as a frontend module.
 - The `smarthomedash.update` action (admins), installing the latest version from
   GitHub; see updater.py. Installations through the Marketplace (HACS) update through it instead.
 """
@@ -208,6 +209,9 @@ async def _async_setup_shared(hass: HomeAssistant, conf: dict) -> dict:
     hass.http.register_view(FrontendView(hass, root / "frontend"))
     hass.http.register_view(SitesView(hass, sites_dir))
     hass.http.register_view(BackupView(hass, sites_dir))
+    # The card for other dashboards (frontend/card.js): loaded with every dashboard, so
+    # `custom:smarthomedash-card` is there without adding a resource by hand.
+    frontend.add_extra_js_url(hass, f"{FRONTEND_URL}/card.js?v={data['version']}")
     # Installations through the Marketplace (HACS) update through it. The update action is only for
     # setups that point at a repository themselves (a private fork, a token).
     if conf.get("github_token") or conf.get("repository"):

@@ -669,3 +669,16 @@ details.alert .alert-action { margin: 4px 0 2px; font-size: 13px; }
 .is-lite .ov-window-bloom, .is-lite .ov-wash, .is-lite .ov-solar-sweep, .is-lite .ov-wx::after { display: none; }
 .is-lite .stage.is-night .fp-halo { transform: none; }
 .is-lite .sheet, .is-lite .bell { background: rgba(4, 9, 7, 0.9); }
+
+/* ---------- as a card in another dashboard (card.js): only the picture, filling the frame */
+html:has(> body.is-embed), body.is-embed { height: 100%; }
+body.is-embed { padding: 0; overflow: hidden; }
+.is-embed #app { height: 100%; display: flex; flex-direction: column; }
+.is-embed .top, .is-embed .side, .is-embed .stage-hint, .is-embed .alerts, .is-embed .banner { display: none !important; }
+.is-embed .layout { flex: 1; min-height: 0; width: 100%; max-width: none; margin: 0; display: block; }
+.is-embed .stage-wrap { height: 100%; display: flex; flex-direction: column; min-height: 0; }
+.is-embed .stage { flex: 1; min-height: 0; border: 0; border-radius: 0; aspect-ratio: auto; }
+.is-embed .ov { position: absolute; inset: 0; aspect-ratio: auto !important; height: 100%; }
+.is-embed .ov-lower { height: 100%; }
+.is-embed .back { top: 8px; left: 8px; }
+.is-embed .fatal { padding: 16px; }
