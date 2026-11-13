@@ -1,6 +1,6 @@
 # Working on SmartHomeDash
 
-A picture-based Home Assistant dashboard, shipped as a custom integration (HACS custom repository).
+A picture-based Home Assistant dashboard, shipped as a custom integration (Home Assistant Marketplace, added from a link; HACS custom repository before Home Assistant 2026.11).
 
 New to the project, or a new model picking it up? Read `docs/roadmap/kickoff.md` first: setup, the code on one page, how to work, and briefs for the next tasks.
 
@@ -30,5 +30,5 @@ New to the project, or a new model picking it up? Read `docs/roadmap/kickoff.md`
 
 ## Releasing
 1. Bump `version` in `custom_components/smarthomedash/manifest.json` and add a section to `CHANGELOG.md`.
-2. Merge to main, then publish a GitHub release tagged `vX.Y.Z` with the changelog section. HACS offers the update from the release.
+2. Merge to main, then publish a GitHub release tagged `vX.Y.Z` with the changelog section. The Marketplace offers the update from the release.
 3. Python/manifest changes need a Home Assistant restart; frontend-only changes need a dashboard reload.

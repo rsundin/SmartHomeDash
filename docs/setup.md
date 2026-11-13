@@ -7,19 +7,22 @@ Plan for about an hour, most of it spent on the pictures.
 ## What you need
 
 - Home Assistant 2024.8 or newer, with an administrator account.
-- [HACS](https://hacs.xyz), or SSH or Samba access to copy files.
+- Home Assistant's **Marketplace** (2026.11 and newer; [HACS](https://hacs.xyz) before that), or SSH or Samba access to copy files.
 - **An overview picture** of the property from above. A drone photo taken at an angle works best; without a drone, [make one from a 3D map](overview-picture.md). Any size is fine; about 1200 to 2500 pixels wide keeps it sharp without being slow.
 - **A floor plan picture** per building or storey: a scanned drawing, an estate agent's plan or a realistic render seen from above, cropped to the outer walls.
 - Optional: an **evening picture**, the same view at dusk with every light off.
 
 ## 1. Install the integration
 
-**With HACS**
+**From the Marketplace** (Home Assistant 2026.11 and newer)
 
-1. HACS → three-dot menu → **Custom repositories**.
-2. Add the repository URL, category **Integration**.
-3. Find **SmartHomeDash** in HACS, choose **Download**.
-4. Restart Home Assistant.
+1. **Settings → Marketplace → Add from link.** The first time, the Marketplace shows a notice that community code is not reviewed by Home Assistant, and asks you to sign in with GitHub.
+2. Paste `https://github.com/rsundin/SmartHomeDash` and install **SmartHomeDash**.
+3. Setup starts right away: continue with step 2 below.
+
+New versions show up in the Marketplace like for any other integration. Restart Home Assistant after an update.
+
+*Before Home Assistant 2026.11:* HACS → three-dot menu → *Custom repositories* → add the repository URL with category **Integration** → download **SmartHomeDash** → restart Home Assistant.
 
 **Manually**
 

@@ -21,7 +21,9 @@ A Home Assistant dashboard that shows your home as a picture. Lights glow where 
 
 ## Install
 
-**HACS:** HACS → *Custom repositories* → add this repository as an **Integration** → download **SmartHomeDash** → restart Home Assistant.
+**Marketplace (Home Assistant 2026.11 and newer):** **Settings → Marketplace → Add from link**, paste `https://github.com/rsundin/SmartHomeDash` and install **SmartHomeDash**. Setup starts right away. *Add from link* asks you to sign in with GitHub once, and the first visit shows a notice that community code is not reviewed by Home Assistant; what SmartHomeDash can reach is described in [SECURITY.md](SECURITY.md).
+
+*Before Home Assistant 2026.11:* HACS → *Custom repositories* → add this repository as an **Integration** → download **SmartHomeDash** → restart Home Assistant.
 
 **Manually:** copy `custom_components/smarthomedash` to `<config>/custom_components/`, then restart. With SSH: `scripts/deploy.sh user@host`.
 
@@ -77,7 +79,7 @@ smarthomedash:
 
 ## Updating
 
-Through HACS like any other integration. Without HACS, `smarthomedash.update` installs the latest version from GitHub; set `github_token` (a read-only token for a private fork) and optionally `repository` and `branch` under `smarthomedash:` in `configuration.yaml`. It keeps your `site.json`, adds new site files, and says whether Home Assistant needs a restart. The same action is available as **Uppdatera dashboarden** in placement mode.
+The Marketplace offers new versions like for any other integration (HACS before Home Assistant 2026.11); restart Home Assistant after updating. Without the Marketplace, `smarthomedash.update` installs the latest version from GitHub; set `github_token` (a read-only token for a private fork) and optionally `repository` and `branch` under `smarthomedash:` in `configuration.yaml`. It keeps your `site.json`, adds new site files, and says whether Home Assistant needs a restart. The same action is available as **Uppdatera dashboarden** in placement mode.
 
 ## Development
 

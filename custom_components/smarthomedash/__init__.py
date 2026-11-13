@@ -26,7 +26,7 @@ What it registers:
 - One sidebar panel per dashboard, loading the code in an iframe and handing it the
   logged-in `hass` object, so no access token is needed.
 - The `smarthomedash.update` action (admins), installing the latest version from
-  GitHub; see updater.py. Installations through HACS update through HACS instead.
+  GitHub; see updater.py. Installations through the Marketplace (HACS) update through it instead.
 """
 
 from __future__ import annotations
@@ -208,7 +208,7 @@ async def _async_setup_shared(hass: HomeAssistant, conf: dict) -> dict:
     hass.http.register_view(FrontendView(hass, root / "frontend"))
     hass.http.register_view(SitesView(hass, sites_dir))
     hass.http.register_view(BackupView(hass, sites_dir))
-    # Installations through HACS update through HACS. The update action is only for
+    # Installations through the Marketplace (HACS) update through it. The update action is only for
     # setups that point at a repository themselves (a private fork, a token).
     if conf.get("github_token") or conf.get("repository"):
         _register_update_action(hass)
