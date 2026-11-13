@@ -20,7 +20,7 @@ Status at the time of writing: version **0.8.16**, 13 November 2026. See [status
 - **No real-home data in the repo:** no photos, entity ids, room names, IPs or tokens. The examples are fictional.
 - **No build step, no runtime calls to outside services.** Plain ES modules, bundled fonts.
 - **Security:** site files are served to logged-in users only; writes are admin-only; `safe_path` for every path; bounded body reads (`views.read_limited`); picture magic-byte check; no `innerHTML` with data (use `el()`/`sv()` from `util.js`).
-- **UI strings** go in `frontend/js/i18n.js` (until Q8 moves them) with both `sv` and `en`.
+- **UI strings** go in `frontend/i18n/en.json` and `sv.json`, the same keys in both (a test checks it).
 - **New frontend module:** add it to `MODULES` in `index.html`, or the standalone page and the demo miss it.
 - **Light mode must keep working** for every feature: no blur, blending or animation when `body.is-lite`.
 - **Commits** as `rsundin <37210129+rsundin@users.noreply.github.com>`, with the attribution lines your harness asks for.
@@ -76,10 +76,11 @@ custom_components/smarthomedash/
     js/power.js    power readings and the split into flows
     js/glow.js     lamp colours (rgb and colour temperature)
     js/views/      overview.js (picture), floorplan.js, flow.js (energy lines)
-    js/ui/         setup.js (guide), editor.js (placement), shape.js (corner editing), panel.js
+    js/ui/         setup/ (guide: index.js and a module per step), editor.js (placement), shape.js (corner editing), panel.js
                    (room panel), cards.js, wall.js (kiosk, idle, doorbell, light mode), zoom.js,
                    backup.js, report.js, settings.js
-    js/i18n.js     strings sv/en, t(key, vars)
+    js/i18n.js     t(key, vars); fetches the texts before start() draws anything
+    i18n/          en.json, sv.json: the texts, one file per language
 index.html, sites/   standalone page and example sites (symlinks into example/)
 tests/backend/       unittest with stand-ins for HA (stubs.py)
 tests/browser/       node:test + Playwright; lib.js (server, sizes, harness), harness.html

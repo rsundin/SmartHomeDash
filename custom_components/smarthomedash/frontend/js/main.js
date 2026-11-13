@@ -28,15 +28,16 @@ import { nameOf as entityName } from './entities.js';
 // The online demo sets data-demo on <body> (see .github/workflows/pages.yml).
 const DEMO = document.body?.dataset.demo === 'true';
 const REPO_URL = 'https://github.com/rsundin/SmartHomeDash';
-import { t, setLanguage } from './i18n.js';
+import { t, setLanguage, loadLanguage, languageReady } from './i18n.js';
 
 const params = new URLSearchParams(location.search);
 
 export function showFatal(app, e) {
   console.error(e);
-  app.replaceChildren(el('div', { class: 'fatal' },
+  // Starting may have failed before the texts arrived (i18n.js): show them once they have.
+  languageReady().then(() => app.replaceChildren(el('div', { class: 'fatal' },
     el('p', { class: 'eyebrow' }, t('app.startFailed')), el('p', {}, e.message),
-    el('p', { class: 'muted small' }, t('app.checkSiteJson'))));
+    el('p', { class: 'muted small' }, t('app.checkSiteJson')))));
 }
 
 if (!window.SHD_PANEL) {
@@ -70,7 +71,11 @@ export async function start(opts) {
   document.body.classList.remove('is-editing');
   const siteId = opts.siteId ?? (params.get('site') || document.body.dataset.defaultSite || 'example-apartment');
   const editing = opts.editing ?? location.hash === '#edit';
+  // The texts (i18n.js): English is fetched beside site.json, the site's language once it is known.
+  const english = loadLanguage('en');
+  english.catch(() => {}); // awaited below; a failed site load must not leave it unhandled
   const site = await loadSite(siteId, { useDraft: editing, loader: opts.loader });
+  await Promise.all([english, loadLanguage(site.language)]);
   setLanguage(site.language);
   // Light mode for older tablets: no blur, blending or animation (see ui/wall.js).
   document.body.classList.toggle('is-lite', liteMode(site));

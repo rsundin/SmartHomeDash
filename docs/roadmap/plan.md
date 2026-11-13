@@ -23,7 +23,7 @@ Take these in order. They take precedence over "first `todo` in the file" until 
 
 1. Take the first task whose status is `todo` and whose `Depends` are `done`, unless the owner names another.
 2. Branch `feat/<task-id>-<short-name>` (for example `feat/q1-tests`), one task per branch and pull request.
-3. Read `CLAUDE.md` first; its rules apply (English in code and docs, UI strings in `i18n.js` in Swedish and English, no real-home data, no build step, no outside calls).
+3. Read `CLAUDE.md` first; its rules apply (English in code and docs, UI strings in `frontend/i18n/` in Swedish and English, no real-home data, no build step, no outside calls).
 4. Meet every point under **Done when**. Add or extend tests (see Q1), update `docs/configuration.md` or `docs/setup.md` when behaviour or config changes, and add a `CHANGELOG.md` entry with a version bump in `manifest.json`: the next patch version for each task (0.8.10, 0.8.11 …); the owner decides when a release is big enough for 0.9.0, and 1.0.0 comes when everything runs stable.
 5. In this file, set the task's status to `done (vX.Y.Z)`; in `ROADMAP.md`, move finished milestones to **Done**.
 6. Keep the product principles below. If a task seems to need breaking one, stop and ask the owner.
@@ -124,7 +124,7 @@ The community's top complaint is slow dashboards [R22][R23]. Work through Claude
 - **Done when:** the job runs on every pull request and is required on main; it would have caught a broken config flow import.
 - **Result (0.8.19):** 17 tests, on Home Assistant 2026.10.4 and 2025.6.3. 2025.6 is the oldest version on which all pass: **Configure** fails before 2024.12 (`OptionsFlow.config_entry`), and the update action cannot be registered before 2025.6 (`supports_response` on admin services). The owner raised the `hacs.json` minimum from 2024.8.0 to 2025.6.0 with this. Open for the owner: make the job required in branch protection.
 
-### Q8: Split the setup guide and the strings. Status: todo. Size: M
+### Q8: Split the setup guide and the strings. Status: done (v0.8.20). Size: M
 - **Why:** `ui/setup.js` (837 lines, with very long lines) and `i18n.js` (1,053 lines) are the largest files, and every task touches them. S5 will add five languages to `i18n.js`.
 - **What:**
   - Move each setup step into `ui/setup/<step>.js` with a small shared module for `draw`, fields and undo.

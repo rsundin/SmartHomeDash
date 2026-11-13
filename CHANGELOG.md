@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.8.20
+
+A tidier codebase for what comes next. Nothing looks or works differently.
+
+- **One file per language.** The texts moved from `i18n.js` to `frontend/i18n/en.json` and `sv.json`. The dashboard fetches English and the site's own language before it draws anything, so a site in English no longer downloads the Swedish texts and the other way round. Adding a language is now one new file and one line
+- **The setup guide in one module per step.** `ui/setup.js` (837 lines) became `ui/setup/`: the frame with undo, save and close, and a module each for basics, the overview picture, floor plans, energy, buttons, wall screen and lights, plus the shared helpers, drawing and the quick start
+- New tests: every language file has the same keys and placeholders, every text the code asks for exists, the standalone page lists every module, the texts are fetched once with the page's version, and a start that fails still shows its message as text
 ## 0.8.19
 
 Tests against a real Home Assistant, and three faults they found.
