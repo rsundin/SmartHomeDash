@@ -131,6 +131,31 @@ The last step, for administrators in the Home Assistant panel:
 - **Import**: **Choose .zip …** reads a file exported from SmartHomeDash into this dashboard, after you confirm. It replaces the settings and adds the pictures; pictures already there with other names stay. To move a dashboard to another Home Assistant, or copy it, add a new dashboard there (step 2) and import into it. Home Assistant checks the whole file first and imports nothing if any part fails: only `site.json` and jpg, png or webp pictures (checked by content), at most 100 MB unpacked, 25 MB per picture and 200 files, and no names that lead out of the dashboard's folder.
 - **Restore points**: every save keeps the version it replaced, up to the last 10 (`site.json.1` is the newest, up to `site.json.10`). Each is listed with when it was saved and how many floor plans and rooms it has; **Restore** makes it the current one, after you confirm. An import or a restore keeps the settings it replaced as a restore point too, so it can be undone the same way. Pictures are not part of a restore point.
 
+## The card
+
+The picture also works as a card in any other Home Assistant dashboard: the overview, one floor plan or one room. The card comes with the integration, so there is nothing more to install. After an update that adds or changes it, reload the browser page once.
+
+1. Open a dashboard, choose **Edit dashboard**, then **Add card**, and search for **SmartHomeDash**.
+2. Pick the **Dashboard** (every SmartHomeDash dashboard you have added is listed) and what to **Show**: the overview, a floor plan or a room.
+3. In a sections view, drag the card's corner to size it. In other views, set **Height** in pixels (400 if left empty).
+
+The same in YAML:
+
+```yaml
+type: custom:smarthomedash-card
+site: my-home          # the dashboard's folder name, as in step 2
+view: room:kitchen     # overview (default), plan:<floor plan id> or room:<room id>
+height: 400            # optional; not needed in a sections view
+```
+
+Good to know:
+
+- The card shows only the picture: no header, energy cards, warnings or setup. Tapping a building opens its floor plan, tapping a room opens the room's panel inside the card, and lamps and heating work as in the dashboard.
+- A card for a floor plan or a room stays on that floor plan. A card for the overview of a dashboard without an overview picture starts on its first floor plan.
+- From Home Assistant 2026.6, picking a lamp or a thermostat in **Add card** suggests the room it is in, if the lamp is placed in a room or the room is linked to the lamp's area.
+- Night mode, pinch zoom and light mode for older tablets work as in the dashboard. Kiosk mode, idle mode and the doorbell camera belong to the dashboard itself and are not part of the card.
+- Everyone who can see the dashboard you put the card in sees the picture, also when the SmartHomeDash dashboard itself is set to administrators only: that setting hides it from the sidebar, and the card is your choice to show it. Changing the setup stays with administrators, in the dashboard.
+
 ## Tips for the pictures
 
 **Overview from a drone photo.** Fly high enough to have the whole property in view, camera tilted down about 45°. Daylight with soft shadows works best.

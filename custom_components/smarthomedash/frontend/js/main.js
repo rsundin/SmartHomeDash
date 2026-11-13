@@ -70,7 +70,11 @@ export async function start(opts) {
   document.querySelectorAll('.setup, .editor').forEach((n) => n.remove());
   document.body.classList.remove('is-editing');
   const siteId = opts.siteId ?? (params.get('site') || document.body.dataset.defaultSite || 'example-apartment');
-  const editing = opts.editing ?? location.hash === '#edit';
+  // A card in another dashboard (card.js): only the picture, opened on one view.
+  // opts.embed = { view: 'overview' | 'plan:<id>' | 'room:<id>' }
+  const embed = opts.embed ?? null;
+  document.body.classList.toggle('is-embed', !!embed);
+  const editing = !embed && (opts.editing ?? location.hash === '#edit');
   // The texts (i18n.js): English is fetched beside site.json, the site's language once it is known.
   const english = loadLanguage('en');
   english.catch(() => {}); // awaited below; a failed site load must not leave it unhandled
@@ -84,7 +88,7 @@ export async function start(opts) {
   // Connection, in order: a token saved under Anslutning, the Home Assistant login of
   // this browser (when served from HA), otherwise test data. ?mock forces test data.
   // The setup guide needs to save the config and upload pictures (panel, admins).
-  const canSetup = !!(opts.saveSite && opts.uploadFile && opts.navigateEdit);
+  const canSetup = !embed && !!(opts.saveSite && opts.uploadFile && opts.navigateEdit);
   let source, adapter;
   if (opts.adapter) {
     source = 'panel';
@@ -149,7 +153,7 @@ export async function start(opts) {
       canSetup && !editing ? el('button', { class: 'chip', type: 'button', onclick: () => openSetup() }, t('app.setup')) : null,
       source === 'panel' || DEMO ? null : el('button', { class: 'chip', type: 'button', onclick: () => settings.open() }, t('app.connection')),
       helpBtn));
-  keepAwake();
+  if (!embed) keepAwake(); // a card does not keep the whole screen on
 
   // ---- stage
   const stage = el('div', { class: 'stage' });
@@ -215,7 +219,7 @@ export async function start(opts) {
 
   // Wall screen / tablet in landscape: the image fills the stage instead of letterboxing.
   const wallScreen = window.matchMedia('(min-width: 1024px) and (orientation: landscape) and (min-height: 560px)');
-  const applyFit = () => overview?.setFit(wallScreen.matches && !editor ? 'slice' : 'meet');
+  const applyFit = () => overview?.setFit(wallScreen.matches && !editor && !embed ? 'slice' : 'meet');
   wallScreen.addEventListener?.('change', applyFit);
   applyFit();
 
@@ -282,8 +286,10 @@ export async function start(opts) {
     stage.dataset.view = id;
   }
 
+  // A card set to one floor plan or room stays on that plan: no way back to the overview.
+  let pinned = false;
   function showOverview() {
-    if (!overview) return;
+    if (!overview || pinned) return;
     panel.close();
     plans.forEach((p) => p.el.classList.remove('is-active'));
     overview.el.classList.add('is-active');
@@ -306,7 +312,7 @@ export async function start(opts) {
       if (!fp.el.classList.contains('is-active')) void fp.el.offsetWidth;
       plans.forEach((p) => p.el.classList.toggle('is-active', p === fp));
       overview?.el.classList.remove('is-active');
-      backBtn.hidden = !overview;
+      backBtn.hidden = !overview || pinned;
       hint.textContent = withZoomHint(t('app.hintPlan'));
       mark(`plan:${planId}`);
     }
@@ -378,9 +384,15 @@ export async function start(opts) {
   if (canSetup && !editing && (empty || (site.raw.setup_pending && !storage.get(SETUP_LATER, false)))) openSetup();
 
   const resume = editor?.initialView;
-  if (resume?.startsWith('plan:') && planById.has(resume.slice(5))) { if (overview) showOverview(); await showPlan(resume.slice(5)); }
+  // A card's view: a plan, or a room (its plan with the room open). One that no longer
+  // exists falls back to the dashboard's own start view.
+  const embedRoom = embed?.view?.startsWith('room:') ? site.index.rooms.get(embed.view.slice(5)) : null;
+  const embedPlan = embedRoom?.plan ?? (embed?.view?.startsWith('plan:') ? embed.view.slice(5) : null);
+  if (embedPlan && planById.has(embedPlan)) { pinned = true; await showPlan(embedPlan, embedRoom?.id); }
+  else if (resume?.startsWith('plan:') && planById.has(resume.slice(5))) { if (overview) showOverview(); await showPlan(resume.slice(5)); }
   else if (overview) showOverview();
   else showPlan(site.floorplans[0]?.id);
+  if (embedRoom && !embedRoom.plan) panel.open(embedRoom);
 
   // Wall screens: the doorbell camera, and back to the start view (dimmed at night) when idle.
   const home = () => {
@@ -390,7 +402,7 @@ export async function start(opts) {
     if (overview) showOverview(); else if (site.floorplans[0]) showPlan(site.floorplans[0].id);
     zoom.reset();
   };
-  wall = editing ? null : createWall({ site, store, adapter, goHome: home, kiosk: () => document.body.classList.contains('is-kiosk'), enterKiosk: () => setKiosk(true, true), signal: run.signal });
+  wall = editing || embed ? null : createWall({ site, store, adapter, goHome: home, kiosk: () => document.body.classList.contains('is-kiosk'), enterKiosk: () => setKiosk(true, true), signal: run.signal });
   // Test data: ?ring rings the first doorbell a moment after start.
   const bell = [].concat(site.wall_screen?.doorbell ?? [])[0];
   if (wall && adapter.kind === 'mock' && params.has('ring') && bell?.entity) {
@@ -404,7 +416,7 @@ export async function start(opts) {
 
   // Start in kiosk mode from ?kiosk or when this device was left in it. Full screen
   // needs a tap, so it follows on the first touch.
-  if (!editing && kiosk.wanted()) {
+  if (!editing && !embed && kiosk.wanted()) {
     setKiosk(true, false);
     document.addEventListener('pointerdown', () => kiosk.fullscreen(true), { once: true, signal: run.signal });
   }

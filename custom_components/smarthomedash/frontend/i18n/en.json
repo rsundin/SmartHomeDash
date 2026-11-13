@@ -523,5 +523,16 @@
   "history.undo": "Undo",
   "history.redo": "Redo",
   "history.undone": "Undone.",
-  "history.redone": "Redone."
+  "history.redone": "Redone.",
+  "card.description": "Your home as a picture: the overview, a floor plan or a room of a SmartHomeDash dashboard.",
+  "card.noSite": "Choose a dashboard for this card.",
+  "card.frameTitle": "SmartHomeDash: {site}",
+  "card.view.overview": "Overview picture",
+  "card.view.plan": "Floor plan: {name}",
+  "card.view.room": "Room: {name} ({plan})",
+  "card.editor.site": "Dashboard",
+  "card.editor.view": "Show",
+  "card.editor.height": "Height",
+  "card.editor.heightHelp": "Leave empty in a sections view, where you resize the card in the grid.",
+  "card.suggest": "{room} on the picture ({dashboard})"
 }

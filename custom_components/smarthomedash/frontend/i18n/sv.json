@@ -523,5 +523,16 @@
   "history.undo": "Ångra",
   "history.redo": "Gör om",
   "history.undone": "Ångrat.",
-  "history.redone": "Gjort om."
+  "history.redone": "Gjort om.",
+  "card.description": "Ditt hem som en bild: översikten, en planritning eller ett rum från en SmartHomeDash-dashboard.",
+  "card.noSite": "Välj en dashboard för det här kortet.",
+  "card.frameTitle": "SmartHomeDash: {site}",
+  "card.view.overview": "Översiktsbild",
+  "card.view.plan": "Planritning: {name}",
+  "card.view.room": "Rum: {name} ({plan})",
+  "card.editor.site": "Dashboard",
+  "card.editor.view": "Visa",
+  "card.editor.height": "Höjd",
+  "card.editor.heightHelp": "Lämna tomt i en sektionsvy, där du ändrar kortets storlek i rutnätet.",
+  "card.suggest": "{room} på bilden ({dashboard})"
 }

@@ -65,6 +65,8 @@ custom_components/smarthomedash/
   example/         fictional house and apartment: pictures, site*.json, apartment*.json (en + sv)
   frontend/
     panel.js       <smarthomedash-panel>: runs in HA's iframe, gets `hass`, calls main.start()
+    card.js        <smarthomedash-card> for other dashboards, its editor and card picker entry;
+                   the picture runs in a frame: card.html + card-frame.js → main.start({ embed })
     css/style.css  one stylesheet; tokens on :root; light mode under body.is-lite
     js/main.js     start(opts): loads the site, connects the adapter, builds header, stage, cards
     js/store.js    entity states; store.watch(ids, fn) batched per animation frame
@@ -83,7 +85,8 @@ custom_components/smarthomedash/
     i18n/          en.json, sv.json: the texts, one file per language
 index.html, sites/   standalone page and example sites (symlinks into example/)
 tests/backend/       unittest with stand-ins for HA (stubs.py)
-tests/browser/       node:test + Playwright; lib.js (server, sizes, harness), harness.html
+tests/browser/       node:test + Playwright; lib.js (server, sizes, harness), harness.html,
+                     card-harness.html (a stand-in HA dashboard for the card)
 tests/fixtures/      perf-site.js (large generated home)
 docs/                setup.md (user guide), configuration.md (site.json reference), roadmap/
 ```
@@ -170,13 +173,7 @@ Do them in this order, one pull request each. Briefs below add what you need bey
 
 ## 7. Second batch, notes ahead of time
 
-- **S4 (card):** `start()` assumes it owns the whole document:
-  - `window.__shdRun` keeps one run per window
-  - it uses `document.querySelectorAll`, `document.body` classes and global keyboard listeners
-  - the room panel and setup are appended to `document.body`
-  - fonts are declared with `@font-face` in `style.css`, which does not apply inside a shadow root
-
-  A card in HA's main document needs a per-instance root (shadow DOM with the stylesheet adopted), no globals, and fonts declared on the document once. Plan that refactor first and keep the panel path working. Register the card's module with `frontend.add_extra_js_url` and announce it in `window.customCards`.
+- **S4 (card), done in 0.8.21:** the card (`frontend/card.js`) does not run the dashboard in Home Assistant's own document. `start()` owns its whole document (`window.__shdRun`, `document.body` classes, global key listeners, the room panel on `document.body`, `@font-face` in `style.css`), so the card puts a frame in its shadow root (`card.html` + `card-frame.js`) and the frame calls `start({ embed: { view } })`, exactly as `panel.js` does in the panel's iframe. The card element only sizes the frame and hands it `hass` and the config (`contentWindow.shdCard.update`). `body.is-embed` in `style.css` hides everything but the picture. If a card without a frame is ever wanted (for example to follow Home Assistant's theme), that is the per-instance-root refactor: no globals, the stylesheet adopted into a shadow root, fonts declared on the document once.
 - **S5 (languages):** after Q8, each language is one JSON file. Mark machine-assisted translations in the file. The key-coverage test from Q8 covers them.
 - **A1:** add `@axe-core/playwright` to the browser tests' install line in CI and in `tests/run.sh`'s comment; check both examples.
 - **F1 (summer house mode)** depends on W2's screen profiles, so build W2 before F1 if the owner wants F1 early.

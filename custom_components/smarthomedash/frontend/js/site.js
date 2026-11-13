@@ -1,4 +1,4 @@
-import { t } from './i18n.js';
+import { t, languageReady } from './i18n.js';
 import { storage } from './util.js';
 
 // Loads sites/<id>/site.json and builds lookup indexes the views share.
@@ -27,9 +27,10 @@ export async function loadSite(id, { useDraft = false, loader = null } = {}) {
   const fromDraft = !!raw;
   if (!raw) {
     const res = await source.get('site.json');
-    if (!res.ok) throw new Error(t('site.notFound', { path: `${base}site.json`, status: res.status }));
+    // The texts may still be on their way this early: wait, so the message is not a bare key.
+    if (!res.ok) { await languageReady(); throw new Error(t('site.notFound', { path: `${base}site.json`, status: res.status })); }
     try { raw = await res.json(); }
-    catch (e) { throw new Error(t('site.invalidJson', { path: `${base}site.json`, msg: e.message })); }
+    catch (e) { await languageReady(); throw new Error(t('site.invalidJson', { path: `${base}site.json`, msg: e.message })); }
   }
   const site = structuredClone(raw);
   site.raw = raw;
