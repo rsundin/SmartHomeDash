@@ -102,6 +102,8 @@ Pick the sensors you have; leave the rest empty and their rows or cards are hidd
 
 Tick the scenes and scripts to show as buttons, and give them short names.
 
+**All on and all off** turns the **All on** and **All off** buttons on or off. They sit behind the lamp in the header (also on a wall screen in kiosk mode) and at the bottom of the lights card. Untick lights that the buttons should leave alone, such as garden lights on a schedule.
+
 ### Wall screen
 
 All optional, for tablets and screens on the wall (see [configuration.md](configuration.md#wall-screens) for the details):

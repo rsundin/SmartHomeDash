@@ -112,6 +112,19 @@ button { font: inherit; color: inherit; }
 .chip-danger { color: var(--danger); }
 .chip-danger.is-armed { background: var(--danger); color: var(--bg); border-color: var(--danger); }
 
+/* All lights on and off from the header (ui/lights.js) */
+.lights-wrap { position: relative; }
+.chip-lights { display: inline-flex; align-items: center; justify-content: center; min-width: 34px; padding-inline: 8px; }
+.chip-lights.is-on { color: var(--glow); border-color: var(--glow); }
+.lights-menu {
+  position: absolute; top: calc(100% + 6px); left: 0; z-index: 30; display: flex; flex-direction: column; gap: 8px;
+  padding: 10px; background: var(--surface-solid); border: 1px solid var(--line); border-radius: 14px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35); min-width: 180px;
+}
+.lights-menu.to-left { left: auto; right: 0; }
+.lights-menu[hidden] { display: none; }
+.lights-menu .chip { width: 100%; text-align: center; }
+
 .icon-btn {
   width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--line);
   background: transparent; cursor: pointer; font-size: 20px; line-height: 1;
@@ -537,6 +550,8 @@ input[type='range'] { width: 100%; accent-color: var(--glow); }
 
 /* ---------- kiosk mode: only the dashboard */
 .is-kiosk .top-actions .chip, .is-kiosk .top-actions .pill, .is-kiosk .stage-hint, .is-kiosk .brand .eyebrow, .is-kiosk .banner { display: none !important; }
+.is-kiosk .top-actions .chip.chip-lights { display: inline-flex !important; }
+.is-kiosk .lights-menu .chip { display: block !important; }
 .is-kiosk .clock { cursor: default; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
 .toast {
   position: fixed; left: 50%; bottom: calc(24px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); z-index: 60;

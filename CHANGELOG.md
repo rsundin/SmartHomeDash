@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.8.22
+
+All lights on and off with one button.
+
+- **All on, beside All off.** The lights card had **All off**; it now has **All on** too. All on takes one tap, All off still asks for a second tap so nobody is left in the dark by mistake
+- **In the header, also on wall screens.** A lamp button in the header opens both, so they are one tap away from the picture and the floor plan without scrolling to the lights card. It stays in kiosk mode, and the lamp lights up while any light is on. Not shown in the card for other dashboards
+- **Choose what "all" means.** Under **Buttons** in the setup guide, the buttons can be turned off, and lights can be left out of them (garden lights on a schedule, a night light). In site.json: `"all_lights": { "enabled": false, "exclude": ["light.garden"] }`. "All" is every light on the dashboard, including the ones found in linked areas
+- New tests: on in one tap and off in two from the header, an excluded light left alone from the lights card, the header control in kiosk mode on a phone, and turning the buttons off in the setup guide
+
 ## 0.8.21
 
 The picture as a card in any Home Assistant dashboard.

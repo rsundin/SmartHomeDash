@@ -62,7 +62,7 @@ async def read_limited(stream, limit: int) -> bytes | None:
 _TOP_LEVEL = {
     "name": str, "language": str, "locale": str, "currency": str, "weather": str,
     "comfort": dict, "overview": dict, "energy": dict, "wall_screen": dict, "mock": dict,
-    "floorplans": list, "climates": list, "scenes": list,
+    "floorplans": list, "climates": list, "scenes": list, "all_lights": dict,
 }
 
 
@@ -107,6 +107,9 @@ def validate_site(data) -> str | None:
             return f"{key} should be {_type_name(kind)}"
     if "warnings" in data and not isinstance(data["warnings"], (bool, dict)):
         return "warnings should be an object or false"
+    exclude = data.get("all_lights", {}).get("exclude", [])
+    if not isinstance(exclude, list) or not all(isinstance(x, str) for x in exclude):
+        return "all_lights.exclude should be a list of entity ids"
     for key in ("climates", "scenes"):
         problem = _list_of_objects(data.get(key, []), key)
         if problem:

@@ -4,7 +4,7 @@ The working plan behind [ROADMAP.md](../../ROADMAP.md), written for Claude Code 
 
 ## Next up (order set 13 November 2026, owner's wishes added 14 November 2026)
 
-Take these in order. L1, L2 and H4 come before S5 because they are what the owner wants on their own wall screen now, and S5 then translates their texts along with the rest. They take precedence over "first `todo` in the file" until the owner changes the list.
+Take these in order. L1, L2, H4 and L3 come before S5 because they are what the owner wants on their own wall screen now, and S5 then translates their texts along with the rest. They take precedence over "first `todo` in the file" until the owner changes the list.
 
 1. **M1** Install docs and metadata for the Marketplace (HACS moved into Home Assistant)
 2. **Q6** The lost tap after a drag (the pinch zoom test fails outside CI)
@@ -14,13 +14,14 @@ Take these in order. L1, L2 and H4 come before S5 because they are what the owne
 6. **L1** All lights on and all off
 7. **L2** Goodnight: lights stay on a few minutes, then everything turns off
 8. **H4** Cameras on the picture (moved up from 1.1)
-9. **S5** More languages
-10. **S6** A Marketplace listing
-11. **A1** Accessibility and large text
-12. **G1** Launch: show the project to the community
-13. **F1** Summer house mode, then **F2** warm-up before arrival
-14. **W2** Screen profiles and guest mode, then **W1** the house as screensaver
-15. **H2**, **H1**, **H3**, **H5**, **H6**, **E1**, then the rest in file order
+9. **L3** LED strips drawn as lit lines and areas
+10. **S5** More languages
+11. **S6** A Marketplace listing
+12. **A1** Accessibility and large text
+13. **G1** Launch: show the project to the community
+14. **F1** Summer house mode, then **F2** warm-up before arrival
+15. **W2** Screen profiles and guest mode, then **W1** the house as screensaver
+16. **H2**, **H1**, **H3**, **H5**, **H6**, **E1**, then the rest in file order
 
 ## How to work this plan
 
@@ -231,13 +232,13 @@ Setup effort is the main barrier for every floor plan project [R5][R6][R11]. Sma
 
 Added 14 November 2026 at the owner's request. Small things a wall screen in the hall is used for every day.
 
-### L1: All lights on and all off. Status: todo. Size: S
+### L1: All lights on and all off. Status: done (v0.8.22). Size: S
 - **Why:** The lights card already has **Släck allt** (two taps), but there is no **Tänd allt**, and on a wall screen the card is a scroll away from the picture.
 - **What:**
   - **Tänd allt** beside **Släck allt** in the lights card. "All" means the lights on this dashboard, including the ones picked up from linked areas (`site.index.lights`), not every light in Home Assistant. On takes one tap; off keeps its second tap, so nobody is left in the dark by mistake.
   - The same two buttons as one compact control in the header (a lamp icon that opens on and off), so they are reachable from the picture and the floor plan without scrolling. Hidden in the card for other dashboards (`body.is-embed`).
-  - `"all_lights": { "exclude": ["light.garden"] }` in site.json leaves chosen lights out of both (outdoor lights on a schedule, a child's night light). Set in the guide's Lights step as a list of ticks.
-- **Files:** `ui/cards.js`, `main.js` (header), `site.js`, `ui/setup/lights.js`, `i18n/*.json`, `docs/configuration.md`.
+  - `"all_lights": { "exclude": ["light.garden"] }` in site.json leaves chosen lights out of both (outdoor lights on a schedule, a child's night light), and `"enabled": false` hides them. Both are set under **Buttons** in the setup guide, which the owner asked for: each whole-house action can be turned on or off there.
+- **Files:** `ui/lights.js` (new), `ui/cards.js`, `main.js` (header), `ui/setup/buttons.js`, `views.py` (site.json check), `i18n/*.json`, `docs/configuration.md`.
 - **Done when:** browser tests cover on in one tap, off in two, an excluded light left alone, and the header control in kiosk and light mode.
 
 ### L2: Goodnight. Status: todo. Size: M. Depends: L1
@@ -246,9 +247,20 @@ Added 14 November 2026 at the owner's request. Small things a wall screen in the
   - A **Godnatt** button (beside the L1 control and in the lights card). It starts a countdown, 5 minutes by default: lights stay as they are, a small banner on every open screen says "Släcker allt om 4:12" with **Avbryt**, and when it runs out every light from L1 (minus the exclusions) turns off.
   - It runs in Home Assistant, not in the browser: the integration adds the action `smarthomedash.goodnight` (`entity_id`, `minutes`, `cancel`) that schedules the turn-off with `async_call_later`, and a sensor per dashboard entry (`sensor.<dashboard>_goodnight`, device class `timestamp`, the time everything turns off, or unknown). Every screen shows the countdown from that sensor. Closing or reloading the tablet does not stop it, and the action can also be used from automations, voice or an NFC tag.
   - Optional `"goodnight": { "minutes": 5, "then": "script.goodnight" }` in site.json: `then` runs a script of the user's own when the lights go off (lock up, TV off, heating down). The integration does not write scripts or automations into the user's configuration.
+  - Turned on or off under **Buttons** in the setup guide, like L1 (`"goodnight": { "enabled": false }`).
   - A restart of Home Assistant during the countdown cancels it (said in the docs); a second tap on **Godnatt** restarts the countdown.
 - **Files:** `__init__.py`, `services.yaml`, `strings.json` + `translations/`, a new `sensor.py`, `ui/cards.js`, `main.js`, `i18n/*.json`, `docs/configuration.md`, `docs/setup.md`, `SECURITY.md` (a new action: any logged-in user can call it, like turning lights off).
 - **Done when:** `tests/ha` covers the action scheduling and cancelling the turn-off and the sensor's state (with time moved forward); browser tests cover the banner, its countdown from the sensor and **Avbryt**; the backend stand-in tests still pass.
+
+### L3: LED strips drawn as lit areas. Status: todo. Size: M. Depends: S2
+- **Why:** The owner asked (14 November 2026) for LED strips to be drawn as what they are: a line or a surface that glows, not a round spot.
+- **What:**
+  - In placement mode a light can be placed as a **strip**: drawn as a line with two or more points (under a kitchen cabinet, along a stair) or as a surface (a cove ceiling, a backlit panel), with the same drawing and corner editing as rooms (`ui/shape.js`).
+  - On the floor plan: `"lights": [{ "entity": "light.kitchen_strip", "line": [[x, y], ...], "width": 60 }]` or `"area": [[x, y], ...]`. On the overview the zone lamp gets `"type": "line"` or `"type": "area"` beside today's `point`, `wall` and `ground`.
+  - It glows along its whole length in the light's own colour and brightness (`glow.js`), as a soft blurred stroke or fill; in light mode a plain coloured line or fill, no blur.
+  - A tap anywhere on the strip switches it, a long press opens the room, like a lamp.
+- **Files:** `views/floorplan.js`, `views/overview.js`, `glow.js`, `ui/editor.js`, `ui/shape.js`, `site.js`, `views.py` (site.json check), `css/style.css`, `docs/configuration.md`.
+- **Done when:** browser tests cover drawing a strip, switching it by tapping it, its colour following the light, light mode without blur, and the performance budget with strips on the large test site.
 
 ---
 

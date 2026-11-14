@@ -21,6 +21,7 @@ import { createSetup } from './ui/setup.js';
 import { createZoom } from './ui/zoom.js';
 import { createWall, liteMode } from './ui/wall.js';
 import { createReport } from './ui/report.js';
+import { createLightsMenu, allLightsOn } from './ui/lights.js';
 import { loadAreas, applyAreaNames, noAreas, linkByName, autoPlace } from './areas.js';
 import { assignSensors, warnings, warningIds, configEntities } from './status.js';
 import { nameOf as entityName } from './entities.js';
@@ -79,6 +80,7 @@ export async function start(opts) {
   const english = loadLanguage('en');
   english.catch(() => {}); // awaited below; a failed site load must not leave it unhandled
   const site = await loadSite(siteId, { useDraft: editing, loader: opts.loader });
+  run.site = site; // read by the browser tests
   await Promise.all([english, loadLanguage(site.language)]);
   setLanguage(site.language);
   // Light mode for older tablets: no blur, blending or animation (see ui/wall.js).
@@ -144,11 +146,13 @@ export async function start(opts) {
       kiosk.exit();
     }
   }
+  // All lights on and off from the header (ui/lights.js); stays on wall screens in kiosk mode.
+  const lightsMenu = !embed && !editing && allLightsOn(site) ? createLightsMenu({ site, store, adapter, signal: run.signal }) : null;
   press(clock, null, () => { if (document.body.classList.contains('is-kiosk')) setKiosk(false); }, 2000);
   const header = el('header', { class: 'top' },
     el('div', { class: 'brand' }, el('p', { class: 'eyebrow' }, 'SmartHomeDash'), el('h1', {}, site.name)),
     viewNav,
-    el('div', { class: 'top-actions' }, clock, source === 'panel' ? null : status, site.overview || site.floorplans.length ? nightBtn : null, editing ? null : kioskBtn,
+    el('div', { class: 'top-actions' }, lightsMenu?.el, clock, source === 'panel' ? null : status, site.overview || site.floorplans.length ? nightBtn : null, editing ? null : kioskBtn,
       opts.navigateEdit && !editing ? el('button', { class: 'chip', type: 'button', onclick: () => opts.navigateEdit(true) }, t('app.edit')) : null,
       canSetup && !editing ? el('button', { class: 'chip', type: 'button', onclick: () => openSetup() }, t('app.setup')) : null,
       source === 'panel' || DEMO ? null : el('button', { class: 'chip', type: 'button', onclick: () => settings.open() }, t('app.connection')),
@@ -204,6 +208,7 @@ export async function start(opts) {
   site.autoPlaced = new Set(autoPlace(site, site.areas, store));
   // Doors, windows, locks, presence and alarms per room, from the room's area and site.json.
   assignSensors(site, store);
+  lightsMenu?.refresh(); // the area lights are known now
 
   // ---- views
   let view = null;

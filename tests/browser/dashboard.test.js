@@ -60,7 +60,7 @@ describe('dashboard', () => {
     const btn = page.locator('.top-actions .chip', { hasText: /Auto/ });
     await btn.click(); // auto → night
     await page.waitForFunction(() => document.querySelector('.stage').classList.contains('is-night'));
-    assert.match(await page.locator('.top-actions .chip').nth(0).textContent(), /Night/);
+    await page.locator('.top-actions .chip', { hasText: 'Night' }).waitFor(); // the header button says Night now
     const dusk = await page.locator('.ov-img-night').first().evaluate((n) => Number(n.closest('.view').style.getPropertyValue('--dusk')));
     assert.equal(dusk, 1, 'the evening picture is shown in full');
     await page.locator('.top-actions .chip', { hasText: 'Night' }).click(); // night → day

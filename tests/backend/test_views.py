@@ -187,6 +187,8 @@ class SitesViewTest(unittest.TestCase):
             "overview.size should be [width, height] in numbers": {"overview": {"size": [100, True]}},
             "overview.buildings[0].area should be a list of at least three [x, y] number pairs":
                 {"overview": {"buildings": [{"id": "h", "area": [[0, 0, 1], [1, 0, 1], [1, 1, 1]]}]}},
+            "all_lights should be an object": {"all_lights": True},
+            "all_lights.exclude should be a list of entity ids": {"all_lights": {"exclude": "light.garden"}},
             "overview.solar.panels[0] should be a list of at least three [x, y] number pairs":
                 {"overview": {"solar": {"panels": [[0, 0]]}}},
         }
