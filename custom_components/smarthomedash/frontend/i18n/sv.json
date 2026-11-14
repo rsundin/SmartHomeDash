@@ -550,5 +550,21 @@
   "card.editor.view": "Visa",
   "card.editor.height": "Höjd",
   "card.editor.heightHelp": "Lämna tomt i en sektionsvy, där du ändrar kortets storlek i rutnätet.",
-  "card.suggest": "{room} på bilden ({dashboard})"
+  "card.suggest": "{room} på bilden ({dashboard})",
+  "camera.eyebrow": "Kamera",
+  "camera.open": "Visa kameran {name}",
+  "camera.prev": "Föregående kamera",
+  "camera.next": "Nästa kamera",
+  "missing.camera": "Kamera",
+  "editor.kindCameras": "Kameror",
+  "editor.overview": "Översiktsbilden",
+  "editor.tapWhereCamera": "Tryck där kameran sitter, på en planlösning eller översiktsbilden.",
+  "editor.cameraDirection": "Riktning",
+  "editor.cameraLeft": "Vrid åt vänster",
+  "editor.cameraRight": "Vrid åt höger",
+  "editor.cameraNoWedge": "Ingen synvinkel",
+  "editor.cameraTurned": "{name} vreds",
+  "editor.cameraMotion": "Rörelsesensor",
+  "editor.cameraMotionNone": "Ingen (kamerans egen om den finns)",
+  "editor.cameraMotionSet": "Rörelsesensor för {name} sparad"
 }

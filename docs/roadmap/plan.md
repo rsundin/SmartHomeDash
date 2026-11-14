@@ -290,11 +290,11 @@ Competitors show people, openings, media, appliances, cameras and power where th
   - Robot vacuum status in its room.
 - **Done when:** mock media and appliance cycles show and clear correctly.
 
-### H4: Cameras on the picture. Status: todo. Size: M. Depends: S2
+### H4: Cameras on the picture. Status: done (v0.8.25). Size: M. Depends: S2
 - **Why:** The owner wants to place cameras on the picture and tap one to see it. The doorbell window (0.8.0) already shows a camera live or as stills through Home Assistant's camera proxy.
 - **What:**
-  - Placement mode lists `camera.*` entities as their own group. A camera is placed like a lamp, on a floor plan (`cameras` in the plan, `{ "entity": "camera.garden", "at": [x, y], "angle": 200, "motion": "binary_sensor.garden_motion" }`) or on the overview picture (`overview.cameras`, in image pixels).
-  - On the plan a small camera icon, and an optional field-of-view wedge pointing along `angle` (dragged in placement mode). The wedge turns red while the linked motion sensor is on; without `motion`, the camera's own `motion_detected` attribute is used where it exists.
+  - Placement mode lists `camera.*` entities as their own group. A camera is placed like a lamp, on a floor plan (`cameras` in the plan, `{ "entity": "camera.garden", "at": [x, y], "angle": 200, "motion": "binary_sensor.garden_motion" }`; the direction is set with ↺/↻ in 45° steps in placement mode) or on the overview picture (`overview.cameras`, in image pixels).
+  - On the plan a small camera icon, and an optional field-of-view wedge pointing along `angle` (turned with ↺/↻ in placement mode). The wedge turns red while the linked motion sensor is on; without `motion`, the camera's own `motion_detected` attribute is used where it exists.
   - A tap opens the camera window: the doorbell's window moved into a shared `ui/camera.js` (live MJPEG where Home Assistant streams it, otherwise a still every two seconds; stills only in light mode). It closes on × or a tap outside, and after 2 minutes on a wall screen so a stream is not left running. Several placed cameras give arrows to step between them.
   - No camera address or password in site.json; everything goes through `/api/camera_proxy*` with the user's own login, so non-admins see only what Home Assistant lets them see. W2 guest mode can later hide cameras.
 - **Files:** `ui/camera.js` (new, from `ui/wall.js`), `ui/editor.js`, `views/floorplan.js`, `views/overview.js`, `site.js`, `status.js` (missing-entity check), `adapters/mock.js` (mock snapshots), `i18n/*.json`, `docs/configuration.md`.

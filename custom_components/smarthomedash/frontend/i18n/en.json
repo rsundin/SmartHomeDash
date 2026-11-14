@@ -550,5 +550,21 @@
   "card.editor.view": "Show",
   "card.editor.height": "Height",
   "card.editor.heightHelp": "Leave empty in a sections view, where you resize the card in the grid.",
-  "card.suggest": "{room} on the picture ({dashboard})"
+  "card.suggest": "{room} on the picture ({dashboard})",
+  "camera.eyebrow": "Camera",
+  "camera.open": "Show the camera {name}",
+  "camera.prev": "Previous camera",
+  "camera.next": "Next camera",
+  "missing.camera": "Camera",
+  "editor.kindCameras": "Cameras",
+  "editor.overview": "Overview picture",
+  "editor.tapWhereCamera": "Tap where the camera is, on a floor plan or the overview picture.",
+  "editor.cameraDirection": "Direction",
+  "editor.cameraLeft": "Turn left",
+  "editor.cameraRight": "Turn right",
+  "editor.cameraNoWedge": "No field of view",
+  "editor.cameraTurned": "{name} turned",
+  "editor.cameraMotion": "Motion sensor",
+  "editor.cameraMotionNone": "None (the camera's own, if it has one)",
+  "editor.cameraMotionSet": "Motion sensor for {name} saved"
 }

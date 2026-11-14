@@ -15,6 +15,7 @@ import { mixColor, createTints } from '../glow.js';
 import { roomStatus, statusIds, isClosedCover } from '../status.js';
 import { ICONS } from './floorplan.js';
 import { createFlow } from './flow.js';
+import { cameraMarkers, openCamera } from '../ui/camera.js';
 
 export function createOverview({ site, store, adapter, onOpenBuilding }) {
   const ov = site.overview;
@@ -190,8 +191,13 @@ export function createOverview({ site, store, adapter, onOpenBuilding }) {
     });
   }
 
+  // Cameras on the overview picture (ui/camera.js).
+  const cams = (ov.cameras ?? []).filter((c) => c?.entity && Array.isArray(c.at));
+  const camsG = cameraMarkers({ cams, unit: Math.max(W, H) / 90, store, site,
+    onOpen: (i) => openCamera({ site, store, adapter, ids: cams.map((c) => c.entity), index: i }) });
+
   const upper = sv('svg', { viewBox: vb, class: 'ov-upper' },
-    defs, windowsG, solarG, createFlow({ site, store, ov, size: [W, H] }), lampsG, chip, badgesG, hits, zoneHits);
+    defs, windowsG, solarG, createFlow({ site, store, ov, size: [W, H] }), lampsG, chip, badgesG, hits, zoneHits, camsG);
 
   const weather = el('div', { class: 'ov-wx', 'aria-hidden': 'true' });
   const root = el('div', { class: `view ov${nightImg ? ' has-night-image' : ''}`, style: { aspectRatio: `${W} / ${H}` } }, lower, weather, upper);
@@ -208,6 +214,7 @@ export function createOverview({ site, store, adapter, onOpenBuilding }) {
   const placed = [
     ...ov.buildings.map((b) => b.area),
     ...ov.zones.flatMap((z) => z.lamps.map((l) => [l.at])),
+    ...cams.map((c) => [c.at]),
     ...(ov.solar?.panels ?? []),
     ...(ov.windows ?? []).map((w) => w.area),
   ];

@@ -122,8 +122,9 @@ Opens placement mode (also available as **Placera** / **Place** in the header):
 2. Tap where it is. On a floor plan the room is found from the tap: a light is placed at that spot, a thermostat or sensor is linked to the room. On the overview picture a light becomes an outdoor lamp; tap again to add more fixtures switched by the same entity. Outdoor lamps in the same Home Assistant area share one switch in the lights card.
 3. To move something already placed, drag the lamp to its new spot; on a floor plan it can go into another room. On the overview picture each fixture of an outdoor lamp moves on its own. Tap a lamp to see which one it is: a tag over it shows its name and entity id, and it is selected in the list.
 4. Fine-tune a selected lamp with the arrow keys (Shift moves ten times as far); it is saved when you stop pressing.
-5. **Undo** and **Redo** (or Ctrl/Cmd+Z and Ctrl/Cmd+Shift+Z) step back through the changes in placement mode until you save or throw the draft away.
-6. **Save to Home Assistant.**
+5. **Cameras** have a group of their own. Tap where a camera sits, anywhere on a floor plan or the overview picture. Once placed, **↺** and **↻** turn its field of view in steps of 45°, and **Motion sensor** picks the sensor that turns it red. A tap on a camera in the dashboard opens it.
+6. **Undo** and **Redo** (or Ctrl/Cmd+Z and Ctrl/Cmd+Shift+Z) step back through the changes in placement mode until you save or throw the draft away.
+7. **Save to Home Assistant.**
 
 New outdoor lamps are drawn as wall lamps. To make one a flood or deck light, change its `type` to `ground` in `site.json` (see [configuration.md](configuration.md)).
 

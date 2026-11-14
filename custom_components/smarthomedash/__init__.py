@@ -300,7 +300,9 @@ def _strip_entities(site: dict) -> None:
     """Remove every entity link from the example, keeping the drawn geometry."""
     overview = site.get("overview") or {}
     overview["zones"] = []
+    overview.pop("cameras", None)
     for plan in site.get("floorplans", []):
+        plan.pop("cameras", None)
         for room in plan.get("rooms", []):
             room["lights"] = []
             room.pop("climate", None)

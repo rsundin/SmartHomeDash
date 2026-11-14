@@ -12,6 +12,7 @@
     "image": "example_day.jpg",
     "night_image": "example_night.jpg",
     "size": [1264, 848],
+    "cameras": [{ "entity": "camera.driveway", "at": [905, 560], "angle": 120 }],
     "buildings": [
       {
         "id": "house",
@@ -141,6 +142,7 @@
         ]
       },
       "outline": [[55, 55], [970, 55], [970, 460], [700, 460], [700, 970], [55, 970]],
+      "cameras": [{ "entity": "camera.garden", "at": [715, 480], "angle": 45, "motion": "binary_sensor.garden_motion" }],
       "rooms": [
         {
           "id": "kitchen",

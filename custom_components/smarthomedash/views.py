@@ -93,6 +93,20 @@ def _list_of_objects(value, where: str) -> str | None:
     return None
 
 
+def _cameras_problem(value, where: str) -> str | None:
+    problem = _list_of_objects(value, where)
+    if problem:
+        return problem
+    for i, cam in enumerate(value):
+        if not isinstance(cam.get("entity"), str) or not cam["entity"].startswith("camera."):
+            return f"{where}[{i}].entity should be a camera entity id"
+        if not _is_point(cam.get("at")):
+            return f"{where}[{i}].at should be an [x, y] number pair"
+        if "angle" in cam and not _is_number(cam["angle"]):
+            return f"{where}[{i}].angle should be a number"
+    return None
+
+
 def validate_site(data) -> str | None:
     """Return a readable reason why data is not a usable site.json, or None.
 
@@ -135,6 +149,10 @@ def validate_site(data) -> str | None:
         problem = _list_of_objects(rooms, f"{where}.rooms")
         if problem:
             return problem
+        if "cameras" in plan:
+            problem = _cameras_problem(plan["cameras"], f"{where}.cameras")
+            if problem:
+                return problem
         for j, room in enumerate(rooms):
             here = f"{where}.rooms[{j}]"
             if "area" in room:
@@ -150,6 +168,10 @@ def validate_site(data) -> str | None:
     overview = data.get("overview", {})
     if "size" in overview and not _is_point(overview["size"]):
         return "overview.size should be [width, height] in numbers"
+    if "cameras" in overview:
+        problem = _cameras_problem(overview["cameras"], "overview.cameras")
+        if problem:
+            return problem
     for key in ("buildings", "zones", "windows"):
         items = overview.get(key, [])
         problem = _list_of_objects(items, f"overview.{key}")

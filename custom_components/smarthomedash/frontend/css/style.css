@@ -249,6 +249,23 @@ button { font: inherit; color: inherit; }
 .fp-lamp:focus-visible { outline: none; }
 .fp-lamp.is-missing { opacity: 0.35; }
 
+/* Cameras on the plans and the overview (ui/camera.js) */
+.cam { cursor: pointer; }
+.cam:focus-visible { outline: none; }
+.cam-hit { fill: transparent; }
+.cam-dot { fill: var(--surface-solid); stroke: var(--accent); stroke-width: 1.5; vector-effect: non-scaling-stroke; }
+.cam-icon { fill: var(--accent); }
+.cam-wedge { fill: var(--accent); fill-opacity: 0.2; stroke: var(--accent); stroke-opacity: 0.7; stroke-width: 1; vector-effect: non-scaling-stroke; pointer-events: none; transition: fill 0.3s, fill-opacity 0.3s; }
+.cam.is-motion .cam-wedge { fill: var(--danger); fill-opacity: 0.32; stroke: var(--danger); stroke-opacity: 0.8; }
+.cam.is-motion .cam-dot { stroke: var(--danger); }
+.cam.is-motion .cam-icon { fill: var(--danger); }
+.cam:hover .cam-dot, .cam:focus-visible .cam-dot { stroke: var(--glow); }
+.cam.is-missing, .cam.is-off { opacity: 0.4; }
+.is-editing .cam.is-picked .cam-dot { stroke: var(--glow); stroke-width: 3; }
+.cam-nav { align-items: center; gap: 10px; }
+.editor-cam { display: grid; gap: 8px; margin-top: 8px; }
+.editor-cam .row { align-items: center; gap: 8px; }
+
 /* ---------- side cards */
 .side { display: grid; gap: 12px; min-width: 0; }
 @media (max-width: 1000px) and (min-width: 620px) { .side { grid-template-columns: repeat(2, minmax(0, 1fr)); } }

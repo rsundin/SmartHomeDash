@@ -135,9 +135,17 @@ export function createMockAdapter(site) {
     if (site.weather) {
       list.push(S(site.weather, 'cloudy', { temperature: 6.5, wind_speed: 4, wind_gust_speed: 9, humidity: 86, temperature_unit: '°C', wind_speed_unit: 'm/s' }));
     }
+    // Cameras placed on the plans and the overview, and their motion sensors. A camera in
+    // mock.entities gets the test picture too.
+    const cams = [...site.floorplans.flatMap((p) => p.cameras ?? []), ...(site.overview?.cameras ?? [])];
+    for (const c of cams) {
+      if (c?.entity && !list.some((s) => s.entity_id === c.entity)) list.push(S(c.entity, 'idle', { friendly_name: c.name ?? pretty(c.entity), entity_picture: TEST_CAMERA }));
+      if (c?.motion && !list.some((s) => s.entity_id === c.motion)) list.push(S(c.motion, 'off', { friendly_name: pretty(c.motion), device_class: 'motion' }));
+    }
     for (const x of site.mock?.entities ?? []) {
       const id = typeof x === 'string' ? x : x.entity;
       if (list.some((s) => s.entity_id === id)) continue;
+      if (id.startsWith('camera.')) { list.push(S(id, 'idle', { friendly_name: (typeof x === 'object' && x.name) || id, entity_picture: TEST_CAMERA })); continue; }
       list.push(S(id, 'off', { friendly_name: (typeof x === 'object' && x.name) || id, ...((typeof x === 'object' && x.attributes) || {}) }));
     }
     list.push(sunState());
@@ -347,6 +355,9 @@ export function createMockAdapter(site) {
   };
 }
 
+// camera.garden_motion → "Garden motion"
+const pretty = (id) => { const s = id.split('.')[1].replace(/_/g, ' '); return s[0].toUpperCase() + s.slice(1); };
+
 function seeded(seed) {
   let a = seed >>> 0;
   return () => {
@@ -357,7 +368,7 @@ function seeded(seed) {
   };
 }
 
-// A drawn test picture for doorbell cameras: a front door at dusk with its porch lamp on.
+// A drawn test picture for cameras: a front door at dusk with its porch lamp on.
 const TEST_CAMERA = `data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 360">
 <defs><radialGradient id="l" cx="0.5" cy="0.2" r="0.7"><stop offset="0" stop-color="#ffd9a0" stop-opacity="0.55"/><stop offset="1" stop-color="#ffd9a0" stop-opacity="0"/></radialGradient></defs>
 <rect width="640" height="360" fill="#1b2430"/><rect y="290" width="640" height="70" fill="#2a2f33"/>

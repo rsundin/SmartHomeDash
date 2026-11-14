@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.8.25
+
+Cameras on the picture.
+
+- **Place cameras** on a floor plan or the overview picture in placement mode. They have a group of their own in the list and can go anywhere, also outside the rooms
+- **A tap opens the camera** in the window the doorbell uses: live where Home Assistant streams it, otherwise a new still every two seconds. With several cameras on a plan, arrows step between them. It closes after two minutes, on ×, a tap outside or Escape
+- **Which way it looks.** ↺ and ↻ in placement mode turn a field-of-view wedge in steps of 45°. The wedge turns red while the camera's motion sensor is on, or while the camera itself reports motion
+- **Light mode shows stills**, also for the doorbell, so an older tablet does not have to play a stream
+- The example house has a camera in the garden and one on the driveway. A new dashboard from the example starts without them
+- site.json is checked for cameras before it is saved: a `camera.*` entity and an `[x, y]` spot. Cameras that Home Assistant does not know show up under the missing devices
+- New tests: the wedge on motion, opening and stepping through cameras, stills in light mode, placing, turning, linking a motion sensor and dragging in placement mode, and the doorbell in the same window
+
 ## 0.8.23
 
 Goodnight: one tap, and the lights stay on while you go to bed.
