@@ -26,6 +26,8 @@ import { assignSensors, warnings, warningIds, configEntities } from './status.js
 import { nameOf as entityName } from './entities.js';
 
 // The online demo sets data-demo on <body> (see .github/workflows/pages.yml).
+// Text size is a choice for the screen, not for one dashboard: one key for the whole device.
+const TEXT_KEY = 'shd:text';
 const DEMO = document.body?.dataset.demo === 'true';
 const REPO_URL = 'https://github.com/rsundin/SmartHomeDash';
 import { t, setLanguage, loadLanguage, languageReady } from './i18n.js';
@@ -116,6 +118,25 @@ export async function start(opts) {
   // Report a problem: a prefilled GitHub issue, read before it leaves (ui/report.js).
   const report = createReport({ site, store, adapter, source });
   const helpBtn = el('button', { class: 'chip chip-help', type: 'button', title: t('report.button'), 'aria-label': t('report.button'), onclick: () => report.open() }, '?');
+  // Text size for this device: normal, large or extra large. CSS does the scaling (body[data-text]).
+  const TEXT_SIZES = ['normal', 'large', 'xlarge'];
+  let textSize = storage.get(TEXT_KEY, 'normal');
+  if (!TEXT_SIZES.includes(textSize)) textSize = 'normal';
+  const textBtn = el('button', { class: 'chip chip-text', type: 'button' });
+  const applyText = () => {
+    if (textSize === 'normal') delete document.body.dataset.text; else document.body.dataset.text = textSize;
+    const label = t('app.textSize', { size: t(`app.textSize.${textSize}`) });
+    textBtn.textContent = `Aa${'+'.repeat(TEXT_SIZES.indexOf(textSize))}`;
+    textBtn.title = label;
+    textBtn.setAttribute('aria-label', label);
+  };
+  applyText();
+  textBtn.addEventListener('click', () => {
+    textSize = TEXT_SIZES[(TEXT_SIZES.indexOf(textSize) + 1) % TEXT_SIZES.length];
+    storage.set(TEXT_KEY, textSize);
+    applyText();
+    toast(t('app.textSize', { size: t(`app.textSize.${textSize}`) }));
+  });
   const clock = el('time', { class: 'clock' });
   const tickClock = () => {
     const d = new Date();
@@ -148,7 +169,7 @@ export async function start(opts) {
   const header = el('header', { class: 'top' },
     el('div', { class: 'brand' }, el('p', { class: 'eyebrow' }, 'SmartHomeDash'), el('h1', {}, site.name)),
     viewNav,
-    el('div', { class: 'top-actions' }, clock, source === 'panel' ? null : status, site.overview || site.floorplans.length ? nightBtn : null, editing ? null : kioskBtn,
+    el('div', { class: 'top-actions' }, clock, source === 'panel' ? null : status, site.overview || site.floorplans.length ? nightBtn : null, textBtn, editing ? null : kioskBtn,
       opts.navigateEdit && !editing ? el('button', { class: 'chip', type: 'button', onclick: () => opts.navigateEdit(true) }, t('app.edit')) : null,
       canSetup && !editing ? el('button', { class: 'chip', type: 'button', onclick: () => openSetup() }, t('app.setup')) : null,
       source === 'panel' || DEMO ? null : el('button', { class: 'chip', type: 'button', onclick: () => settings.open() }, t('app.connection')),
@@ -175,13 +196,13 @@ export async function start(opts) {
   // The online demo (GitHub Pages): say what it is and where to get it.
   if (DEMO) {
     const other = site.overview ? ['example-apartment', t('app.demoApartment')] : ['example-house', t('app.demoHouse')];
-    app.prepend(el('div', { class: 'banner banner-demo' },
+    app.prepend(el('aside', { class: 'banner banner-demo', 'aria-label': t('app.notice') },
       el('span', {}, t('app.demoBanner')),
       el('a', { class: 'chip', href: `?site=${other[0]}` }, other[1]),
       el('a', { class: 'chip chip-primary', href: REPO_URL, target: '_blank', rel: 'noopener' }, t('app.demoGet'))));
   // Make test data impossible to mistake for the real house.
   } else if (adapter.kind === 'mock' && !params.has('mock')) {
-    app.prepend(el('div', { class: 'banner banner-mock' },
+    app.prepend(el('aside', { class: 'banner banner-mock', 'aria-label': t('app.notice') },
       el('span', {}, t('app.mockBanner')),
       el('button', { class: 'chip chip-primary', type: 'button', onclick: () => settings.open() }, t('app.connectNow'))));
   }
@@ -191,7 +212,7 @@ export async function start(opts) {
     await adapter.connect(store, setStatus);
   } catch (e) {
     setStatus('error', e.message);
-    app.prepend(el('div', { class: 'banner' },
+    app.prepend(el('aside', { class: 'banner', role: 'alert', 'aria-label': t('app.notice') },
       t('app.connectFailed', { msg: e.message }),
       el('a', { href: '?mock' + (params.get('site') ? `&site=${site.id}` : '') }, t('app.showTestData'))));
   }

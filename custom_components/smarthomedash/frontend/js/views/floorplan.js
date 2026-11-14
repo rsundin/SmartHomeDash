@@ -56,7 +56,7 @@ export function createFloorplan({ site, plan, store, adapter, onRoom }) {
     const [cx, cy] = room.label ?? centroid(room.area);
     const fill = sv('polygon', { class: 'fp-room', points: pts(room.area), tabindex: 0, role: 'button', 'aria-label': room.name });
     fill.addEventListener('click', () => onRoom(room));
-    fill.addEventListener('keydown', (e) => { if (e.key === 'Enter') onRoom(room); });
+    fill.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onRoom(room); } });
     fills.append(fill);
 
     // Shrink the name to fit narrow rooms (cupboards, utility rooms).
@@ -97,6 +97,8 @@ export function createFloorplan({ site, plan, store, adapter, onRoom }) {
       const state = comfort(store, room, site);
       fill.setAttribute('data-comfort', state ?? 'none');
       const cur = temp == null ? '' : `${fmt(temp, 1, site.locale)}°`;
+      // Read out after the room's name: "Bedroom, 21.2°".
+      if (cur) fill.setAttribute('aria-description', cur); else fill.removeAttribute('aria-description');
       const showTarget = temp != null && c?.target != null && c.mode !== 'off';
       const tgt = showTarget ? ` /${fmt(c.target, Number.isInteger(c.target) ? 0 : 1, site.locale)}` : '';
       tempText.replaceChildren(cur, tgt ? sv('tspan', { class: 'fp-target', 'font-size': unit * 0.8 }, tgt) : '');
@@ -128,6 +130,7 @@ export function createFloorplan({ site, plan, store, adapter, onRoom }) {
         lamp.style.setProperty('--lamp', c.glow ?? '');
         lamp.style.setProperty('--lamp-core', c.core ?? '');
         lamp.classList.toggle('is-on', lv > 0);
+        lamp.setAttribute('aria-pressed', String(lv > 0));
         lamp.classList.toggle('is-missing', !store.get(light.entity));
       });
     }

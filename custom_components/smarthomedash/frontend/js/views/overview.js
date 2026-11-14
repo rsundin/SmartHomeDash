@@ -92,6 +92,7 @@ export function createOverview({ site, store, adapter, onOpenBuilding }) {
 
   // ---------- lamps per zone
   const lampsG = sv('g', { class: 'ov-glows' });
+  const zoneBtns = new Map(); // zone id → its tappable lamps, for their on/off state
   for (const z of ov.zones) {
     const g = sv('g', { class: 'ov-zone', 'data-zone': z.id }, z.lamps.map((l) => lampShape(l, k)));
     lampsG.append(g);
@@ -99,6 +100,7 @@ export function createOverview({ site, store, adapter, onOpenBuilding }) {
       const lv = zoneLevel(store, z.lights);
       g.style.opacity = String(lv);
       g.classList.toggle('is-on', lv > 0);
+      for (const b of zoneBtns.get(z.id) ?? []) b.setAttribute('aria-pressed', String(lv > 0));
       paint(g, z.lights);
     });
   }
@@ -149,7 +151,7 @@ export function createOverview({ site, store, adapter, onOpenBuilding }) {
     const grp = sv('g', { class: 'ov-bgroup' }, poly, tag);
     if (tappable) {
       grp.addEventListener('click', () => onOpenBuilding(b));
-      poly.addEventListener('keydown', (e) => { if (e.key === 'Enter') onOpenBuilding(b); });
+      poly.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onOpenBuilding(b); } });
     }
     hits.append(grp);
   }
@@ -157,8 +159,9 @@ export function createOverview({ site, store, adapter, onOpenBuilding }) {
   for (const z of ov.zones) {
     for (const [li, l] of z.lamps.entries()) {
       const [x, y] = l.at;
-      const c = sv('circle', { class: 'ov-zonehit', 'data-drag': 'lamp', 'data-zone': z.id, 'data-lamp': li, cx: x, cy: y, r: Math.max(l.size * 0.5, 16), tabindex: 0, role: 'button', 'aria-label': t('overview.toggle', { name: z.name }) },
+      const c = sv('circle', { class: 'ov-zonehit', 'data-drag': 'lamp', 'data-zone': z.id, 'data-lamp': li, cx: x, cy: y, r: Math.max(l.size * 0.5, 16), tabindex: 0, role: 'button', 'aria-label': t('overview.toggle', { name: z.name }), 'aria-pressed': String(zoneLevel(store, z.lights) > 0) },
         sv('title', {}, t('overview.toggleHint', { name: z.name })));
+      zoneBtns.set(z.id, [...(zoneBtns.get(z.id) ?? []), c]);
       press(c, () => toggleZone(z));
       zoneHits.append(c);
     }

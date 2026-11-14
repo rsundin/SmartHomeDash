@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Runs every check: syntax, the backend tests and the browser tests.
 # Needs Python 3.12+, Node 20+ and Playwright with Chromium:
-#   npm install --no-save playwright && npx playwright install chromium
+#   npm install --no-save playwright axe-core && npx playwright install chromium
 # Run one part with:  tests/run.sh backend   or   tests/run.sh browser
 set -euo pipefail
 cd "$(dirname "$0")/.."

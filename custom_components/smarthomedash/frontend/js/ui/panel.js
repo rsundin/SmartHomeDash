@@ -9,23 +9,30 @@ export function createPanel({ site, store, adapter }) {
   const body = el('div', { class: 'panel-body' });
   const title = el('h2', { class: 'panel-title' });
   const closeBtn = el('button', { class: 'icon-btn', type: 'button', 'aria-label': t('panel.close'), onclick: () => close() }, '×');
-  const root = el('aside', { class: 'panel', 'aria-hidden': 'true', 'aria-label': t('panel.room') },
+  const root = el('aside', { class: 'panel', 'aria-hidden': 'true', inert: '', 'aria-label': t('panel.room') },
     el('header', { class: 'panel-head' }, el('div', {}, el('p', { class: 'eyebrow' }, t('panel.room')), title), closeBtn),
     body);
 
   let unwatch = [];
   let current = null;
+  let opener = null; // what had focus when the panel opened
 
   function close() {
     unwatch.forEach((u) => u()); unwatch = [];
     current = null;
     root.classList.remove('is-open');
+    // Focus goes back to the room or lamp the panel was opened from.
+    if (root.contains(document.activeElement) && opener?.isConnected) opener.focus({ preventScroll: true });
+    opener = null;
     root.setAttribute('aria-hidden', 'true');
+    root.inert = true;
     root.dispatchEvent(new CustomEvent('close'));
   }
 
   function open(room) {
+    const from = root.contains(document.activeElement) ? opener : document.activeElement;
     close();
+    opener = from;
     current = room;
     title.textContent = room.name;
     body.replaceChildren();
@@ -39,6 +46,7 @@ export function createPanel({ site, store, adapter }) {
     }
     root.classList.add('is-open');
     root.setAttribute('aria-hidden', 'false');
+    root.inert = false;
     closeBtn.focus({ preventScroll: true });
   }
 
@@ -218,7 +226,10 @@ function tempChart(points, target, site) {
   const ticks = [lo, Math.round((lo + hi) / 2), hi];
   const last = points[points.length - 1];
   const hours = [0, 6, 12, 18, 24].map((h) => t0 + (h / 24) * (t1 - t0));
-  return sv('svg', { viewBox: `0 0 ${W} ${H}`, class: 'tchart', role: 'img', 'aria-label': t('panel.chart') },
+  // The graph in words, for screen readers.
+  const deg = (v) => `${fmt(v, 1, site.locale)}°`;
+  const summary = t('panel.chartSummary', { now: deg(last.v), low: deg(Math.min(...points.map((p) => p.v))), high: deg(Math.max(...points.map((p) => p.v))) });
+  return sv('svg', { viewBox: `0 0 ${W} ${H}`, class: 'tchart', role: 'img', 'aria-label': `${t('panel.chart')}. ${summary}` },
     ticks.map((v) => [
       sv('line', { x1: L, x2: W - R, y1: Y(v), y2: Y(v), class: 'grid' }),
       sv('text', { x: L - 6, y: Y(v) + 3.5, 'text-anchor': 'end', class: 'axis' }, `${v}°`)]),
