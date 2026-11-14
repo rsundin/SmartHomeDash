@@ -208,7 +208,7 @@ describe('editing', () => {
     const group = (kind) => list.locator(`section[data-kind="${kind}"]`);
     const row = (kind, id) => group(kind).locator('.editor-ent', { hasText: id });
 
-    assert.deepEqual(await list.locator('section').evaluateAll((n) => n.map((x) => x.dataset.kind)), ['lights', 'temperature', 'climate', 'switches']);
+    assert.deepEqual(await list.locator('section').evaluateAll((n) => n.map((x) => x.dataset.kind)), ['lights', 'temperature', 'climate', 'cameras', 'switches']);
     // A light with no room is shown; one in the facade's area joins the facade by itself.
     await row('lights', 'light.garden_path').waitFor();
     assert.match(await row('lights', 'light.facade_spot').textContent(), /placed automatically/);

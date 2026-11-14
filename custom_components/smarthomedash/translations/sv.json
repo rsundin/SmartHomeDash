@@ -49,6 +49,32 @@
           "description": "Ersätt den sparade site.json med den i repot (den gamla sparas som site.json.bak)."
         }
       }
+    },
+    "goodnight": {
+      "name": "Godnatt",
+      "description": "Släck lamporna efter några minuter. Alla öppna dashboards visar nedräkningen och kan avbryta den.",
+      "fields": {
+        "site": {
+          "name": "Dashboard",
+          "description": "Dashboardens mappnamn (som i adressen till dess filer)."
+        },
+        "entity_id": {
+          "name": "Lampor",
+          "description": "Lampor och strömbrytare som släcks när tiden är ute."
+        },
+        "minutes": {
+          "name": "Minuter",
+          "description": "Hur länge lamporna lyser först."
+        },
+        "then": {
+          "name": "Kör sedan",
+          "description": "Ett script som körs när lamporna släcks, till exempel för att låsa."
+        },
+        "cancel": {
+          "name": "Avbryt",
+          "description": "Stoppa en nedräkning som pågår."
+        }
+      }
     }
   },
   "selector": {

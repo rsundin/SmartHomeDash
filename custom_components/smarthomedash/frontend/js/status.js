@@ -170,7 +170,9 @@ export function configEntities(raw) {
       for (const id of list(room?.sensors)) add(id, where);
     }
   }
+  for (const plan of list(raw.floorplans)) for (const c of list(plan?.cameras)) { add(c?.entity, plan.name ?? plan.id); add(c?.motion, plan.name ?? plan.id); }
   const ov = raw.overview ?? {};
+  for (const c of list(ov.cameras)) { add(c?.entity, t('missing.camera')); add(c?.motion, t('missing.camera')); }
   for (const z of list(ov.zones)) for (const id of list(z?.lights)) add(id, `${t('editor.outdoor')}: ${z.name ?? z.id}`);
   for (const w of list(ov.windows)) for (const id of list(w?.lights)) add(id, t('missing.window'));
   for (const b of list(ov.buildings)) for (const id of list(b?.sensors)) add(id, b.name ?? b.id);

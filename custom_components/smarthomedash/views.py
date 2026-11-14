@@ -62,7 +62,7 @@ async def read_limited(stream, limit: int) -> bytes | None:
 _TOP_LEVEL = {
     "name": str, "language": str, "locale": str, "currency": str, "weather": str,
     "comfort": dict, "overview": dict, "energy": dict, "wall_screen": dict, "mock": dict,
-    "floorplans": list, "climates": list, "scenes": list,
+    "floorplans": list, "climates": list, "scenes": list, "all_lights": dict, "goodnight": dict,
 }
 
 
@@ -93,6 +93,20 @@ def _list_of_objects(value, where: str) -> str | None:
     return None
 
 
+def _cameras_problem(value, where: str) -> str | None:
+    problem = _list_of_objects(value, where)
+    if problem:
+        return problem
+    for i, cam in enumerate(value):
+        if not isinstance(cam.get("entity"), str) or not cam["entity"].startswith("camera."):
+            return f"{where}[{i}].entity should be a camera entity id"
+        if not _is_point(cam.get("at")):
+            return f"{where}[{i}].at should be an [x, y] number pair"
+        if "angle" in cam and not _is_number(cam["angle"]):
+            return f"{where}[{i}].angle should be a number"
+    return None
+
+
 def validate_site(data) -> str | None:
     """Return a readable reason why data is not a usable site.json, or None.
 
@@ -107,6 +121,14 @@ def validate_site(data) -> str | None:
             return f"{key} should be {_type_name(kind)}"
     if "warnings" in data and not isinstance(data["warnings"], (bool, dict)):
         return "warnings should be an object or false"
+    exclude = data.get("all_lights", {}).get("exclude", [])
+    if not isinstance(exclude, list) or not all(isinstance(x, str) for x in exclude):
+        return "all_lights.exclude should be a list of entity ids"
+    night = data.get("goodnight", {})
+    if "minutes" in night and not (_is_number(night["minutes"]) and 0 <= night["minutes"] <= 120):
+        return "goodnight.minutes should be a number from 0 to 120"
+    if "then" in night and not (isinstance(night["then"], str) and night["then"].startswith("script.")):
+        return "goodnight.then should be a script entity id"
     for key in ("climates", "scenes"):
         problem = _list_of_objects(data.get(key, []), key)
         if problem:
@@ -127,6 +149,10 @@ def validate_site(data) -> str | None:
         problem = _list_of_objects(rooms, f"{where}.rooms")
         if problem:
             return problem
+        if "cameras" in plan:
+            problem = _cameras_problem(plan["cameras"], f"{where}.cameras")
+            if problem:
+                return problem
         for j, room in enumerate(rooms):
             here = f"{where}.rooms[{j}]"
             if "area" in room:
@@ -142,6 +168,10 @@ def validate_site(data) -> str | None:
     overview = data.get("overview", {})
     if "size" in overview and not _is_point(overview["size"]):
         return "overview.size should be [width, height] in numbers"
+    if "cameras" in overview:
+        problem = _cameras_problem(overview["cameras"], "overview.cameras")
+        if problem:
+            return problem
     for key in ("buildings", "zones", "windows"):
         items = overview.get(key, [])
         problem = _list_of_objects(items, f"overview.{key}")

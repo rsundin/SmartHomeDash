@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.8.24
+## 0.8.26
 
 Larger text, the keyboard and screen readers.
 
@@ -9,6 +9,37 @@ Larger text, the keyboard and screen readers.
 - **Screen readers.** Lamps on the picture say whether they are on, rooms say their temperature, and the price chart and the temperature graph are read as a sentence with the value now, the lowest and the highest. The notices above the header are a region of their own
 - **Contrast.** The small labels in the cards (INDOOR, OUTDOOR and the like) were too faint, 3.6:1; they are now 6.6:1. Text on the picture was measured against its backing in day and evening and already passed
 - New tests: axe-core on both examples (start view, floor plan, room panel, evening, desktop and phone), a keyboard-only run that opens a room and switches a lamp, names and states for screen readers, contrast of the text on the picture, and large and extra large text on a phone. The browser tests now need `axe-core` as well as Playwright
+## 0.8.25
+
+Cameras on the picture.
+
+- **Place cameras** on a floor plan or the overview picture in placement mode. They have a group of their own in the list and can go anywhere, also outside the rooms
+- **A tap opens the camera** in the window the doorbell uses: live where Home Assistant streams it, otherwise a new still every two seconds. With several cameras on a plan, arrows step between them. It closes after two minutes, on ×, a tap outside or Escape
+- **Which way it looks.** ↺ and ↻ in placement mode turn a field-of-view wedge in steps of 45°. The wedge turns red while the camera's motion sensor is on, or while the camera itself reports motion
+- **Light mode shows stills**, also for the doorbell, so an older tablet does not have to play a stream
+- The example house has a camera in the garden and one on the driveway. A new dashboard from the example starts without them
+- site.json is checked for cameras before it is saved: a `camera.*` entity and an `[x, y]` spot. Cameras that Home Assistant does not know show up under the missing devices
+- New tests: the wedge on motion, opening and stepping through cameras, stills in light mode, placing, turning, linking a motion sensor and dragging in placement mode, and the doorbell in the same window
+
+## 0.8.23
+
+Goodnight: one tap, and the lights stay on while you go to bed.
+
+- **A Goodnight button** behind the lamp in the header and in the lights card. The lights stay as they are for five minutes, then the same lights as **All off** turn off
+- **The countdown on every screen.** "Goodnight: everything off in 4:12" with **Cancel**, on every open screen of the dashboard, also in kiosk mode
+- **It runs in Home Assistant**, not in the browser: a tablet that sleeps or reloads does not stop it. It is the new action `smarthomedash.goodnight`, so automations, voice and NFC tags can start it too. Restart Home Assistant once after updating
+- **Set under Buttons** in the setup guide: show it or not, the minutes, and a script of your own to run when the lights go off (to lock up, turn the TV off, lower the heating). SmartHomeDash does not write any scripts or automations into your configuration
+- The action is open to every logged-in user, like switching a lamp, and only turns off lights and switches and runs a script (SECURITY.md)
+- New tests: under Home Assistant, the countdown turning the lights off and running the script on time, cancelling, starting over, refusing other entities and stopping on unload; in the browser, the countdown, Cancel, a countdown started elsewhere, and the setup guide's settings
+
+## 0.8.22
+
+All lights on and off with one button.
+
+- **All on, beside All off.** The lights card had **All off**; it now has **All on** too. All on takes one tap, All off still asks for a second tap so nobody is left in the dark by mistake
+- **In the header, also on wall screens.** A lamp button in the header opens both, so they are one tap away from the picture and the floor plan without scrolling to the lights card. It stays in kiosk mode, and the lamp lights up while any light is on. Not shown in the card for other dashboards
+- **Choose what "all" means.** Under **Buttons** in the setup guide, the buttons can be turned off, and lights can be left out of them (garden lights on a schedule, a night light). In site.json: `"all_lights": { "enabled": false, "exclude": ["light.garden"] }`. "All" is every light on the dashboard, including the ones found in linked areas
+- New tests: on in one tap and off in two from the header, an excluded light left alone from the lights card, the header control in kiosk mode on a phone, and turning the buttons off in the setup guide
 
 ## 0.8.21
 
