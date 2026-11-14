@@ -28,7 +28,7 @@ What is planned next, roughly in order. Plans change; ideas and votes are welcom
 ## Whole-house control
 
 - **All lights on and all off** from the lights card and the header, with lights you can leave out. Done in 0.8.22.
-- **Goodnight**: one tap, the lights stay on a few minutes while you go to bed, then everything turns off. Runs in Home Assistant, so it works even if the screen goes off.
+- **Goodnight**: one tap, the lights stay on a few minutes while you go to bed, then everything turns off. Runs in Home Assistant, so it works even if the screen goes off. Done in 0.8.23.
 - **Cameras on the picture** (moved up from 1.1): place them on the floor plan or the overview, tap for the live view.
 - **LED strips drawn as what they are**: a glowing line or surface on the plan and the picture, not a round spot.
 

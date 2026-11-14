@@ -97,7 +97,8 @@ describe('all lights on and off', () => {
     await page.waitForFunction(() => window.harness.saved.length === 1 && window.harness.starts === 2);
     await page.evaluate(() => window.harness.ready);
     assert.deepEqual(await page.evaluate(() => window.harness.saved[0].all_lights), { enabled: false, exclude: ['light.facade'] });
-    assert.equal(await page.locator('.chip-lights').count(), 0);
+    // The lamp in the header stays for Goodnight, without All on and All off.
+    assert.equal(await page.locator('[data-action="all-on"], [data-action="all-off"]').count(), 0);
     assert.equal(await page.locator('.side [data-action="all-off"]').count(), 0);
     check(page);
     await close(page);

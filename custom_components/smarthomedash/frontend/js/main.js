@@ -21,7 +21,7 @@ import { createSetup } from './ui/setup.js';
 import { createZoom } from './ui/zoom.js';
 import { createWall, liteMode } from './ui/wall.js';
 import { createReport } from './ui/report.js';
-import { createLightsMenu, allLightsOn } from './ui/lights.js';
+import { createLightsMenu, createGoodnightBanner, allLightsOn, goodnightOn } from './ui/lights.js';
 import { loadAreas, applyAreaNames, noAreas, linkByName, autoPlace } from './areas.js';
 import { assignSensors, warnings, warningIds, configEntities } from './status.js';
 import { nameOf as entityName } from './entities.js';
@@ -147,7 +147,10 @@ export async function start(opts) {
     }
   }
   // All lights on and off from the header (ui/lights.js); stays on wall screens in kiosk mode.
-  const lightsMenu = !embed && !editing && allLightsOn(site) ? createLightsMenu({ site, store, adapter, signal: run.signal }) : null;
+  // Goodnight's countdown shows on every screen of this dashboard, with Cancel.
+  const goodnight = !embed && !editing ? createGoodnightBanner({ site, store, adapter, signal: run.signal }) : null;
+  const lightsMenu = !embed && !editing && (allLightsOn(site) || goodnightOn(site))
+    ? createLightsMenu({ site, store, adapter, signal: run.signal, onGoodnightError: goodnight?.failed }) : null;
   press(clock, null, () => { if (document.body.classList.contains('is-kiosk')) setKiosk(false); }, 2000);
   const header = el('header', { class: 'top' },
     el('div', { class: 'brand' }, el('p', { class: 'eyebrow' }, 'SmartHomeDash'), el('h1', {}, site.name)),
@@ -175,6 +178,7 @@ export async function start(opts) {
   const main = el('main', { class: 'layout' }, stageWrap, side);
   const alerts = el('div', { class: 'alerts', hidden: true, role: 'status', 'aria-live': 'polite' });
   app.replaceChildren(header, alerts, main, panel.el, settings.el, report.el);
+  if (goodnight) app.append(goodnight.el);
 
   // The online demo (GitHub Pages): say what it is and where to get it.
   if (DEMO) {

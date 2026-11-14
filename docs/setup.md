@@ -104,6 +104,8 @@ Tick the scenes and scripts to show as buttons, and give them short names.
 
 **All on and all off** turns the **All on** and **All off** buttons on or off. They sit behind the lamp in the header (also on a wall screen in kiosk mode) and at the bottom of the lights card. Untick lights that the buttons should leave alone, such as garden lights on a schedule.
 
+**Goodnight** shows a button that leaves the lights on for a few minutes while you go to bed, then turns the same lights off. Set the minutes, and pick a script of your own to run when the lights go off (to lock up or turn the TV off) if you like.
+
 ### Wall screen
 
 All optional, for tablets and screens on the wall (see [configuration.md](configuration.md#wall-screens) for the details):

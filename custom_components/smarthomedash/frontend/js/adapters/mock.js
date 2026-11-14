@@ -7,6 +7,7 @@ import { dayBounds } from '../entities.js';
 
 export function createMockAdapter(site) {
   let store;
+  let goodnightTimer = null;
   let demoMode = 'auto'; // 'auto' follows the clock; 'day' / 'night' follow the header button
   const rnd = seeded(site.id.length * 7919);
   const now = () => new Date().toISOString();
@@ -258,6 +259,17 @@ export function createMockAdapter(site) {
           if (service === 'set_hvac_mode') set(id, data.hvac_mode, { hvac_action: data.hvac_mode === 'off' ? 'off' : 'idle' });
         }
         tick();
+      } else if (domain === 'smarthomedash' && service === 'goodnight') {
+        // As goodnight.py in Home Assistant: one countdown per site, shown as a state.
+        const id = `smarthomedash.goodnight_${String(data.site).toLowerCase().replace(/-/g, '_')}`;
+        clearTimeout(goodnightTimer);
+        if (data.cancel) { set(id, 'off', { ends_at: null }); return; }
+        const ms = (data.minutes ?? 5) * 60000;
+        set(id, 'on', { ends_at: new Date(Date.now() + ms).toISOString(), minutes: data.minutes ?? 5 });
+        goodnightTimer = setTimeout(() => {
+          set(id, 'off', { ends_at: null });
+          for (const l of [].concat(data.entity_id ?? [])) if (store.get(l)) set(l, 'off', { brightness: null });
+        }, ms);
       } else if (domain === 'scene' && service === 'turn_on') {
         for (const id of ids) {
           const sc = site.scenes.find((x) => x.entity === id);

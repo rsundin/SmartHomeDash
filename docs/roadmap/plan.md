@@ -241,16 +241,16 @@ Added 14 November 2026 at the owner's request. Small things a wall screen in the
 - **Files:** `ui/lights.js` (new), `ui/cards.js`, `main.js` (header), `ui/setup/buttons.js`, `views.py` (site.json check), `i18n/*.json`, `docs/configuration.md`.
 - **Done when:** browser tests cover on in one tap, off in two, an excluded light left alone, and the header control in kiosk and light mode.
 
-### L2: Goodnight. Status: todo. Size: M. Depends: L1
+### L2: Goodnight. Status: done (v0.8.23). Size: M. Depends: L1
 - **Why:** Going to bed means walking through the house with the lights still on, then everything off. One tap on the hall screen should do it.
 - **What:**
   - A **Godnatt** button (beside the L1 control and in the lights card). It starts a countdown, 5 minutes by default: lights stay as they are, a small banner on every open screen says "Släcker allt om 4:12" with **Avbryt**, and when it runs out every light from L1 (minus the exclusions) turns off.
-  - It runs in Home Assistant, not in the browser: the integration adds the action `smarthomedash.goodnight` (`entity_id`, `minutes`, `cancel`) that schedules the turn-off with `async_call_later`, and a sensor per dashboard entry (`sensor.<dashboard>_goodnight`, device class `timestamp`, the time everything turns off, or unknown). Every screen shows the countdown from that sensor. Closing or reloading the tablet does not stop it, and the action can also be used from automations, voice or an NFC tag.
+  - It runs in Home Assistant, not in the browser: the integration adds the action `smarthomedash.goodnight` (`entity_id`, `minutes`, `cancel`) that schedules the turn-off with `async_call_later`, and a state per site (`smarthomedash.goodnight_<site>`, `on` with `ends_at` while counting down), set like `sun.sun` so it works for dashboards from YAML too, which have no config entry. Every screen shows the countdown from that state. Closing or reloading the tablet does not stop it, and the action can also be used from automations, voice or an NFC tag.
   - Optional `"goodnight": { "minutes": 5, "then": "script.goodnight" }` in site.json: `then` runs a script of the user's own when the lights go off (lock up, TV off, heating down). The integration does not write scripts or automations into the user's configuration.
   - Turned on or off under **Buttons** in the setup guide, like L1 (`"goodnight": { "enabled": false }`).
   - A restart of Home Assistant during the countdown cancels it (said in the docs); a second tap on **Godnatt** restarts the countdown.
-- **Files:** `__init__.py`, `services.yaml`, `strings.json` + `translations/`, a new `sensor.py`, `ui/cards.js`, `main.js`, `i18n/*.json`, `docs/configuration.md`, `docs/setup.md`, `SECURITY.md` (a new action: any logged-in user can call it, like turning lights off).
-- **Done when:** `tests/ha` covers the action scheduling and cancelling the turn-off and the sensor's state (with time moved forward); browser tests cover the banner, its countdown from the sensor and **Avbryt**; the backend stand-in tests still pass.
+- **Files:** `__init__.py`, `services.yaml`, `strings.json` + `translations/`, a new `goodnight.py`, `ui/lights.js`, `ui/cards.js`, `main.js`, `i18n/*.json`, `docs/configuration.md`, `docs/setup.md`, `SECURITY.md` (a new action: any logged-in user can call it, like turning lights off).
+- **Done when:** `tests/ha` covers the action scheduling and cancelling the turn-off and the state (with time moved forward); browser tests cover the banner, its countdown from the sensor and **Avbryt**; the backend stand-in tests still pass.
 
 ### L3: LED strips drawn as lit areas. Status: todo. Size: M. Depends: S2
 - **Why:** The owner asked (14 November 2026) for LED strips to be drawn as what they are: a line or a surface that glows, not a round spot.

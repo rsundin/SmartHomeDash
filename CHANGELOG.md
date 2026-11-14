@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.8.23
+
+Goodnight: one tap, and the lights stay on while you go to bed.
+
+- **A Goodnight button** behind the lamp in the header and in the lights card. The lights stay as they are for five minutes, then the same lights as **All off** turn off
+- **The countdown on every screen.** "Goodnight: everything off in 4:12" with **Cancel**, on every open screen of the dashboard, also in kiosk mode
+- **It runs in Home Assistant**, not in the browser: a tablet that sleeps or reloads does not stop it. It is the new action `smarthomedash.goodnight`, so automations, voice and NFC tags can start it too. Restart Home Assistant once after updating
+- **Set under Buttons** in the setup guide: show it or not, the minutes, and a script of your own to run when the lights go off (to lock up, turn the TV off, lower the heating). SmartHomeDash does not write any scripts or automations into your configuration
+- The action is open to every logged-in user, like switching a lamp, and only turns off lights and switches and runs a script (SECURITY.md)
+- New tests: under Home Assistant, the countdown turning the lights off and running the script on time, cancelling, starting over, refusing other entities and stopping on unload; in the browser, the countdown, Cancel, a countdown started elsewhere, and the setup guide's settings
+
 ## 0.8.22
 
 All lights on and off with one button.

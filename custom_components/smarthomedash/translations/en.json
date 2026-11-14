@@ -49,6 +49,32 @@
           "description": "Replace the saved site.json with the one in the repository (the old one is kept as site.json.bak)."
         }
       }
+    },
+    "goodnight": {
+      "name": "Goodnight",
+      "description": "Turn the lights off after a few minutes. Every open dashboard shows the countdown and can cancel it.",
+      "fields": {
+        "site": {
+          "name": "Dashboard",
+          "description": "The dashboard's folder name (as in the address of its site files)."
+        },
+        "entity_id": {
+          "name": "Lights",
+          "description": "Lights and switches to turn off when the time is up."
+        },
+        "minutes": {
+          "name": "Minutes",
+          "description": "How long the lights stay on first."
+        },
+        "then": {
+          "name": "Then run",
+          "description": "A script to run when the lights go off, for example to lock up."
+        },
+        "cancel": {
+          "name": "Cancel",
+          "description": "Stop a countdown that is running."
+        }
+      }
     }
   },
   "selector": {

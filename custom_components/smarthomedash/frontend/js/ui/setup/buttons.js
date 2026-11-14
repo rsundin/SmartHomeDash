@@ -1,11 +1,11 @@
-// Setup guide, step: buttons (scenes and scripts, and all on / all off).
+// Setup guide, step: buttons (scenes and scripts, all on / all off, and goodnight).
 
 import { el } from '../../util.js';
 import { t } from '../../i18n.js';
 import { nameOf } from '../../entities.js';
 
 export function buttonsStep(ctx) {
-  const { cfg, site, store, changed, section, intro, input, label } = ctx;
+  const { cfg, site, store, changed, section, intro, input, label, select, field, entityOptions } = ctx;
   function buttons() {
     const list = store.all().filter((s) => /^(scene|script)\./.test(s.entity_id))
       .sort((a, b) => label(a).localeCompare(label(b), site.locale));
@@ -26,6 +26,7 @@ export function buttonsStep(ctx) {
         return el('li', { class: 'setup-check-row' }, box, name, el('span', { class: 'muted small' }, s.entity_id));
       })) : el('p', { class: 'muted small' }, t('setup.noScenes'))),
       allLightsSection(),
+      goodnightSection(),
     ];
   }
 
@@ -57,6 +58,32 @@ export function buttonsStep(ctx) {
       el('label', { class: 'setup-check-row' }, show, el('span', {}, t('setup.allLightsShow'))),
       el('p', { class: 'muted small' }, t('setup.allLightsIntro')),
       list);
+  }
+
+  // Goodnight (ui/lights.js, goodnight.py): shown or not, minutes, and a script to run after.
+  function goodnightSection() {
+    const conf = () => (cfg.goodnight ??= {});
+    const tidy = () => {
+      const g = cfg.goodnight;
+      if (!g) return;
+      if (g.enabled !== false) delete g.enabled;
+      if (g.minutes == null || g.minutes === 5) delete g.minutes;
+      if (!g.then) delete g.then;
+      if (!Object.keys(g).length) delete cfg.goodnight;
+    };
+    const show = el('input', { type: 'checkbox', checked: cfg.goodnight?.enabled !== false });
+    const minutes = input(String(cfg.goodnight?.minutes ?? 5), (v) => {
+      const n = Number(v.replace(',', '.'));
+      if (Number.isFinite(n) && n >= 0 && n <= 120) { conf().minutes = n; tidy(); }
+    }, { type: 'number', min: 0, max: 120, step: 1, inputmode: 'decimal', 'aria-label': t('setup.goodnightMinutes') });
+    const then = select(entityOptions((s) => s.entity_id.startsWith('script.')), cfg.goodnight?.then ?? '', (v) => { conf().then = v || undefined; tidy(); },
+      { 'aria-label': t('setup.goodnightThen') });
+    const more = el('div', { hidden: !show.checked }, field(t('setup.goodnightMinutes'), minutes), field(t('setup.goodnightThen'), then, t('setup.goodnightThenHelp')));
+    show.addEventListener('change', () => { conf().enabled = show.checked; tidy(); more.hidden = !show.checked; changed(); });
+    return section(t('setup.goodnight'),
+      el('label', { class: 'setup-check-row' }, show, el('span', {}, t('setup.goodnightShow'))),
+      el('p', { class: 'muted small' }, t('setup.goodnightIntro')),
+      more);
   }
 
   return buttons;

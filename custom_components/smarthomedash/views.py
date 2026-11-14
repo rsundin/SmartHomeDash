@@ -62,7 +62,7 @@ async def read_limited(stream, limit: int) -> bytes | None:
 _TOP_LEVEL = {
     "name": str, "language": str, "locale": str, "currency": str, "weather": str,
     "comfort": dict, "overview": dict, "energy": dict, "wall_screen": dict, "mock": dict,
-    "floorplans": list, "climates": list, "scenes": list, "all_lights": dict,
+    "floorplans": list, "climates": list, "scenes": list, "all_lights": dict, "goodnight": dict,
 }
 
 
@@ -110,6 +110,11 @@ def validate_site(data) -> str | None:
     exclude = data.get("all_lights", {}).get("exclude", [])
     if not isinstance(exclude, list) or not all(isinstance(x, str) for x in exclude):
         return "all_lights.exclude should be a list of entity ids"
+    night = data.get("goodnight", {})
+    if "minutes" in night and not (_is_number(night["minutes"]) and 0 <= night["minutes"] <= 120):
+        return "goodnight.minutes should be a number from 0 to 120"
+    if "then" in night and not (isinstance(night["then"], str) and night["then"].startswith("script.")):
+        return "goodnight.then should be a script entity id"
     for key in ("climates", "scenes"):
         problem = _list_of_objects(data.get(key, []), key)
         if problem:

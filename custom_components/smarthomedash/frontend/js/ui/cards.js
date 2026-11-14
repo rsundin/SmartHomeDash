@@ -5,7 +5,7 @@ import { el, sv, fmt, hhmm, num } from '../util.js';
 import { isOn, zoneLevel, kw, priceSlots, priceSlotsTomorrow, slotAt, cheapestWindow, dayBounds, nordpoolSlots, roomTemp, climate, heating, comfort } from '../entities.js';
 import { areaOf, areaName } from '../areas.js';
 import { t } from '../i18n.js';
-import { allLightsOn, allOnButton, allOffButton } from './lights.js';
+import { allLightsOn, allOnButton, allOffButton, goodnightOn, goodnightButton } from './lights.js';
 import { readPower, splitPower, powerSentence } from '../power.js';
 
 
@@ -221,6 +221,7 @@ function lightsCard({ site, store, adapter }) {
     site.scenes.map((s) => el('button', { class: 'chip', type: 'button', onclick: () => adapter.call(s.entity.split('.')[0], 'turn_on', { entity_id: s.entity }) }, s.name)));
 
   if (allLightsOn(site)) scenes.append(allOnButton({ site, adapter }), allOffButton({ site, adapter }));
+  if (goodnightOn(site)) scenes.append(goodnightButton({ site, adapter }));
 
   return card(t('cards.lights'), list, scenes);
 }

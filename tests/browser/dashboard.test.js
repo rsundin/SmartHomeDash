@@ -60,10 +60,10 @@ describe('dashboard', () => {
     const btn = page.locator('.top-actions .chip', { hasText: /Auto/ });
     await btn.click(); // auto → night
     await page.waitForFunction(() => document.querySelector('.stage').classList.contains('is-night'));
-    await page.locator('.top-actions .chip', { hasText: 'Night' }).waitFor(); // the header button says Night now
+    await page.locator('.top-actions .chip', { hasText: /^Night/ }).waitFor(); // the header button says Night now
     const dusk = await page.locator('.ov-img-night').first().evaluate((n) => Number(n.closest('.view').style.getPropertyValue('--dusk')));
     assert.equal(dusk, 1, 'the evening picture is shown in full');
-    await page.locator('.top-actions .chip', { hasText: 'Night' }).click(); // night → day
+    await page.locator('.top-actions .chip', { hasText: /^Night/ }).click(); // night → day
     await page.waitForFunction(() => !document.querySelector('.stage').classList.contains('is-night'));
     assert.equal(await page.evaluate(() => localStorage.getItem('shd:example-house:night')), '"day"');
     check(page);
@@ -178,7 +178,7 @@ describe('dashboard', () => {
     const page = await harness(env, '?site=example-house');
     // Auto → Night → Day: the test data then shows midday sun.
     await page.locator('.top-actions .chip', { hasText: /Auto/ }).click();
-    await page.locator('.top-actions .chip', { hasText: 'Night' }).click();
+    await page.locator('.top-actions .chip', { hasText: /^Night/ }).click();
     await page.waitForFunction(() => Number(window.store.get('sensor.solar_power')?.state) > 0, null, { timeout: 8000 });
     await drawn(page);
     const flows = await page.locator('.ov-flow-track').count();
