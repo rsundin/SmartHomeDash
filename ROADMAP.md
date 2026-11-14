@@ -25,12 +25,17 @@ What is planned next, roughly in order. Plans change; ideas and votes are welcom
 - **Accessibility and large text**: text size per screen, keyboard use, screen reader names.
 - **Launch**: a short recording in the README and a post on the Home Assistant forum.
 
+## Whole-house control
+
+- **All lights on and all off** from the lights card and the header, with lights you can leave out.
+- **Goodnight**: one tap, the lights stay on a few minutes while you go to bed, then everything turns off. Runs in Home Assistant, so it works even if the screen goes off.
+- **Cameras on the picture** (moved up from 1.1): place them on the floor plan or the overview, tap for the live view.
+
 ## 1.1: More of the home on the picture
 
 - **People in rooms**, from person entities and room presence sensors (off by default).
 - **Doors and windows where they are**, opening on the plan and the picture.
 - **Media and appliances**: what is playing, and when the washing machine is done.
-- **Cameras on the picture**, with motion and a tap for the live view.
 - **Power per room** as an energy view of the floor plan.
 - **Humidity and CO₂** as alternatives to the temperature tint.
 - **Solar forecast** beside the live flow, a **car charging plan** from the cheapest hours, and an optional **capacity peak** tracker for grid companies that charge by peak.
