@@ -21,6 +21,8 @@ Everything except `name` and at least one floor plan is optional. A card whose e
 | `weather` | entity | A `weather.*` entity |
 | `climates` | list | Climate devices that are not a room, such as a heat pump: `{ "entity": "climate.heat_pump", "name": "Heat pump" }`. Shown in the heating card |
 | `scenes` | list | Buttons for scenes or scripts: `{ "entity": "script.we_are_here", "name": "We're here" }` |
+| `all_lights` | object | The **All on** and **All off** buttons in the header and the lights card. They switch every light on the dashboard, including the ones found in linked areas. `{ "exclude": ["light.garden"] }` leaves lights out (garden lights on a schedule, a night light); `{ "enabled": false }` hides the buttons. All on takes one tap, all off two |
+| `goodnight` | object | The **Goodnight** button beside All on and All off: the lights stay as they are for `minutes` (default 5), then the same lights as All off turn off and the script in `then` runs, if set. `{ "minutes": 5, "then": "script.lock_up" }`; `{ "enabled": false }` hides the button. See [Goodnight](#goodnight) |
 | `wall_screen` | object | Doorbell camera, idle mode and light mode for wall screens, see [Wall screens](#wall-screens) |
 | `mock` | object | Test data only, for example sunrise and sunset times. `mock.prices` sets the test prices: `{ "minutes": 15, "format": "raw" }` (`minutes` 60 or 15; `format` `list`, `raw` with start and end times, or `action` for the Nord Pool action). `mock.devices` gives test entities a device, named the Home Assistant 2026.11 way: `[{ "id": "kitchen_hub", "name": "Kitchen", "entities": { "light.kitchen_ceiling": "Ceiling" } }]` shows that light as "Kitchen Ceiling" (`null` for the device's name alone). `mock.floors` and `mock.areas` replace the test floors and areas made from the plans and rooms: `[{ "floor_id": "ground", "name": "Ground floor", "level": 0 }]` and `[{ "area_id": "kitchen", "name": "Kitchen", "floor_id": "ground", "entities": ["light.kitchen_ceiling"] }]`. An entry in `mock.entities` can carry `"entity_category": "diagnostic"` or `"hidden": true`, as Home Assistant's entity registry does |
 
@@ -144,6 +146,19 @@ Each panel outline glows green while the panels produce, stronger as production 
 - A floor plan's `ha_floor` links it to a Home Assistant floor by its floor id: the plan then shows the floor's name, and linked plans are listed in floor order.
 - `"layout": "tiles"` marks a plan from the setup guide's **Start from my Home Assistant**: no picture and no walls, each room drawn as a tile, and the lights found in a room's area set out in a row along the bottom of its tile. Uploading a picture for the plan removes it. A room with `"redraw": true` still has its tile's shape stretched over the new picture and waits to be drawn; the guide offers a **Draw** button for it.
 
+### cameras
+
+```json
+"cameras": [{ "entity": "camera.garden", "at": [715, 480], "angle": 45, "motion": "binary_sensor.garden_motion", "name": "Garden" }]
+```
+
+On a floor plan, in plan units; the same list under `overview` places cameras on the overview picture, in image pixels. Placement mode writes it.
+
+- A camera icon marks the spot. A tap opens the camera window: live where Home Assistant can stream the camera as MJPEG, otherwise a still renewed every two seconds, and always stills in light mode. With several cameras on the same plan, arrows step between them. The window closes after two minutes, on ×, a tap outside or Escape.
+- `angle` draws a field-of-view wedge, in degrees: 0 points right, 90 down. Without it only the icon is drawn.
+- The wedge and the icon turn red while `motion` is on. Without `motion`, the camera's own `motion_detected` attribute is used where the camera has one.
+- Everything goes through Home Assistant's camera proxy with the viewer's own login. No camera address or password goes in site.json.
+
 ### Warnings
 
 A row above the picture shows, most serious first: alarms (smoke, gas, carbon monoxide, water leak), a door or window open in a room while it is heating, low batteries, devices that stopped responding, and devices named in site.json that Home Assistant does not know (renamed or removed). An alarm or open window opens its room when tapped; the others unfold a list. For administrators, the list of missing devices has **Show in placement mode**, which opens placement mode with only those devices listed.
@@ -170,6 +185,27 @@ A row above the picture shows, most serious first: alarms (smoke, gas, carbon mo
 - `grid_power` above zero is bought from the grid and `battery_power` above zero is the battery discharging. If your sensors count the other way, set `"grid_invert": true` or `"battery_invert": true` under `energy`, or tick **Direction** in the setup guide's Energy step, which shows how each one reads right now.
 - `"energy_flow": false` and `"weather_effects": false` turn them off.
 - With the header set to Auto, the day picture fades into the evening picture from 3° above the horizon to 6° below it (`sun.sun` elevation). The `weather` entity adds a light veil for cloud, fog, rain or snow.
+
+## Goodnight
+
+```json
+"goodnight": { "minutes": 5, "then": "script.lock_up" }
+```
+
+- A tap on **Goodnight** (behind the lamp in the header, or in the lights card) starts a countdown. Every open screen of the dashboard shows "Goodnight: everything off in 4:12" with **Cancel**. Tapping Goodnight again starts the countdown over.
+- The countdown runs in Home Assistant, so a tablet that sleeps or reloads does not stop it. A restart of Home Assistant does stop it.
+- It is the action `smarthomedash.goodnight`, so it can also be started from an automation, a voice command or an NFC tag:
+
+```yaml
+action: smarthomedash.goodnight
+data:
+  site: home                 # the dashboard's folder name
+  entity_id: [light.hall, light.kitchen]
+  minutes: 5
+  then: script.lock_up       # optional
+```
+
+  `cancel: true` stops a countdown. While one runs, the state `smarthomedash.goodnight_<site>` is `on` with the time in `ends_at`; it is what the screens show.
 
 ## Wall screens
 
@@ -228,9 +264,10 @@ Power may be in W or kW; the unit is read from the entity. `battery_soc` is show
 
 ## Placement mode
 
-In the Home Assistant panel, administrators tap **Placera** in the header (or open `/<url_path>/edit`). On the standalone page, add `#edit` to the address. A panel lists every light, temperature sensor, thermostat and switch in Home Assistant (on test data: the ones in the config plus `mock.entities`), in that order, not placed first. What matters less is folded away under **Show n more** in each group, and search still finds it: switches (most are plugs and settings, not lamps; a switch can still be placed as a lamp), a device's own diagnostic or hidden entities, and temperature sensors in no room or in a room that already shows another one.
+In the Home Assistant panel, administrators tap **Placera** in the header (or open `/<url_path>/edit`). On the standalone page, add `#edit` to the address. A panel lists every light, temperature sensor, thermostat, camera and switch in Home Assistant (on test data: the ones in the config plus `mock.entities`), in that order, not placed first. What matters less is folded away under **Show n more** in each group, and search still finds it: switches (most are plugs and settings, not lamps; a switch can still be placed as a lamp), a device's own diagnostic or hidden entities, and temperature sensors in no room or in a room that already shows another one.
 
 - **Place:** pick an entity, then tap where it is. On a floor plan the room is found from the tap: a light is placed at that spot, a thermostat or sensor is linked to the room. On the overview a light becomes an outdoor lamp; tap again to add more fixtures on the same switch.
+- **Cameras** go anywhere on a floor plan or the overview, not only in a room. A placed camera gets **↺** and **↻** to turn its field of view, and a **Motion sensor** list.
 - **Remove placement** takes the selected entity out of every room and zone.
 - **Missing in Home Assistant** lists the entities in site.json that Home Assistant does not know, with where each is used. **Remove from the dashboard** takes one out of rooms, zones, windows, sensor lists, scenes, heating devices and the screen's wake sensors. Energy, weather and doorbell entities are changed in the setup guide or in the file.
 - **Draw area:** click corners to get a polygon for `area`, `outline` or a solar panel.

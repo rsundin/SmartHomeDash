@@ -6,6 +6,7 @@ import { level, roomTemp, comfort, heating, climate } from '../entities.js';
 import { t } from '../i18n.js';
 import { lightColor, createTints } from '../glow.js';
 import { roomStatus, statusIds } from '../status.js';
+import { cameraMarkers, openCamera } from '../ui/camera.js';
 
 // Status icons, drawn in a 24-unit box.
 export const ICONS = {
@@ -133,12 +134,17 @@ export function createFloorplan({ site, plan, store, adapter, onRoom }) {
     }
   }
 
+  // Cameras on the plan (ui/camera.js): a tap opens the camera window, with arrows to the plan's other cameras.
+  const cams = (plan.cameras ?? []).filter((c) => c?.entity && Array.isArray(c.at));
+  const camsG = cameraMarkers({ cams, unit, store, site,
+    onOpen: (i) => openCamera({ site, store, adapter, ids: cams.map((c) => c.entity), index: i }) });
+
   const svg = sv('svg', {
     class: 'fp-svg', viewBox: `${bb.x - pad} ${bb.y - pad} ${bb.w + pad * 2} ${bb.h + pad * 2}`,
     role: 'group', 'aria-label': t('plan.label', { name: plan.name }),
   },
   defs,
-  floor, fills, glows, walls, labels, lamps);
+  floor, fills, glows, walls, labels, lamps, camsG);
 
   const root = el('div', { class: `view fp${picture ? ' has-picture' : ''}${tiles ? ' is-tiles' : ''}`, 'data-plan': plan.id }, svg);
 

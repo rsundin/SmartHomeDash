@@ -5,6 +5,7 @@ import { el, sv, fmt, hhmm, num } from '../util.js';
 import { isOn, zoneLevel, kw, priceSlots, priceSlotsTomorrow, slotAt, cheapestWindow, dayBounds, nordpoolSlots, roomTemp, climate, heating, comfort } from '../entities.js';
 import { areaOf, areaName } from '../areas.js';
 import { t } from '../i18n.js';
+import { allLightsOn, allOnButton, allOffButton, goodnightOn, goodnightButton } from './lights.js';
 import { readPower, splitPower, powerSentence } from '../power.js';
 
 
@@ -219,21 +220,8 @@ function lightsCard({ site, store, adapter }) {
   const scenes = el('div', { class: 'scenes' },
     site.scenes.map((s) => el('button', { class: 'chip', type: 'button', onclick: () => adapter.call(s.entity.split('.')[0], 'turn_on', { entity_id: s.entity }) }, s.name)));
 
-  // "All off" asks for a second tap instead of a dialog.
-  let armed = null;
-  const allOff = el('button', { class: 'chip chip-danger', type: 'button' }, t('cards.allOff'));
-  allOff.addEventListener('click', () => {
-    if (!armed) {
-      allOff.textContent = t('cards.allOffConfirm');
-      allOff.classList.add('is-armed');
-      armed = setTimeout(() => { armed = null; allOff.textContent = t('cards.allOff'); allOff.classList.remove('is-armed'); }, 3500);
-      return;
-    }
-    clearTimeout(armed); armed = null;
-    allOff.textContent = t('cards.allOff'); allOff.classList.remove('is-armed');
-    adapter.call('homeassistant', 'turn_off', { entity_id: site.index.lights });
-  });
-  scenes.append(allOff);
+  if (allLightsOn(site)) scenes.append(allOnButton({ site, adapter }), allOffButton({ site, adapter }));
+  if (goodnightOn(site)) scenes.append(goodnightButton({ site, adapter }));
 
   return card(t('cards.lights'), list, scenes);
 }

@@ -1,7 +1,8 @@
 // Placement mode, opened by adding #edit to the address.
 //
-// Place:  pick a light, switch, thermostat or temperature sensor from the list,
-//         then tap where it is. On a floor plan the room is found from the tap
+// Place:  pick a light, switch, thermostat, temperature sensor or camera from the list,
+//         then tap where it is. A camera can go anywhere on a plan or the overview, and
+//         gets a direction (its field-of-view wedge) and a motion sensor in the list. On a floor plan the room is found from the tap
 //         (point in polygon); on the overview a light becomes an outdoor lamp.
 //         Tapping a lamp already on a picture selects it and shows its name tag.
 // Draw:   click corners to get a polygon for site.json (rooms, buildings, panels).
@@ -26,6 +27,7 @@ const KINDS = [
   { id: 'lights', label: 'editor.kindLights', match: (s) => s.entity_id.startsWith('light.') },
   { id: 'temperature', label: 'editor.kindTemp', match: (s) => s.entity_id.startsWith('sensor.') && (s.attributes?.device_class === 'temperature' || /°C|°F/.test(s.attributes?.unit_of_measurement || '')) },
   { id: 'climate', label: 'editor.kindClimate', match: (s) => s.entity_id.startsWith('climate.') },
+  { id: 'cameras', label: 'editor.kindCameras', match: (s) => s.entity_id.startsWith('camera.') },
   { id: 'switches', label: 'editor.kindSwitches', match: (s) => s.entity_id.startsWith('switch.'), folded: true },
 ];
 // Switches are placed as lamps.
@@ -65,6 +67,9 @@ export function createEditor({ site, store, saveSite = null, reload = () => loca
     }
     const device = (raw.climates ?? []).find((c) => c.entity === id);
     if (device) return device.name ?? id;
+    const camPlan = (raw.floorplans ?? []).find((p) => (p.cameras ?? []).some((c) => c.entity === id));
+    if (camPlan) return camPlan.name ?? camPlan.id;
+    if ((raw.overview?.cameras ?? []).some((c) => c.entity === id)) return t('editor.overview');
     const zone = (raw.overview?.zones ?? []).find((z) => (z.lights ?? []).includes(id));
     return zone ? `${t('editor.outdoor')}: ${zone.name}` : null;
   }
@@ -77,6 +82,10 @@ export function createEditor({ site, store, saveSite = null, reload = () => loca
         if (room.temperature === id) delete room.temperature;
       }
     }
+    for (const plan of raw.floorplans ?? []) {
+      if (plan.cameras) { plan.cameras = plan.cameras.filter((c) => c.entity !== id); if (!plan.cameras.length) delete plan.cameras; }
+    }
+    if (raw.overview?.cameras) { raw.overview.cameras = raw.overview.cameras.filter((c) => c.entity !== id); if (!raw.overview.cameras.length) delete raw.overview.cameras; }
     if (raw.overview?.zones) {
       for (const z of raw.overview.zones) z.lights = (z.lights ?? []).filter((x) => x !== id);
       raw.overview.zones = raw.overview.zones.filter((z) => z.lights.length);
@@ -93,6 +102,7 @@ export function createEditor({ site, store, saveSite = null, reload = () => loca
     }
     for (const w of raw.overview?.windows ?? []) if (w.lights) w.lights = drop(w.lights);
     for (const b of raw.overview?.buildings ?? []) if (b.sensors) b.sensors = drop(b.sensors);
+    for (const c of [...(raw.floorplans ?? []).flatMap((p) => p.cameras ?? []), ...(raw.overview?.cameras ?? [])]) if (c.motion === id) delete c.motion;
     if (raw.climates) {
       raw.climates = raw.climates.filter((c) => c.entity !== id);
       for (const c of raw.climates) if (c.temperature === id) delete c.temperature;
@@ -127,6 +137,7 @@ export function createEditor({ site, store, saveSite = null, reload = () => loca
   function placeInPlan(plan, at, id = selected) {
     const kind = kindOf(id);
     const rawPlan = (raw.floorplans ?? []).find((p) => p.id === plan.id);
+    if (kind === 'cameras' && rawPlan) return placeCamera(() => (rawPlan.cameras ??= []), at, id, rawPlan.name ?? rawPlan.id);
     const room = (rawPlan?.rooms ?? []).find((r) => inside(at, r.area));
     if (!room) { status.textContent = t('editor.outsideRooms'); return false; }
     selected = id;
@@ -144,9 +155,30 @@ export function createEditor({ site, store, saveSite = null, reload = () => loca
     return true;
   }
 
+  // ---------- a camera: anywhere on a plan or the overview, keeping its direction and motion sensor
+  function cameraEntry(id) {
+    return [...(raw.floorplans ?? []).flatMap((p) => p.cameras ?? []), ...(raw.overview?.cameras ?? [])].find((c) => c.entity === id) ?? null;
+  }
+  // list() is read after unplace(), which replaces the lists it takes the camera out of.
+  function placeCamera(list, at, id, where) {
+    const old = cameraEntry(id);
+    unplace(id);
+    selected = id;
+    list().push({ ...(old ?? {}), entity: id, at: at.map(Math.round) });
+    save(t('editor.placedIn', { name: nameOf(id), room: where }));
+    return true;
+  }
+  function setCamera(id, change, message) {
+    const c = cameraEntry(id);
+    if (!c) return;
+    change(c);
+    save(message);
+  }
+
   // ---------- place on the overview (outdoor lamp)
   function placeOutdoor(at) {
     const id = selected;
+    if (kindOf(id) === 'cameras' && raw.overview) { placeCamera(() => (raw.overview.cameras ??= []), at, id, t('editor.overview')); return; }
     if (kindOf(id) !== 'lights') { status.textContent = t('editor.onlyLightsOutdoor'); return; }
     raw.overview.zones ??= [];
     let zone = raw.overview.zones.find((z) => (z.lights ?? []).includes(id));
@@ -326,10 +358,29 @@ export function createEditor({ site, store, saveSite = null, reload = () => loca
     selBox.replaceChildren(
       el('p', { class: 'small' }, el('strong', {}, nameOf(id)), ` · ${where ?? t('editor.unplaced')}`,
         el('span', { class: 'editor-sel-id' }, id)),
-      where ? el('button', { class: 'chip', type: 'button', onclick: () => { unplace(id); save(t('editor.removed', { name: nameOf(id) })); } }, t('editor.remove')) : null);
-    status.textContent = kindOf(id) === 'lights' ? t('editor.tapWhereLight') : t('editor.tapWhere');
+      where ? el('button', { class: 'chip', type: 'button', onclick: () => { unplace(id); save(t('editor.removed', { name: nameOf(id) })); } }, t('editor.remove')) : null,
+      where && kindOf(id) === 'cameras' ? cameraControls(id) : null);
+    status.textContent = kindOf(id) === 'lights' ? t('editor.tapWhereLight') : kindOf(id) === 'cameras' ? t('editor.tapWhereCamera') : t('editor.tapWhere');
     renderList();
     list.querySelector('.is-selected')?.scrollIntoView?.({ block: 'nearest' });
+  }
+
+  // The direction of a placed camera's wedge, in 45° steps, and its motion sensor.
+  function cameraControls(id) {
+    const c = cameraEntry(id);
+    const turn = (d) => setCamera(id, (x) => { x.angle = (((x.angle ?? 0) + d) % 360 + 360) % 360; }, t('editor.cameraTurned', { name: nameOf(id) }));
+    const motions = store.all().filter((s) => s.entity_id.startsWith('binary_sensor.') && ['motion', 'occupancy', 'presence'].includes(s.attributes?.device_class))
+      .map((s) => [s.entity_id, `${nameOf(s.entity_id)} · ${s.entity_id}`]).sort((a, b) => a[1].localeCompare(b[1], site.locale));
+    const motion = el('select', { class: 'setup-input', 'aria-label': t('editor.cameraMotion') },
+      [['', t('editor.cameraMotionNone')], ...motions].map(([v, label]) => el('option', { value: v, selected: v === (c?.motion ?? '') }, label)));
+    motion.addEventListener('change', () => setCamera(id, (x) => { if (motion.value) x.motion = motion.value; else delete x.motion; }, t('editor.cameraMotionSet', { name: nameOf(id) })));
+    return el('div', { class: 'editor-cam' },
+      el('div', { class: 'row' },
+        el('span', { class: 'small' }, t('editor.cameraDirection')),
+        el('button', { class: 'chip', type: 'button', 'data-action': 'cam-left', 'aria-label': t('editor.cameraLeft'), onclick: () => turn(-45) }, '↺'),
+        el('button', { class: 'chip', type: 'button', 'data-action': 'cam-right', 'aria-label': t('editor.cameraRight'), onclick: () => turn(45) }, '↻'),
+        Number.isFinite(c?.angle) ? el('button', { class: 'chip', type: 'button', 'data-action': 'cam-none', onclick: () => setCamera(id, (x) => { delete x.angle; }, t('editor.cameraTurned', { name: nameOf(id) })) }, t('editor.cameraNoWedge')) : null),
+      el('label', { class: 'small' }, t('editor.cameraMotion'), motion));
   }
 
   function removeMissing(id) {
@@ -356,7 +407,7 @@ export function createEditor({ site, store, saveSite = null, reload = () => loca
   function lampNode(id) {
     const zones = (raw.overview?.zones ?? []).filter((z) => (z.lights ?? []).includes(id)).map((z) => z.id);
     const nodes = [...document.querySelectorAll('[data-drag]')].filter((n) =>
-      n.dataset.drag === 'light' ? n.dataset.entity === id : zones.includes(n.dataset.zone));
+      n.dataset.drag === 'light' || n.dataset.drag === 'camera' ? n.dataset.entity === id : zones.includes(n.dataset.zone));
     return nodes.find((n) => { const r = n.getBoundingClientRect(); return r.width > 0 && r.height > 0; }) ?? null;
   }
   function placeTag() {
@@ -518,7 +569,7 @@ export function createEditor({ site, store, saveSite = null, reload = () => loca
         drag.moved = true;
         drag.node.classList.add('is-dragging');
         dragNode = drag.node;
-        const r = Number(drag.node.querySelector?.('.fp-lamp-hit')?.getAttribute('r') ?? drag.node.getAttribute('r') ?? 12);
+        const r = Number(drag.node.querySelector?.('.fp-lamp-hit, .cam-hit')?.getAttribute('r') ?? drag.node.getAttribute('r') ?? 12);
         drag.ghost = sv('circle', { class: 'drag-ghost', r: Math.max(r * 0.8, 6) });
         svg.append(drag.ghost);
       }
@@ -542,7 +593,9 @@ export function createEditor({ site, store, saveSite = null, reload = () => loca
       setTimeout(() => { dragged = false; }, 0);
       d.ghost?.remove();
       const at = snap(svgPoint(svg, e));
-      if (d.node.dataset.drag === 'light' && plan) {
+      if (d.node.dataset.drag === 'camera') {
+        setCamera(d.node.dataset.entity, (c) => { c.at = at; }, t('editor.moved', { name: nameOf(d.node.dataset.entity) }));
+      } else if (d.node.dataset.drag === 'light' && plan) {
         placeInPlan(plan, at, d.node.dataset.entity);
       } else if (d.node.dataset.drag === 'lamp') {
         const zone = (raw.overview?.zones ?? []).find((z) => z.id === d.node.dataset.zone);

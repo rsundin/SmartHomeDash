@@ -321,3 +321,75 @@ async def test_unload_removes_the_panel_and_keeps_the_site(hass: HomeAssistant, 
     await hass.async_block_till_done()
     assert "test-home" not in panels(hass)
     assert (sites_in_tmp / "test_home" / "site.json").is_file(), "removing the entry keeps what was set up"
+
+
+# --- Goodnight -------------------------------------------------------------------------
+
+async def test_goodnight_turns_the_lights_off_after_the_countdown(hass: HomeAssistant, entry) -> None:
+    from datetime import timedelta
+    import homeassistant.util.dt as dt_util
+    from pytest_homeassistant_custom_component.common import async_fire_time_changed, async_mock_service
+
+    off = async_mock_service(hass, "homeassistant", "turn_off")
+    script = async_mock_service(hass, "script", "turn_on")
+    await hass.services.async_call(DOMAIN, "goodnight", {
+        "site": "test_home", "entity_id": ["light.kitchen", "switch.lamp", "light.kitchen"], "minutes": 5, "then": "script.lock_up",
+    }, blocking=True)
+    state = hass.states.get("smarthomedash.goodnight_test_home")
+    assert state.state == "on"
+    ends = dt_util.parse_datetime(state.attributes["ends_at"])
+    assert timedelta(minutes=4, seconds=50) < ends - dt_util.utcnow() <= timedelta(minutes=5)
+
+    # Nothing happens before the time is up.
+    async_fire_time_changed(hass, dt_util.utcnow() + timedelta(minutes=4))
+    await hass.async_block_till_done()
+    assert not off
+
+    async_fire_time_changed(hass, dt_util.utcnow() + timedelta(minutes=5, seconds=1))
+    await hass.async_block_till_done()
+    assert [c.data["entity_id"] for c in off] == [["light.kitchen", "switch.lamp"]]
+    assert [c.data["entity_id"] for c in script] == ["script.lock_up"]
+    assert hass.states.get("smarthomedash.goodnight_test_home").state == "off"
+
+
+async def test_goodnight_can_be_cancelled_and_restarted(hass: HomeAssistant, entry) -> None:
+    from datetime import timedelta
+    import homeassistant.util.dt as dt_util
+    from pytest_homeassistant_custom_component.common import async_fire_time_changed, async_mock_service
+
+    off = async_mock_service(hass, "homeassistant", "turn_off")
+    call = lambda **kw: hass.services.async_call(DOMAIN, "goodnight", {"site": "test_home", "entity_id": ["light.kitchen"], **kw}, blocking=True)
+    await call(minutes=5)
+    await call(cancel=True)
+    assert hass.states.get("smarthomedash.goodnight_test_home").state == "off"
+    async_fire_time_changed(hass, dt_util.utcnow() + timedelta(minutes=6))
+    await hass.async_block_till_done()
+    assert not off, "a cancelled countdown turns nothing off"
+
+    # A second start replaces the first: only one turn-off, at the later time.
+    await call(minutes=1)
+    await call(minutes=10)
+    async_fire_time_changed(hass, dt_util.utcnow() + timedelta(minutes=2))
+    await hass.async_block_till_done()
+    assert not off
+    async_fire_time_changed(hass, dt_util.utcnow() + timedelta(minutes=11))
+    await hass.async_block_till_done()
+    assert len(off) == 1
+
+
+async def test_goodnight_refuses_other_entities_and_runs_for_any_user(hass: HomeAssistant, entry, hass_read_only_user) -> None:
+    import pytest
+    import voluptuous as vol
+    from homeassistant.core import Context
+
+    for bad in ({"entity_id": ["lock.front_door"]}, {"then": "automation.x"}, {"minutes": 500}, {"site": "../x"}):
+        with pytest.raises(vol.Invalid):
+            await hass.services.async_call(DOMAIN, "goodnight", {"site": "test_home", **bad}, blocking=True)
+    # Not an admin action: like switching a lamp, any logged-in user may start it.
+    await hass.services.async_call(DOMAIN, "goodnight", {"site": "test_home", "minutes": 5}, blocking=True,
+                                   context=Context(user_id=hass_read_only_user.id))
+    assert hass.states.get("smarthomedash.goodnight_test_home").state == "on"
+    # Unloading the dashboard stops its countdown.
+    assert await hass.config_entries.async_unload(entry.entry_id)
+    await hass.async_block_till_done()
+    assert hass.states.get("smarthomedash.goodnight_test_home") is None

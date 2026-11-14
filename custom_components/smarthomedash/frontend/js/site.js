@@ -116,6 +116,7 @@ function index(site) {
   }
 
   for (const sc of site.scenes) label(sc.entity, sc.name);
+  for (const c of [...site.floorplans.flatMap((p) => p.cameras ?? []), ...(site.overview?.cameras ?? [])]) label(c?.entity, c?.name);
   for (const b of [].concat(site.wall_screen?.doorbell ?? [])) { label(b?.entity, b?.name); label(b?.camera, b?.name); }
 
   site.index = {
