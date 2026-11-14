@@ -302,7 +302,7 @@ button { font: inherit; color: inherit; }
 .toggles { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
 .toggles li { display: grid; grid-template-columns: 1fr auto auto; gap: 10px; align-items: center; padding: 5px 0; border-bottom: 1px solid rgba(42, 69, 59, 0.6); }
 .toggles li:last-child { border-bottom: 0; }
-.tag { font: 600 10.5px var(--f-display); letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted-2); }
+.tag { font: 600 10.5px var(--f-display); letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
 .scenes { display: flex; flex-wrap: wrap; gap: 6px; }
 
 .switch {
@@ -450,10 +450,10 @@ input[type='range'] { width: 100%; accent-color: var(--glow); }
 .editor-ent-where { font-size: 12px; color: var(--muted); }
 .editor-ent.is-unplaced .editor-ent-where { color: var(--glow); }
 .editor-ent.is-missing .editor-ent-where { color: var(--danger); }
-.editor-ent-id { grid-column: 1 / -1; font: 11px var(--f-mono); color: var(--muted-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.editor-ent-id { grid-column: 1 / -1; font: 11px var(--f-mono); color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .editor-sel { border-top: 1px solid var(--line); padding-top: 8px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 .editor-sel:empty { display: none; }
-.editor-sel-id { display: block; font: 11px var(--f-mono); color: var(--muted-2); overflow-wrap: anywhere; }
+.editor-sel-id { display: block; font: 11px var(--f-mono); color: var(--muted); overflow-wrap: anywhere; }
 .editor-status { color: var(--glow-core); min-height: 1.4em; margin: 0; }
 .editor-status textarea { width: 100%; height: 120px; margin-top: 6px; }
 .editor-draft { color: var(--glow); margin: 0; }
@@ -710,6 +710,23 @@ details.alert .alert-action { margin: 4px 0 2px; font-size: 13px; }
 .is-lite .ov-window-bloom, .is-lite .ov-wash, .is-lite .ov-solar-sweep, .is-lite .ov-wx::after { display: none; }
 .is-lite .stage.is-night .fp-halo { transform: none; }
 .is-lite .sheet, .is-lite .bell { background: rgba(4, 9, 7, 0.9); }
+
+/* ---------- text size per device (main.js: body[data-text]): large and extra large
+   Everything outside the picture grows as one piece, text, cards and touch targets alike;
+   on the picture the labels and lamps grow in place. */
+body[data-text="large"] { --ts: 1.15; }
+body[data-text="xlarge"] { --ts: 1.3; }
+body[data-text] :is(.top, .side, .panel, .alerts, .banner, .stage-hint, .back, .zoom-reset, .toast, .goodnight, .sheet-card) { zoom: var(--ts); }
+/* Lengths of the screen itself must not grow with the text. */
+body[data-text] .panel { width: min(400px, calc(100vw / var(--ts))); }
+body[data-text] .sheet-card { width: min(460px, calc(100% / var(--ts))); }
+@media (min-width: 1001px) { body[data-text] .layout { grid-template-columns: minmax(0, 1fr) calc(320px * var(--ts)); } }
+@media (min-width: 1024px) and (orientation: landscape) and (min-height: 560px) {
+  body[data-text] .layout { grid-template-columns: minmax(0, 1fr) calc(clamp(300px, 24vw, 380px) * var(--ts)); }
+}
+body[data-text] :is(.fp-label, .fp-lamp) { transform-box: fill-box; transform-origin: center; transform: scale(var(--ts)); }
+/* These are placed with a transform of their own: grow what is inside, around its middle. */
+body[data-text] :is(.ov-tag, .ov-flow-tag) > * { transform: scale(var(--ts)); }
 
 /* ---------- as a card in another dashboard (card.js): only the picture, filling the frame */
 html:has(> body.is-embed), body.is-embed { height: 100%; }

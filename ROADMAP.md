@@ -22,7 +22,7 @@ What is planned next, roughly in order. Plans change; ideas and votes are welcom
 - **A card for any dashboard** (`custom:smarthomedash-card`): the overview, a floor plan or a room in any Home Assistant dashboard. Done in 0.8.21.
 - **More languages**: German, Norwegian, Danish, Finnish, Dutch.
 - **A listing in Home Assistant's Marketplace**, so SmartHomeDash can be found without a link.
-- **Accessibility and large text**: text size per screen, keyboard use, screen reader names.
+- **Accessibility and large text**: text size per device, keyboard use, screen reader names. Done in 0.8.26.
 - **Launch**: a short recording in the README and a post on the Home Assistant forum.
 
 ## Whole-house control

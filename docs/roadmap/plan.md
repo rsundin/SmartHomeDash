@@ -209,7 +209,7 @@ Setup effort is the main barrier for every floor plan project [R5][R6][R11]. Sma
   - Follow the current Marketplace inclusion process (formerly hacs/default; check the docs at the time). It needs the owner to open pull requests from their account, so prepare the files and the text.
 - **Done when:** the HACS check passes without ignores, and the owner has the submission text and steps.
 
-### A1: Accessibility and large text. Status: todo. Size: M
+### A1: Accessibility and large text. Status: done (v0.8.26). Size: M
 - **Why:** Users ask for bigger text, keyboard navigation and graphs a screen reader can read [R39][R40]. A wall screen for the whole family includes older parents and guests.
 - **What:**
   - A **Text size** setting per screen (normal, large, extra large) that scales labels, cards, the room panel and touch targets, remembered per device.

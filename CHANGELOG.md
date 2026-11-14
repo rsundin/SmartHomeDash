@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.8.26
+
+Larger text, the keyboard and screen readers.
+
+- **Text size per device.** A new **Aa** button in the header steps between normal, large and extra large. The header, cards, room panel, warnings and buttons grow together, touch targets included, and so do the labels and lamps on the picture. The choice stays on that device, so the wall screen can have large text while a phone keeps its own. Checked at 390 px wide: nothing sticks out
+- **Keyboard.** Space now opens buildings and rooms like Enter does. The closed room panel is no longer in the Tab order (it could take focus while off screen), and when it closes, focus returns to the room it was opened from
+- **Screen readers.** Lamps on the picture say whether they are on, rooms say their temperature, and the price chart and the temperature graph are read as a sentence with the value now, the lowest and the highest. The notices above the header are a region of their own
+- **Contrast.** The small labels in the cards (INDOOR, OUTDOOR and the like) were too faint, 3.6:1; they are now 6.6:1. Text on the picture was measured against its backing in day and evening and already passed
+- New tests: axe-core on both examples (start view, floor plan, room panel, evening, desktop and phone), a keyboard-only run that opens a room and switches a lamp, names and states for screen readers, contrast of the text on the picture, and large and extra large text on a phone. The browser tests now need `axe-core` as well as Playwright
 ## 0.8.25
 
 Cameras on the picture.

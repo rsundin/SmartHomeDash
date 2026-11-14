@@ -30,7 +30,7 @@ Status at the time of writing: version **0.8.16**, 13 November 2026. See [status
 
 ```bash
 # Python 3.12+, Node 20+ (CI uses 22)
-npm install --no-save --no-package-lock playwright@1.63.0
+npm install --no-save --no-package-lock playwright@1.63.0 axe-core@4.14.0
 npx playwright install --with-deps chromium     # or: npx playwright install chromium
 
 tests/run.sh            # everything: syntax, 68 backend tests, ~54 browser tests, perf budget (~3 min)
@@ -175,7 +175,7 @@ Do them in this order, one pull request each. Briefs below add what you need bey
 
 - **S4 (card), done in 0.8.21:** the card (`frontend/card.js`) does not run the dashboard in Home Assistant's own document. `start()` owns its whole document (`window.__shdRun`, `document.body` classes, global key listeners, the room panel on `document.body`, `@font-face` in `style.css`), so the card puts a frame in its shadow root (`card.html` + `card-frame.js`) and the frame calls `start({ embed: { view } })`, exactly as `panel.js` does in the panel's iframe. The card element only sizes the frame and hands it `hass` and the config (`contentWindow.shdCard.update`). `body.is-embed` in `style.css` hides everything but the picture. If a card without a frame is ever wanted (for example to follow Home Assistant's theme), that is the per-instance-root refactor: no globals, the stylesheet adopted into a shadow root, fonts declared on the document once.
 - **S5 (languages):** after Q8, each language is one JSON file. Mark machine-assisted translations in the file. The key-coverage test from Q8 covers them.
-- **A1:** add `@axe-core/playwright` to the browser tests' install line in CI and in `tests/run.sh`'s comment; check both examples.
+- **A1, done in 0.8.26:** `tests/browser/a11y.test.js` loads `axe-core` into the page itself (`page.addScriptTag`), so the only new test dependency is `axe-core`, not `@axe-core/playwright`. New UI must pass it: accessible names, 4.5:1 contrast, nothing focusable inside something hidden. Text size is `body[data-text]` plus CSS `zoom` on the parts outside the picture (`style.css`, "text size per device").
 - **F1 (summer house mode)** depends on W2's screen profiles, so build W2 before F1 if the owner wants F1 early.
 
 ## 8. A prompt to start a session

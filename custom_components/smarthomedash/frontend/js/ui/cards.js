@@ -172,7 +172,12 @@ function priceBars(slots, [d0, d1], cur, lo, hi, win = null) {
   const pad = (n) => String(n).padStart(2, '0');
   const label = (ms) => { const d = new Date(ms); return `${pad(d.getHours())}:${pad(d.getMinutes())}`; };
   const quarters = slots.length > 30;
-  return sv('svg', { viewBox: `0 0 ${W} ${H}`, class: `pbars${quarters ? ' is-quarters' : ''}`, role: 'img', 'aria-label': t(quarters ? 'cards.priceChartQuarter' : 'cards.priceChart') },
+  // The bars in words, for screen readers: the price now, the lowest and the highest.
+  const priced = slots.filter((s) => s.value != null);
+  const low = priced.reduce((a, b) => (b.value < a.value ? b : a), priced[0]);
+  const high = priced.reduce((a, b) => (b.value > a.value ? b : a), priced[0]);
+  const summary = !priced.length ? '' : `. ${cur?.value != null ? `${t('cards.priceSummaryNow', { now: cur.value.toFixed(2) })} ` : ''}${t('cards.priceSummary', { low: low.value.toFixed(2), lowAt: label(low.start), high: high.value.toFixed(2), highAt: label(high.start) })}`;
+  return sv('svg', { viewBox: `0 0 ${W} ${H}`, class: `pbars${quarters ? ' is-quarters' : ''}`, role: 'img', 'aria-label': `${t(quarters ? 'cards.priceChartQuarter' : 'cards.priceChart')}${summary}` },
     slots.map((s) => {
       if (s.value == null) return null;
       const rel = hi === lo ? 0.5 : (s.value - lo) / (hi - lo);

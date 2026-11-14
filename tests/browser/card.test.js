@@ -199,8 +199,8 @@ describe('card', () => {
     assert.deepEqual(entry, { name: 'SmartHomeDash', fn: 'function', stub: { site: 'example-apartment' } });
     await page.waitForFunction(() => window.customCards[0].description.length > 10);
 
-    // The first question starts reading the dashboards; after that the answer is there.
-    await page.waitForFunction(() => window.harness.card.suggest(window.harness.hass, 'light.bedroom') !== null);
+    // The first question starts reading the dashboards; the answer grows as each one arrives.
+    await page.waitForFunction(() => window.harness.card.suggest(window.harness.hass, 'light.bedroom')?.length === 2);
     const r = await page.evaluate(() => ({
       lamp: window.harness.card.suggest(window.harness.hass, 'light.bedroom'),
       climate: window.harness.card.suggest(window.harness.hass, 'climate.bedroom'),

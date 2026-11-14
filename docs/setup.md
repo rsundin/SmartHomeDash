@@ -190,6 +190,14 @@ sensibly in each room. Soft light. Crop exactly to the outer walls. No text or l
 
 After sunset (or with the header button set to night) the pictures are dimmed, the evening picture replaces the day picture if there is one, and lamp light on the overview and on the floor plans stands out.
 
+## Text size and accessibility
+
+**Text size.** The **Aa** button in the header steps between normal, large (15 % larger) and extra large (30 % larger). It scales the header, the cards, the room panel, warnings and buttons together, touch targets included, and the labels and lamps on the picture. The choice is remembered on that device only, for every dashboard there, so a wall screen in the hall can have large text while your phone stays as it is. The button is hidden in kiosk mode: set the size first, then start kiosk mode. A card in another dashboard follows the same choice. The setup guide and placement mode keep their normal size.
+
+**Keyboard.** Tab moves through the header, the buildings, rooms and lamps on the picture, and the cards. Enter or Space opens a building or a room and switches a lamp. Escape closes the room panel, and then goes back to the overview. When the room panel closes, focus returns to the room it was opened from.
+
+**Screen readers.** Buildings, rooms and lamps are buttons with names. Lamps say whether they are on, rooms say their temperature, and the price chart and the temperature graph are read as a sentence (now, lowest, highest).
+
 ## Wall screens and tablets
 
 **Kiosk mode** shows only the dashboard. Open it with `?kiosk` at the end of the address (`http://homeassistant.local:8123/home?kiosk`) or tap **Kiosk mode** in the header and then **Start kiosk mode**. It:
