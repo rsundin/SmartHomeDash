@@ -196,6 +196,18 @@ class SitesViewTest(unittest.TestCase):
             "all_lights.exclude should be a list of entity ids": {"all_lights": {"exclude": "light.garden"}},
             "overview.solar.panels[0] should be a list of at least three [x, y] number pairs":
                 {"overview": {"solar": {"panels": [[0, 0]]}}},
+            "floorplans[0].rooms[0].lights[0].line should be a list of at least two [x, y] number pairs":
+                {"floorplans": [{"id": "a", "rooms": [{"id": "b", "lights": [{"entity": "light.x", "line": [[1, 2]]}]}]}]},
+            "floorplans[0].rooms[0].lights[1].area should be a list of at least three [x, y] number pairs":
+                {"floorplans": [{"id": "a", "rooms": [{"id": "b", "lights": [
+                    {"entity": "light.x", "line": [[1, 2], [3, 4]], "width": 20},
+                    {"entity": "light.y", "area": [[1, 2], [3, 4]]}]}]}]},
+            "floorplans[0].rooms[0].lights[0].width should be a number above zero":
+                {"floorplans": [{"id": "a", "rooms": [{"id": "b", "lights": [{"entity": "light.x", "line": [[1, 2], [3, 4]], "width": 0}]}]}]},
+            "overview.zones[0].lamps[0].line should be a list of at least two [x, y] number pairs":
+                {"overview": {"zones": [{"id": "z", "lamps": [{"type": "line", "line": "along the fence"}]}]}},
+            "overview.zones[0].lamps should be a list":
+                {"overview": {"zones": [{"id": "z", "lamps": {"at": [1, 2]}}]}},
         }
         for reason, data in cases.items():
             with self.subTest(reason=reason):

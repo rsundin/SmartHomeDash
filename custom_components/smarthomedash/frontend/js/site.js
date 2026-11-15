@@ -1,5 +1,5 @@
 import { t, languageReady } from './i18n.js';
-import { storage } from './util.js';
+import { storage, stripOf, stripCentre } from './util.js';
 
 // Loads sites/<id>/site.json and builds lookup indexes the views share.
 //
@@ -87,6 +87,9 @@ function index(site) {
     z.lights ??= [];
     // "lamps" is the full form; "glow": [[x, y, size], ...] is a shorthand for round lamps.
     z.lamps ??= (z.glow ?? []).map(([x, y, size]) => ({ at: [x, y], size, type: 'point' }));
+    // An LED strip (`line` or `area`) has its middle as its place, for everything that asks where a lamp is.
+    for (const l of z.lamps) { const strip = stripOf(l); if (strip) { l.at ??= stripCentre(strip.points); l.size ??= 30; } }
+    z.lamps = z.lamps.filter((l) => Array.isArray(l?.at));
     z.lights.forEach((id) => { lights.add(id); if (!names.has(id)) names.set(id, z.name); });
   }
   for (const plan of site.floorplans) {

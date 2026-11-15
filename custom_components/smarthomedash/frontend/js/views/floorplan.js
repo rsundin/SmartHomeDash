@@ -1,7 +1,7 @@
 // Floor plan: rooms drawn to scale from the site config (millimetres by default),
 // tinted by temperature, with a lamp for every light and a chip per room.
 
-import { el, sv, pts, centroid, bbox, press, fmt } from '../util.js';
+import { el, sv, pts, centroid, bbox, press, fmt, stripOf } from '../util.js';
 import { level, roomTemp, comfort, heating, climate } from '../entities.js';
 import { t } from '../i18n.js';
 import { lightColor, createTints } from '../glow.js';
@@ -44,7 +44,10 @@ export function createFloorplan({ site, plan, store, adapter, onRoom }) {
     sv('stop', { offset: '0', style: { stopColor: coreC, stopOpacity: '0.85' } }),
     sv('stop', { offset: '0.3', style: { stopColor: glow, stopOpacity: '0.45' } }),
     sv('stop', { offset: '1', style: { stopColor: glow, stopOpacity: '0' } }));
-  const defs = sv('defs', {}, haloGradient(gradId, 'var(--glow)', 'var(--glow-core)'));
+  const defs = sv('defs', {}, haloGradient(gradId, 'var(--glow)', 'var(--glow-core)'),
+    // LED strips glow as a blurred line or surface; light mode drops the blur (style.css).
+    sv('filter', { id: `${gradId}-strip`, x: '-50%', y: '-50%', width: '200%', height: '200%', filterUnits: 'userSpaceOnUse' },
+      sv('feGaussianBlur', { stdDeviation: (unit * 0.55).toFixed(2) })));
   // A lamp that reports its colour glows in it (see glow.js).
   const tint = createTints((sx, glow, coreC) => defs.append(haloGradient(gradId + sx, glow, coreC)));
   const walls = tiles ? sv('g', { class: 'fp-walls' }) : sv('g', { class: 'fp-walls' },
@@ -110,6 +113,8 @@ export function createFloorplan({ site, plan, store, adapter, onRoom }) {
     });
 
     for (const light of room.lights) {
+      const strip = stripOf(light);
+      if (strip) { addStrip(room, light, strip); continue; }
       const [x, y] = light.at ?? [cx, cy + unit * 2.5];
       const halo = sv('circle', { class: 'fp-halo', cx: x, cy: y, r: unit * 4.5, fill: `url(#${gradId})` });
       glows.append(halo);
@@ -135,6 +140,42 @@ export function createFloorplan({ site, plan, store, adapter, onRoom }) {
         lamp.classList.toggle('is-missing', !store.get(light.entity));
       });
     }
+  }
+
+  // An LED strip: it glows along its whole length, or over its whole surface, in the
+  // light's own colour and brightness. A tap anywhere on it switches it, like a lamp.
+  function addStrip(room, light, { kind, points }) {
+    const line = kind === 'line';
+    const width = Number(light.width) > 0 ? Number(light.width) : unit * 0.9;
+    const shape = line ? 'polyline' : 'polygon';
+    const filter = `url(#${gradId}-strip)`;
+    // The blurred light, and for a line a bright thread in the middle of it.
+    const glow = sv('g', { class: `fp-strip-glow is-${kind}`, style: { opacity: '0' } },
+      sv(shape, { class: 'fp-strip-bloom', points: pts(points), 'stroke-width': line ? width * 1.6 : width * 0.5, filter }),
+      line ? sv('polyline', { class: 'fp-strip-thread', points: pts(points), 'stroke-width': width * 0.35 }) : null);
+    glows.append(glow);
+    const name = light.name ?? room.name;
+    const lamp = sv('g', { class: `fp-lamp fp-strip is-${kind}`, 'data-drag': 'light', 'data-entity': light.entity, tabindex: 0, role: 'button', 'aria-label': t('overview.toggle', { name }) },
+      sv(shape, { class: 'fp-strip-hit', points: pts(points), 'stroke-width': Math.max(width, unit * 1.6) }),
+      sv(shape, { class: 'fp-strip-mark', points: pts(points), 'stroke-width': line ? Math.max(width * 0.3, unit * 0.14) : unit * 0.14 }),
+      sv('title', {}, t('plan.lampHint', { name })));
+    press(lamp,
+      () => adapter.call('homeassistant', 'toggle', { entity_id: light.entity }),
+      () => onRoom(room));
+    lamps.append(lamp);
+    store.watch([light.entity], () => {
+      const st = store.get(light.entity);
+      const lv = level(st);
+      const c = tint(lightColor(st));
+      glow.style.opacity = String(lv);
+      glow.style.setProperty('--lamp', c.glow ?? '');
+      glow.style.setProperty('--lamp-core', c.core ?? '');
+      lamp.style.setProperty('--lamp', c.glow ?? '');
+      lamp.style.setProperty('--lamp-core', c.core ?? '');
+      lamp.classList.toggle('is-on', lv > 0);
+      lamp.setAttribute('aria-pressed', String(lv > 0));
+      lamp.classList.toggle('is-missing', !st);
+    });
   }
 
   // Cameras on the plan (ui/camera.js): a tap opens the camera window, with arrows to the plan's other cameras.

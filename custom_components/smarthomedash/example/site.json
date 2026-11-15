@@ -158,7 +158,7 @@
             {
               "entity": "light.kitchen_counter",
               "name": "Counter lights",
-              "at": [200, 115]
+              "line": [[100, 108], [405, 108], [405, 170]], "width": 14
             }
           ]
         },
