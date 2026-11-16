@@ -156,7 +156,7 @@
             {
               "entity": "light.kitchen_counter",
               "name": "Bänkbelysning",
-              "at": [200, 115]
+              "line": [[100, 108], [405, 108], [405, 170]], "width": 14
             }
           ]
         },

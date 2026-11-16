@@ -84,6 +84,21 @@ def _polygon_problem(value, where: str) -> str | None:
     return None
 
 
+def _strip_problem(item: dict, where: str) -> str | None:
+    """An LED strip: a light drawn as a line (two points or more) or as a surface."""
+    if "line" in item:
+        line = item["line"]
+        if not isinstance(line, list) or len(line) < 2 or not all(_is_point(p) for p in line):
+            return f"{where}.line should be a list of at least two [x, y] number pairs"
+    if "area" in item:
+        problem = _polygon_problem(item["area"], f"{where}.area")
+        if problem:
+            return problem
+    if "width" in item and not (_is_number(item["width"]) and item["width"] > 0):
+        return f"{where}.width should be a number above zero"
+    return None
+
+
 def _list_of_objects(value, where: str) -> str | None:
     if not isinstance(value, list):
         return f"{where} should be a list"
@@ -163,6 +178,10 @@ def validate_site(data) -> str | None:
                 problem = _list_of_objects(room["lights"], f"{here}.lights")
                 if problem:
                     return problem
+                for k, light in enumerate(room["lights"]):
+                    problem = _strip_problem(light, f"{here}.lights[{k}]")
+                    if problem:
+                        return problem
             if "sensors" in room and not isinstance(room["sensors"], list):
                 return f"{here}.sensors should be a list"
     overview = data.get("overview", {})
@@ -178,6 +197,15 @@ def validate_site(data) -> str | None:
         if problem:
             return problem
         if key == "zones":
+            for i, zone in enumerate(items):
+                lamps = zone.get("lamps", [])
+                problem = _list_of_objects(lamps, f"overview.zones[{i}].lamps")
+                if problem:
+                    return problem
+                for k, lamp in enumerate(lamps):
+                    problem = _strip_problem(lamp, f"overview.zones[{i}].lamps[{k}]")
+                    if problem:
+                        return problem
             continue
         for i, item in enumerate(items):
             if "area" in item:

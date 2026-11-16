@@ -252,7 +252,7 @@ Added 14 November 2026 at the owner's request. Small things a wall screen in the
 - **Files:** `__init__.py`, `services.yaml`, `strings.json` + `translations/`, a new `goodnight.py`, `ui/lights.js`, `ui/cards.js`, `main.js`, `i18n/*.json`, `docs/configuration.md`, `docs/setup.md`, `SECURITY.md` (a new action: any logged-in user can call it, like turning lights off).
 - **Done when:** `tests/ha` covers the action scheduling and cancelling the turn-off and the state (with time moved forward); browser tests cover the banner, its countdown from the sensor and **Avbryt**; the backend stand-in tests still pass.
 
-### L3: LED strips drawn as lit areas. Status: todo. Size: M. Depends: S2
+### L3: LED strips drawn as lit areas. Status: done (v0.8.27). Size: M. Depends: S2
 - **Why:** The owner asked (14 November 2026) for LED strips to be drawn as what they are: a line or a surface that glows, not a round spot.
 - **What:**
   - In placement mode a light can be placed as a **strip**: drawn as a line with two or more points (under a kitchen cabinet, along a stair) or as a surface (a cove ceiling, a backlit panel), with the same drawing and corner editing as rooms (`ui/shape.js`).

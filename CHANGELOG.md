@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.8.27
+
+LED strips drawn as what they are.
+
+- **A light can be a line or a surface.** In placement mode a placed light has **Drawn as**: **Spot**, **Line** or **Surface**. A line follows a strip under the kitchen cabinets or along a stair, with as many bends as it needs; a surface covers a lit ceiling cove or a backlit panel. They are drawn with the same tool as rooms
+- **It glows along its whole length** in the light's own colour and brightness, on the floor plan and on the overview picture. **Width** sets how wide a line is drawn
+- **Tap anywhere on it** to switch it, hold to open the room, like a lamp. Drag it in placement mode to move all of it; **Spot** makes it a round lamp again
+- **Light mode** draws a plain coloured line or surface without the soft glow, so older tablets keep up
+- The example house has a strip under the kitchen cabinets. In site.json a strip is a light with `line` or `area` instead of `at`, and on the overview a zone lamp with `"type": "line"` or `"area"`; see docs/configuration.md. The file is checked for them before it is saved, so restart Home Assistant once after updating
+- New tests: drawing a line and a surface in placement mode, bending, width, dragging and undo, switching by a tap anywhere on the strip, its colour and brightness following the light, light mode without blur, strips on the overview, and the performance budget with strips on the large test site
+
 ## 0.8.26
 
 Larger text, the keyboard and screen readers.

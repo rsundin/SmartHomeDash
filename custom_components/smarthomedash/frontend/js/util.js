@@ -62,6 +62,20 @@ export function bbox(polys) {
   return { x: x0, y: y0, w: x1 - x0, h: y1 - y0 };
 }
 
+// An LED strip: a light drawn as a line (`line`, two or more points) or as a surface
+// (`area`, three or more) instead of a round lamp. Returns { kind, points } or null.
+export function stripOf(l) {
+  const ok = (v, n) => Array.isArray(v) && v.length >= n && v.every((p) => Array.isArray(p) && p.length === 2 && p.every(Number.isFinite));
+  if (ok(l?.line, 2)) return { kind: 'line', points: l.line };
+  if (ok(l?.area, 3)) return { kind: 'area', points: l.area };
+  return null;
+}
+// The middle of a strip: of its box, so it is the same for a line and a surface.
+export function stripCentre(points) {
+  const b = bbox([points]);
+  return [b.x + b.w / 2, b.y + b.h / 2];
+}
+
 export const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
 
 export function num(v) {

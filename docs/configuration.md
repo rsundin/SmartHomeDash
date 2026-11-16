@@ -84,8 +84,17 @@ Each lamp lights up when any of the zone's lights is on, brighter at higher brig
 | `wall` | A fixture on a facade: light washes the wall and pools on the ground below |
 | `ground` | A deck or flood light: a flat pool of light |
 | `point` | A round glow (default) |
+| `line` | An LED strip: a line that glows along its whole length, through the points in `line` |
+| `area` | A lit surface, such as a backlit sign or a deck with strips under it: the polygon in `area` glows |
 
-`size` is in image pixels. The shorthand `"glow": [[x, y, size], ...]` gives round lamps.
+`size` is in image pixels. A strip has no `at`; it takes its shape from `line` or `area`:
+
+```json
+{ "type": "line", "line": [[380, 560], [470, 600], [560, 590]], "width": 6 }
+{ "type": "area", "area": [[600, 520], [660, 520], [660, 560], [600, 560]] }
+```
+
+`width` is how wide the line is drawn, in image pixels (6 without it). A tap anywhere on the strip switches the zone, like any other lamp. The shorthand `"glow": [[x, y, size], ...]` gives round lamps.
 
 ### windows
 
@@ -138,6 +147,9 @@ Each panel outline glows green while the panels produce, stronger as production 
 - `label` moves the room name when the middle of the room is a poor spot, such as in an L-shaped room.
 - `temperature` is a temperature sensor; `climate` is the thermostat that gets controlled. With both, the sensor value is shown.
 - `lights[].at` is where the lamp is. Tap to switch, hold to open the room.
+- An LED strip is drawn as what it is. Give the light `"line": [[x, y], [x, y], ...]` (two points or more, for a strip under the kitchen cabinets or along a stair) or `"area": [[x, y], ...]` (three corners or more, for a lit ceiling cove or a backlit panel) instead of `at`:
+  `{ "entity": "light.kitchen_strip", "line": [[1000, 1080], [4050, 1080], [4050, 1700]], "width": 140 }`.
+  It glows along its whole length in the light's own colour and brightness. A tap anywhere on it switches it, and holding it opens the room. `width` is how wide a line is drawn, in the plan's units; without it the line is a little slimmer than a lamp. In light mode the strip is a plain coloured line or surface without the soft glow.
 - A light can be a `light.*` or a `switch.*` entity. Only `light.*` entities get a dimmer.
 - `sensors` lists doors, windows, locks, presence and alarm sensors for the room. A room with `ha_area` also gets every such sensor in its area automatically, so the list is only needed without areas. Recognised by their device class: `door`, `window`, `opening` and `garage_door` (shown open or closed), `motion`, `occupancy` and `presence` (a faint outline on the room while someone is there), `smoke`, `gas`, `carbon_monoxide`, `moisture` and `safety` (alarms), `battery`; and every `lock.*`. Open doors and windows, unlocked locks and alarms get an icon on the floor plan and a badge on the building in the overview picture; the room panel lists them all. Locks are shown, not controlled.
 - A room without `ha_area` whose name matches an area exactly (ignoring case and accents) is treated as linked to it.
@@ -267,12 +279,13 @@ Power may be in W or kW; the unit is read from the entity. `battery_soc` is show
 In the Home Assistant panel, administrators tap **Placera** in the header (or open `/<url_path>/edit`). On the standalone page, add `#edit` to the address. A panel lists every light, temperature sensor, thermostat, camera and switch in Home Assistant (on test data: the ones in the config plus `mock.entities`), in that order, not placed first. What matters less is folded away under **Show n more** in each group, and search still finds it: switches (most are plugs and settings, not lamps; a switch can still be placed as a lamp), a device's own diagnostic or hidden entities, and temperature sensors in no room or in a room that already shows another one.
 
 - **Place:** pick an entity, then tap where it is. On a floor plan the room is found from the tap: a light is placed at that spot, a thermostat or sensor is linked to the room. On the overview a light becomes an outdoor lamp; tap again to add more fixtures on the same switch.
+- **LED strips:** a placed light has **Drawn as** with **Spot**, **Line** and **Surface**. Line and Surface open the same drawing as for rooms: drag the ends or corners, drag the dot on an edge to add a bend, hold a point to remove it. A line has a **Width** field. Dragging a strip on the picture moves all of it, and **Spot** makes it a round lamp again.
 - **Cameras** go anywhere on a floor plan or the overview, not only in a room. A placed camera gets **↺** and **↻** to turn its field of view, and a **Motion sensor** list.
 - **Remove placement** takes the selected entity out of every room and zone.
 - **Missing in Home Assistant** lists the entities in site.json that Home Assistant does not know, with where each is used. **Remove from the dashboard** takes one out of rooms, zones, windows, sensor lists, scenes, heating devices and the screen's wake sensors. Energy, weather and doorbell entities are changed in the setup guide or in the file.
 - **Draw area:** click corners to get a polygon for `area`, `outline` or a solar panel.
 
-Changes are kept as a draft in that browser and shown immediately. In the panel, **Spara i Home Assistant** writes `site.json` (the last 10 versions are kept as `site.json.1`, the newest, to `site.json.10`, and can be restored under *Backup* in the setup guide). Home Assistant checks the file before writing it: the top-level keys must have the types in this reference, floor plans and rooms must be objects, and every `area`, `outline` and solar panel must be at least three `[x, y]` number pairs. A file that fails is not written, and the message says where, for example `floorplans[0].rooms[2].area should be a list of at least three [x, y] number pairs`. **Kopiera site.json** puts the result on the clipboard instead; **Släng utkast** goes back to the saved file.
+Changes are kept as a draft in that browser and shown immediately. In the panel, **Spara i Home Assistant** writes `site.json` (the last 10 versions are kept as `site.json.1`, the newest, to `site.json.10`, and can be restored under *Backup* in the setup guide). Home Assistant checks the file before writing it: the top-level keys must have the types in this reference, floor plans and rooms must be objects, and every `area`, `outline` and solar panel must be at least three `[x, y]` number pairs. An LED strip's `line` must be at least two pairs, its `area` at least three, and its `width` a number above zero. A file that fails is not written, and the message says where, for example `floorplans[0].rooms[2].area should be a list of at least three [x, y] number pairs`. **Kopiera site.json** puts the result on the clipboard instead; **Släng utkast** goes back to the saved file.
 
 ## Pictures
 

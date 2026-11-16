@@ -33,7 +33,7 @@ Status at the time of writing: version **0.8.16**, 13 November 2026. See [status
 npm install --no-save --no-package-lock playwright@1.63.0 axe-core@4.14.0
 npx playwright install --with-deps chromium     # or: npx playwright install chromium
 
-tests/run.sh            # everything: syntax, 68 backend tests, ~54 browser tests, perf budget (~3 min)
+tests/run.sh            # everything: syntax, 76 backend tests, ~95 browser tests, perf budget (~3 min)
 tests/run.sh backend    # backend only (~1 s)
 tests/run.sh browser    # browser only
 
