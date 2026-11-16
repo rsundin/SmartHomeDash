@@ -49,7 +49,7 @@ Open the dashboard. On the first visit the setup guide opens by itself; later it
 
 ### Basics
 
-The dashboard's name, the language on screen (Swedish or English) and the currency for prices.
+The dashboard's name, the language on screen and the currency for prices. Swedish and English are written by hand; Danish, German, Finnish, Norwegian (bokmål) and Dutch are machine-assisted and marked so in the list (corrections are welcome, see [translating.md](translating.md)). Numbers and times follow the language, for example `2,7 kW` in German. A new dashboard starts in Home Assistant's language when the dashboard has it, otherwise in English.
 
 **Start from my Home Assistant** is offered here, and under **Floor plans**, until the dashboard has floor plans of its own. It makes a floor plan for each floor in Home Assistant, with a tile for each area on that floor, linked to the area; a room with more devices gets a wider tile. Areas on no floor share a plan named *Other rooms* (or *Home* when Home Assistant has no floors). Lights, thermostats and temperature sensors show up in their tiles by themselves, and the area's sensors work as in a drawn room. The example pictures are replaced. **Save**, and the dashboard opens on the first floor.
 

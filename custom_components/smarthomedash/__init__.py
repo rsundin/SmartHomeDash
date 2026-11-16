@@ -61,6 +61,7 @@ from .const import (
     DOMAIN,
     FRONTEND_URL,
     LAYOUT_APARTMENT,
+    LOCALES,
     PANEL_ELEMENT,
     SITE_ID,
     URL_PATH,
@@ -249,6 +250,14 @@ async def _async_add_dashboard(hass: HomeAssistant, dash: dict) -> None:
     )
 
 
+def dashboard_language(language: str | None) -> str:
+    """The dashboard language for Home Assistant's language ("de", "nb", "en-GB" …):
+    the same one when the dashboard has it (frontend/js/i18n.js LANGUAGES), else English."""
+    base = (language or "").lower().replace("_", "-").split("-")[0]
+    base = "nb" if base in ("no", "nn") else base
+    return base if base in LOCALES else "en"
+
+
 def _create_starter_site(sites_dir: Path, dash: dict, language: str, currency: str) -> None:
     """A new dashboard starts from the example house: its pictures, buildings, rooms,
     windows and solar panels, without any entities (those are the user's own).
@@ -257,7 +266,8 @@ def _create_starter_site(sites_dir: Path, dash: dict, language: str, currency: s
     path = folder / "site.json"
     if path.exists():
         return
-    swedish = (language or "").lower().startswith("sv")
+    code = dashboard_language(language)
+    swedish = code == "sv"
     apartment = dash.get(CONF_LAYOUT) == LAYOUT_APARTMENT
     example = Path(__file__).parent / "example"
     stem = "apartment" if apartment else "site"
@@ -274,8 +284,8 @@ def _create_starter_site(sites_dir: Path, dash: dict, language: str, currency: s
         starter = {"floorplans": [], "energy": {}, "scenes": []}
     starter.update({
         "name": dash.get(CONF_TITLE, "SmartHomeDash"),
-        "language": "sv" if swedish else "en",
-        "locale": "sv-SE" if swedish else (language or "en-GB"),
+        "language": code,
+        "locale": language if language and "-" in language else LOCALES[code],
         "currency": currency or "EUR",
         "setup_pending": True,
     })

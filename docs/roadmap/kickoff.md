@@ -82,7 +82,7 @@ custom_components/smarthomedash/
                    (room panel), cards.js, wall.js (kiosk, idle, doorbell, light mode), zoom.js,
                    backup.js, report.js, settings.js
     js/i18n.js     t(key, vars); fetches the texts before start() draws anything
-    i18n/          en.json, sv.json: the texts, one file per language
+    i18n/          sv.json, en.json, da/de/fi/nb/nl.json: the texts, one file per language
 index.html, sites/   standalone page and example sites (symlinks into example/)
 tests/backend/       unittest with stand-ins for HA (stubs.py)
 tests/browser/       node:test + Playwright; lib.js (server, sizes, harness), harness.html,

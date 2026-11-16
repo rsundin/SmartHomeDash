@@ -20,8 +20,23 @@ INDIRECT = re.compile(r"(?<![\w.$])(?:intro|exampleNote)\(([^)]*)\)")
 PLACEHOLDER = re.compile(r"\{(\w+)\}")
 
 
-def languages() -> dict[str, dict[str, str]]:
+def files() -> dict[str, dict[str, str]]:
     return {p.stem: json.loads(p.read_text(encoding="utf-8")) for p in sorted(I18N.glob("*.json"))}
+
+
+def languages() -> dict[str, dict[str, str]]:
+    """The texts of each language, without notes about the file ("_translation" …)."""
+    return {code: {k: v for k, v in strings.items() if not k.startswith("_")} for code, strings in files().items()}
+
+
+def language_info() -> dict[str, dict]:
+    """i18n.js LANGUAGE_INFO as {code: {"name", "locale", "machine"}}."""
+    text = (FRONTEND / "js" / "i18n.js").read_text(encoding="utf-8")
+    block = re.search(r"export const LANGUAGE_INFO = \{(.*?)\n\};", text, re.S).group(1)
+    info = {}
+    for m in re.finditer(r"(\w+): \{ name: '([^']+)', locale: '([\w-]+)'(, machine: true)? \}", block):
+        info[m.group(1)] = {"name": m.group(2), "locale": m.group(3), "machine": bool(m.group(4))}
+    return info
 
 
 def sources() -> list[Path]:
@@ -73,6 +88,34 @@ class StringsTest(unittest.TestCase):
         listed = re.search(r"export const LANGUAGES = \[([^\]]*)\]", text)
         self.assertIsNotNone(listed)
         self.assertEqual(sorted(re.findall(r"'(\w+)'", listed.group(1))), sorted(languages()))
+
+    def test_every_language_has_a_name_and_locale(self):
+        info = language_info()
+        self.assertEqual(sorted(info), sorted(languages()))
+        for code, entry in info.items():
+            self.assertTrue(entry["locale"].lower().startswith(code), f"{code}: locale {entry['locale']}")
+
+    def test_machine_assisted_files_say_so(self):
+        # A machine-assisted translation carries a note in its file, and the setup guide
+        # marks it in the language picker; English and Swedish are written by hand.
+        info = language_info()
+        for code, strings in files().items():
+            self.assertEqual("_translation" in strings, info[code]["machine"], f"{code}.json")
+            self.assertEqual([k for k in strings if k.startswith("_") and k != "_translation"], [], f"{code}.json")
+        self.assertFalse(info["en"]["machine"])
+        self.assertFalse(info["sv"]["machine"])
+
+    def test_the_card_and_the_starter_site_know_every_language(self):
+        # card.js keeps its own list (it runs on every Home Assistant dashboard and does
+        # not load the dashboard's modules), and const.py LOCALES picks a new dashboard's
+        # language from Home Assistant's.
+        card = (FRONTEND / "card.js").read_text(encoding="utf-8")
+        listed = re.search(r"const LANGUAGES = \[([^\]]*)\]", card)
+        self.assertIsNotNone(listed)
+        self.assertEqual(sorted(re.findall(r"'(\w+)'", listed.group(1))), sorted(languages()))
+        const = (ROOT / "custom_components" / "smarthomedash" / "const.py").read_text(encoding="utf-8")
+        locales = dict(re.findall(r'"(\w+)": "([\w-]+)"', re.search(r"LOCALES = \{(.*?)\}", const, re.S).group(1)))
+        self.assertEqual(locales, {code: entry["locale"] for code, entry in language_info().items()})
 
 
 class StandalonePageTest(unittest.TestCase):

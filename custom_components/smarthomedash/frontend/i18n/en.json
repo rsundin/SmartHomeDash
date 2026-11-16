@@ -348,6 +348,7 @@
   "setup.name": "Name",
   "setup.language": "Language",
   "setup.languageHelp": "Room and light names are shown as you write them.",
+  "setup.languageMachine": "machine-assisted",
   "setup.currency": "Currency",
   "setup.overviewIntro": "A picture of the property seen from above, for example a drone photo. Lights glow on it, solar panels light up green, and tapping a building opens its floor plan.",
   "setup.pictures": "Pictures",

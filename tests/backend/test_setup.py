@@ -39,6 +39,8 @@ class StarterSiteTest(unittest.TestCase):
         ("house", "en", "site.json"),
         ("apartment", "sv", "apartment.sv.json"),
         ("apartment", "en-GB", "apartment.json"),
+        ("house", "de", "site.json"),
+        ("apartment", "nb", "apartment.json"),
     ]
 
     def make(self, layout, language, title="Hemma"):
@@ -54,7 +56,7 @@ class StarterSiteTest(unittest.TestCase):
                 folder, site = self.make(layout, language)
                 example = json.loads((EXAMPLE / source).read_text())
                 self.assertEqual(site["name"], "Hemma")
-                self.assertEqual(site["language"], "sv" if language == "sv" else "en")
+                self.assertEqual(site["language"], language.split("-")[0])
                 self.assertTrue(site["setup_pending"])
                 self.assertEqual(site["currency"], "SEK")
                 # The drawing is kept.
@@ -77,6 +79,19 @@ class StarterSiteTest(unittest.TestCase):
                 for plan in site["floorplans"]:
                     for room in plan.get("rooms", []):
                         self.assertEqual(room["lights"], [])
+
+    def test_language_and_locale_follow_home_assistant(self):
+        # A language the dashboard has is used (with the English example's names);
+        # others fall back to English. A region in Home Assistant's language is kept.
+        for language, code, locale in [
+            ("sv", "sv", "sv-SE"), ("en", "en", "en-GB"), ("en-US", "en", "en-US"),
+            ("de", "de", "de-DE"), ("de-AT", "de", "de-AT"), ("no", "nb", "nb-NO"),
+            ("nn", "nb", "nb-NO"), ("da", "da", "da-DK"), ("fi", "fi", "fi-FI"),
+            ("nl", "nl", "nl-NL"), ("fr", "en", "en-GB"), ("pt-BR", "en", "pt-BR"), ("", "en", "en-GB"),
+        ]:
+            with self.subTest(language=language):
+                _, site = self.make("apartment", language)
+                self.assertEqual((site["language"], site["locale"]), (code, locale))
 
     def test_existing_site_is_not_touched(self):
         with tempfile.TemporaryDirectory() as tmp:

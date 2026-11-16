@@ -11,8 +11,8 @@ Everything except `name` and at least one floor plan is optional. A card whose e
 | Field | Type | Description |
 | --- | --- | --- |
 | `name` | text | Shown in the header |
-| `language` | text | Dashboard language: `sv` (default) or `en` |
-| `locale` | text | Number and time format, default `sv-SE` |
+| `language` | text | Dashboard language: `sv` (default), `en`, `da`, `de`, `fi`, `nb` or `nl`. Danish, German, Finnish, Norwegian and Dutch are machine-assisted; see [translating.md](translating.md) |
+| `locale` | text | Number and time format. Default: the language's own (`sv-SE`, `en-GB`, `da-DK`, `de-DE`, `fi-FI`, `nb-NO`, `nl-NL`) |
 | `currency` | text | For price and cost, default `SEK` |
 | `comfort` | `{ low, high }` | Temperature range for rooms without a thermostat, default 19–23 °C |
 | `overview` | object | The overview image, see below. Leave out to open straight into the floor plan |

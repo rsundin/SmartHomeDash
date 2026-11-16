@@ -20,7 +20,15 @@ const VIEW = /^(overview|(plan|room):[\w:.-]+)$/;
 const DEFAULT_HEIGHT = 400;
 const versioned = (file) => `${BASE}${file}${VERSION ? `?v=${encodeURIComponent(VERSION)}` : ''}`;
 
-// ---- texts: the same files as the dashboard (frontend/i18n/), Swedish or English
+// ---- texts: the same files as the dashboard (frontend/i18n/), in the user's language.
+// This file runs on every dashboard, so it keeps its own copy of i18n.js LANGUAGES and
+// matchLanguage rather than importing the dashboard's modules (a backend test compares).
+const LANGUAGES = ['sv', 'en', 'da', 'de', 'fi', 'nb', 'nl'];
+const matchLanguage = (tag) => {
+  const base = String(tag || '').toLowerCase().split(/[-_]/)[0];
+  const code = base === 'no' || base === 'nn' ? 'nb' : base;
+  return LANGUAGES.includes(code) ? code : 'en';
+};
 const strings = {};
 let lang = 'en';
 const t = (key, vars) => {
@@ -30,7 +38,7 @@ const t = (key, vars) => {
 };
 const loading = {};
 function loadTexts(language) {
-  const code = String(language || '').toLowerCase().startsWith('sv') ? 'sv' : 'en';
+  const code = matchLanguage(language);
   lang = code;
   const get = (c) => (loading[c] ??= fetch(versioned(`i18n/${c}.json`))
     .then((r) => (r.ok ? r.json() : {}))
