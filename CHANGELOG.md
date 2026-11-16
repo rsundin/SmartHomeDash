@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.8.28
+
+More languages.
+
+- **Danish, German, Finnish, Norwegian (bokmål) and Dutch.** Pick one under **Basics** in the setup guide. They are machine-assisted and marked so in the list; corrections from native speakers are welcome, and `docs/translating.md` shows how (one JSON file per language, edited on GitHub)
+- **Numbers and times follow the language**: `2,7 kW` and `08.58` in Danish, `2.7 kW` in English. A site.json without `locale` uses the language's own, and picking a language in the guide sets it
+- **A new dashboard starts in Home Assistant's language** when the dashboard has it (Norwegian `no` and `nn` give bokmål), otherwise in English. The card for other dashboards shows its editor and messages in the user's language the same way
+- The price card's cheapest and dearest hours now use the site's time format too
+- New tests: every language file has the same keys and placeholders as English, the machine-assisted ones say so, the card and the starter site know every language; both examples and the setup guide open in each language with no raw keys and the right number format
+- Python changed (the starter site's language), so restart Home Assistant once after updating
+
 ## 0.8.27
 
 LED strips drawn as what they are.

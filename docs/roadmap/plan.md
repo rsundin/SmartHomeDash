@@ -192,7 +192,7 @@ Setup effort is the main barrier for every floor plan project [R5][R6][R11]. Sma
 - **Files:** `frontend/card.js` (new), `__init__.py` (resource registration), `main.js` (embeddable start), docs.
 - **Done when:** the card works in a sections view on phone and desktop, and the panel is unchanged. Browser tests cover the card harness.
 
-### S5: More languages and a translation workflow. Status: todo. Size: M
+### S5: More languages and a translation workflow. Status: done (v0.8.28). Size: M
 - **Why:** The leading competitor ships 19 languages [R9]. The audience is European.
 - **What:**
   - Move strings from `i18n.js` into `frontend/i18n/<lang>.json`, loaded on demand.

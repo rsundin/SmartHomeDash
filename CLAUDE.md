@@ -5,7 +5,7 @@ A picture-based Home Assistant dashboard, shipped as a custom integration (Home 
 New to the project, or a new model picking it up? Read `docs/roadmap/kickoff.md` first: setup, the code on one page, how to work, and briefs for the next tasks.
 
 ## Rules
-- Repo text, code, comments and docs in English. Dashboard UI strings live in `frontend/i18n/<language>.json`, one file per language with the same keys (Swedish default, English); `frontend/js/i18n.js` fetches them and has `t(key, vars)`.
+- Repo text, code, comments and docs in English. Dashboard UI strings live in `frontend/i18n/<language>.json`, one file per language with the same keys (Swedish default, English, and machine-assisted Danish, German, Finnish, Norwegian bokmål and Dutch); `frontend/js/i18n.js` fetches them and has `t(key, vars)`. A new UI string goes into every language file (English text is acceptable as a stopgap in the machine-assisted ones; better a translation). Adding a language: `docs/translating.md`.
 - Never commit data about a real home: photos, entity ids, room names, IPs, tokens. Real sites live in `<config>/smarthomedash/sites/` on the user's Home Assistant, not here. Examples in `custom_components/smarthomedash/example/` are fictional.
 - Commit as `rsundin <37210129+rsundin@users.noreply.github.com>`.
 - No build step and no runtime calls to outside services (fonts are bundled in `frontend/fonts/`).

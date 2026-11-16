@@ -103,7 +103,7 @@ function priceCard({ site, store, adapter }) {
     if (!ok.length) { range.textContent = t('cards.noPrices'); chart.replaceChildren(); best.textContent = ''; level.textContent = ''; return; }
     const lo = ok.reduce((a, b) => (b.value < a.value ? b : a));
     const hi = ok.reduce((a, b) => (b.value > a.value ? b : a));
-    range.textContent = t('cards.priceRange', { lo: fmt(lo.value, 2, site.locale), loH: hhmm(lo.start), hi: fmt(hi.value, 2, site.locale), hiH: hhmm(hi.start) });
+    range.textContent = t('cards.priceRange', { lo: fmt(lo.value, 2, site.locale), loH: hhmm(lo.start, site.locale), hi: fmt(hi.value, 2, site.locale), hiH: hhmm(hi.start, site.locale) });
     // Cheap or dear in the slot running now, compared with the rest of the day.
     const avg = ok.reduce((a, b) => a + b.value, 0) / ok.length;
     const rel = value == null ? null : (value - avg) / (avg || 1);

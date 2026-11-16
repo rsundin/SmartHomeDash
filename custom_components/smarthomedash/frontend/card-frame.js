@@ -26,13 +26,13 @@ function addHead() {
 
 async function boot() {
   addHead();
-  const [{ start, showFatal }, { createHassAdapter }, { setLanguage }] = await Promise.all([
+  const [{ start, showFatal }, { createHassAdapter }, { setLanguage, matchLanguage }] = await Promise.all([
     import(`${BASE}js/main.js`),
     import(`${BASE}js/adapters/hass.js`),
     import(`${BASE}js/i18n.js`),
   ]);
   // Until site.json says which language the dashboard uses: the user's own, for errors.
-  setLanguage(String(hass.language || '').toLowerCase().startsWith('sv') ? 'sv' : 'en');
+  setLanguage(matchLanguage(hass.language));
   const siteId = config.site;
   const root = document.getElementById('app');
   adapter = createHassAdapter(hass);

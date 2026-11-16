@@ -348,6 +348,7 @@
   "setup.name": "Namn",
   "setup.language": "Språk",
   "setup.languageHelp": "Namn på rum och lampor visas som du skriver dem.",
+  "setup.languageMachine": "maskinöversatt",
   "setup.currency": "Valuta",
   "setup.overviewIntro": "En bild av fastigheten ovanifrån, till exempel ett drönarfoto. Lampor lyser på den, solpaneler glöder grönt och ett tryck på en byggnad öppnar dess planlösning.",
   "setup.pictures": "Bilder",

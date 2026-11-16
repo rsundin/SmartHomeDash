@@ -1,4 +1,4 @@
-import { t, languageReady } from './i18n.js';
+import { t, languageReady, localeFor } from './i18n.js';
 import { storage, stripOf, stripCentre } from './util.js';
 
 // Loads sites/<id>/site.json and builds lookup indexes the views share.
@@ -68,9 +68,10 @@ function assetPaths(raw) {
 }
 
 function index(site) {
-  // The dashboard itself is Swedish by default; set "language": "en" for English.
-  site.locale ??= 'sv-SE';
+  // The dashboard itself is Swedish by default; "language" picks another (i18n.js
+  // LANGUAGES), and numbers and dates follow that language unless "locale" says otherwise.
   site.language ??= 'sv';
+  site.locale ??= localeFor(site.language);
   site.currency ??= 'SEK';
   site.floorplans ??= [];
   site.scenes ??= [];
