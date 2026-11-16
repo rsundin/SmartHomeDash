@@ -591,5 +591,9 @@
   "editor.cameraTurned": "{name} käännetty",
   "editor.cameraMotion": "Liiketunnistin",
   "editor.cameraMotionNone": "Ei mitään (kameran oma, jos sillä on)",
-  "editor.cameraMotionSet": "Liiketunnistin kohteelle {name} tallennettu"
+  "editor.cameraMotionSet": "Liiketunnistin kohteelle {name} tallennettu",
+  "save.conflictTitle": "Muutettu muualla",
+  "save.conflict": "Joku muu on tallentanut kojelaudan, tai se on tallennettu toisessa välilehdessä, sen jälkeen kun avasit sen tässä. Jos tallennat nyt, nuo muutokset korvataan omillasi. Toinen versio säilyy palautuspisteenä Varmuuskopio-kohdassa.",
+  "save.anyway": "Tallenna silti",
+  "save.conflictCancelled": "mitään ei tallennettu, kojelautaa on muutettu muualla"
 }

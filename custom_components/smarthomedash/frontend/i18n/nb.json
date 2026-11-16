@@ -591,5 +591,9 @@
   "editor.cameraTurned": "{name} dreid",
   "editor.cameraMotion": "Bevegelsessensor",
   "editor.cameraMotionNone": "Ingen (kameraets egen, hvis det har en)",
-  "editor.cameraMotionSet": "Bevegelsessensor for {name} lagret"
+  "editor.cameraMotionSet": "Bevegelsessensor for {name} lagret",
+  "save.conflictTitle": "Endret et annet sted",
+  "save.conflict": "Dashbordet er lagret av noen andre, eller i en annen fane, siden du åpnet det her. Lagrer du nå, erstattes de endringene med dine. Den andre versjonen beholdes som gjenopprettingspunkt under Sikkerhetskopi.",
+  "save.anyway": "Lagre likevel",
+  "save.conflictCancelled": "ingenting ble lagret, dashbordet er endret et annet sted"
 }

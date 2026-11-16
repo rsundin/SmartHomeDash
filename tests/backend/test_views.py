@@ -124,10 +124,43 @@ class SitesViewTest(unittest.TestCase):
         self.assertTrue(views.SitesView.requires_auth)
 
     def test_get_file(self):
+        (self.root / "home" / "roof.jpg").write_bytes(JPEG)
+        res = self.get("roof.jpg")
+        self.assertEqual(res.status, 200)
+        self.assertEqual(res.path, (self.root / "home" / "roof.jpg").resolve())
+        self.assertEqual(res.headers["X-Content-Type-Options"], "nosniff")
+
+    def test_get_config_comes_with_its_version(self):
         res = self.get("site.json")
         self.assertEqual(res.status, 200)
-        self.assertEqual(res.path, self.config.resolve())
+        self.assertEqual(res.body, self.config.read_bytes())
+        self.assertEqual(res.headers["ETag"], views.config_version(self.config.read_bytes()))
+        self.assertEqual(res.headers["Cache-Control"], "no-store")
         self.assertEqual(res.headers["X-Content-Type-Options"], "nosniff")
+
+    # ---- two editors
+
+    def test_save_based_on_the_current_version_is_accepted(self):
+        base = self.get("site.json").headers["ETag"]
+        res = self.put("site.json", b'{"name": "A", "floorplans": []}', headers={"If-Match": base})
+        self.assertEqual(res.status, 200, res.body)
+        # The answer carries the new version, the one a following read gives.
+        self.assertEqual(res.json()["version"], self.get("site.json").headers["ETag"])
+        self.assertNotEqual(res.json()["version"], base)
+
+    def test_save_based_on_an_older_version_is_refused(self):
+        base = self.get("site.json").headers["ETag"]
+        self.assertEqual(self.put("site.json", b'{"name": "A", "floorplans": []}', headers={"If-Match": base}).status, 200)
+        # A second editor that read the file before the first one saved.
+        res = self.put("site.json", b'{"name": "B", "floorplans": []}', headers={"If-Match": base})
+        self.assertEqual(res.status, 412)
+        self.assertIn("changed since", res.json()["message"])
+        self.assertEqual(json.loads(self.config.read_text())["name"], "A")
+        self.assertFalse((self.root / "home" / "site.json.2").exists(), "a refused save leaves no restore point")
+        # Saving anyway, without a version, replaces it; the other editor's is a restore point.
+        self.assertEqual(self.put("site.json", b'{"name": "B", "floorplans": []}').status, 200)
+        self.assertEqual(json.loads(self.config.read_text())["name"], "B")
+        self.assertEqual(json.loads((self.root / "home" / "site.json.1").read_text())["name"], "A")
 
     def test_get_outside_is_not_found(self):
         self.assertEqual(self.get("../../secret.txt").status, 404)

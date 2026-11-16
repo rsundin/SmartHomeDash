@@ -396,6 +396,8 @@ input[type='range'] { width: 100%; accent-color: var(--glow); }
 /* ---------- settings sheet + editor */
 .sheet { position: fixed; inset: 0; z-index: 30; background: rgba(4, 9, 7, 0.6); display: grid; place-items: center; padding: 16px; }
 .sheet-card { width: min(460px, 100%); background: var(--surface-solid); border: 1px solid var(--line); border-radius: 12px; padding: 18px; display: grid; gap: 10px; }
+/* Asked on top of the setup guide or placement mode (ui/conflict.js). */
+.save-conflict { z-index: 80; }
 .settings-form { display: grid; gap: 8px; }
 .report .sheet-card { width: min(560px, 100%); max-height: calc(100dvh - 32px); overflow-y: auto; }
 .report-text { width: 100%; background: var(--bg); color: var(--ink); border: 1px solid var(--line); border-radius: 6px; padding: 9px 10px; font: 12px/1.45 var(--f-mono); resize: vertical; }

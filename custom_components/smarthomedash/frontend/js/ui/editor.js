@@ -14,7 +14,7 @@
 
 import { el, sv, svgPoint, inside, bbox, storage, createHistory, undoKey, arrowStep, stripOf, stripCentre } from '../util.js';
 import { editShape } from './shape.js';
-import { draftKey, missingFilterKey } from '../site.js';
+import { draftKey, draftBaseKey, missingFilterKey } from '../site.js';
 import { t } from '../i18n.js';
 import { areaOf, areaName } from '../areas.js';
 import { nameOf as entityName } from '../entities.js';
@@ -127,6 +127,7 @@ export function createEditor({ site, store, saveSite = null, reload = () => loca
   // Writes the draft as it is now and restarts on it.
   function store_(message) {
     storage.set(draftKey(site.id), raw);
+    storage.set(draftBaseKey(site.id), site.version ?? null);
     storage.set(viewKey, currentView());
     // Keep the selection and the message across the reload, so the moved lamp stays marked.
     storage.set(selKey, { id: selected, lamp: selLamp, message });

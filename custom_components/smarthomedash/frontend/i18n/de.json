@@ -591,5 +591,9 @@
   "editor.cameraTurned": "{name} gedreht",
   "editor.cameraMotion": "Bewegungsmelder",
   "editor.cameraMotionNone": "Keiner (der eigene der Kamera, falls vorhanden)",
-  "editor.cameraMotionSet": "Bewegungsmelder für {name} gespeichert"
+  "editor.cameraMotionSet": "Bewegungsmelder für {name} gespeichert",
+  "save.conflictTitle": "Anderswo geändert",
+  "save.conflict": "Das Dashboard wurde von jemand anderem oder in einem anderen Tab gespeichert, seit du es hier geöffnet hast. Wenn du jetzt speicherst, werden diese Änderungen durch deine ersetzt. Die andere Version bleibt als Wiederherstellungspunkt unter Sicherung erhalten.",
+  "save.anyway": "Trotzdem speichern",
+  "save.conflictCancelled": "nichts wurde gespeichert, das Dashboard wurde anderswo geändert"
 }
