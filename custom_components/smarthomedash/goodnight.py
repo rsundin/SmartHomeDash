@@ -20,6 +20,7 @@ import logging
 import voluptuous as vol
 
 from homeassistant.core import HomeAssistant, ServiceCall, callback
+from homeassistant.exceptions import ServiceValidationError
 import homeassistant.helpers.config_validation as cv
 from homeassistant.helpers.event import async_call_later
 import homeassistant.util.dt as dt_util
@@ -69,6 +70,10 @@ def async_register(hass: HomeAssistant) -> None:
 
     async def handle(call: ServiceCall) -> None:
         site = call.data["site"]
+        # Only for a dashboard that exists: the action is open to every user, and each
+        # site gets a state and a timer of its own.
+        if site not in hass.data[DOMAIN]["sites"]:
+            raise ServiceValidationError(f"There is no SmartHomeDash dashboard with the site \"{site}\"")
         stop(site)
         if call.data["cancel"]:
             show(site)

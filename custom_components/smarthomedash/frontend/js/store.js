@@ -35,6 +35,16 @@ export class Store {
     this.#pending.add(state.entity_id);
   }
 
+  // An entity that no longer exists in Home Assistant: its watchers redraw without it.
+  remove(id) {
+    if (!this.#states.delete(id)) return;
+    if (!this.#pending) {
+      this.#pending = new Set();
+      nextFrame(() => this.flush());
+    }
+    this.#pending.add(id);
+  }
+
   // Runs the watchers of everything changed since the last frame now.
   flush() {
     const ids = this.#pending;

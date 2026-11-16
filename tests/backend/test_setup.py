@@ -157,6 +157,28 @@ class UpdaterTest(unittest.TestCase):
         })
         self.assertFalse(result.restart_required)
 
+    def test_any_python_file_or_translation_needs_a_restart(self):
+        # Not a fixed list of names: goodnight.py and diagnostics.py were once left out of it.
+        same = {
+            "custom_components/smarthomedash/manifest.json": b'{"version": "1"}',
+            "custom_components/smarthomedash/views.py": b"old",
+        }
+        for name, old in [("goodnight.py", "old"), ("diagnostics.py", "old"), ("brand_new.py", None),
+                          ("translations/de.json", "{}"), ("services.yaml", "old")]:
+            with self.subTest(changed=name):
+                path = self.integration / name
+                path.parent.mkdir(exist_ok=True)
+                files = dict(same)
+                if old is not None:
+                    path.write_text(old)
+                    # Still there, unchanged: no restart.
+                    unchanged = self.install({**files, f"custom_components/smarthomedash/{name}": old.encode()})
+                    self.assertFalse(unchanged.restart_required)
+                changed = self.install({**files, f"custom_components/smarthomedash/{name}": b"new"})
+                self.assertTrue(changed.restart_required)
+                # And once more when the file is gone from the new version.
+                self.assertTrue(self.install(files).restart_required)
+
     def test_overwrite_site_keeps_backup(self):
         self.install({
             "custom_components/smarthomedash/manifest.json": b"{}",

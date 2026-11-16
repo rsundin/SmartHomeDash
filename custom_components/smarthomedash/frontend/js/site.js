@@ -47,6 +47,9 @@ export async function loadSite(id, { useDraft = false, loader = null } = {}) {
       } catch (e) { console.warn(`Could not load ${p}`, e); }
     }));
     site.asset = (path) => urls.get(path) ?? '';
+    // The pictures stay in memory until their addresses are released: main.js does so
+    // when the dashboard restarts in place, or a wall screen would grow with every save.
+    site.dispose = () => { for (const u of urls.values()) URL.revokeObjectURL(u); urls.clear(); };
   } else {
     // Files from the site folder get the dashboard version, past Home Assistant's long cache.
     site.asset = (path) => `${base}${path}${window.SHD_VERSION ? `?v=${encodeURIComponent(window.SHD_VERSION)}` : ''}`;

@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.8.29
+
+Five fixes from a review of the whole code.
+
+- **The update action no longer misses a restart.** It compared a fixed list of files, and `goodnight.py` and `diagnostics.py` were not on it, so an update of only those said "reload the dashboard". Every Python file and translation now counts
+- **Goodnight only starts for a dashboard that exists.** The action is open to every user and took any site name, each one leaving a state and a timer behind. An unknown site is now refused
+- **A device removed from Home Assistant disappears from the dashboard** at once, instead of showing its last state until the page was reloaded
+- **No more memory kept after a restart in place.** Saving in the setup guide or leaving placement mode restarts the dashboard without reloading the page; the previous run's pictures and its keep-the-screen-on listeners are now released
+- **Two starts at the same moment no longer collide.** A start overtaken by a newer one stops instead of drawing over it with buttons that do nothing
+- New tests for each of them. Python changed, so restart Home Assistant once after updating
+
 ## 0.8.28
 
 More languages.

@@ -15,6 +15,8 @@ export function createHassAdapter(initialHass) {
     for (const [id, s] of Object.entries(states)) {
       if (last[id] !== s) store.update(s);
     }
+    // Entities removed from Home Assistant since the last object.
+    for (const id in last) if (!(id in states)) store.remove(id);
     last = states;
   }
 

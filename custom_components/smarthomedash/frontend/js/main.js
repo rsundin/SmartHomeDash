@@ -82,8 +82,13 @@ export async function start(opts) {
   const english = loadLanguage('en');
   english.catch(() => {}); // awaited below; a failed site load must not leave it unhandled
   const site = await loadSite(siteId, { useDraft: editing, loader: opts.loader });
+  // A newer start() took over while this one was loading (a quick restart in place):
+  // leave the page to it, and here and below draw nothing more.
+  if (run.signal.aborted) { site.dispose?.(); return; }
+  run.signal.addEventListener('abort', () => site.dispose?.());
   run.site = site; // read by the browser tests
   await Promise.all([english, loadLanguage(site.language)]);
+  if (run.signal.aborted) return;
   setLanguage(site.language);
   // Light mode for older tablets: no blur, blending or animation (see ui/wall.js).
   document.body.classList.toggle('is-lite', liteMode(site));
@@ -181,7 +186,7 @@ export async function start(opts) {
       canSetup && !editing ? el('button', { class: 'chip', type: 'button', onclick: () => openSetup() }, t('app.setup')) : null,
       source === 'panel' || DEMO ? null : el('button', { class: 'chip', type: 'button', onclick: () => settings.open() }, t('app.connection')),
       helpBtn));
-  if (!embed) keepAwake(); // a card does not keep the whole screen on
+  if (!embed) keepAwake(run.signal); // a card does not keep the whole screen on
 
   // ---- stage
   const stage = el('div', { class: 'stage' });
@@ -224,8 +229,10 @@ export async function start(opts) {
       t('app.connectFailed', { msg: e.message }),
       el('a', { href: '?mock' + (params.get('site') ? `&site=${site.id}` : '') }, t('app.showTestData'))));
   }
+  if (run.signal.aborted) return;
   // Home Assistant areas: room names follow the area they are linked to.
   site.areas = store.all().length ? await loadAreas(adapter) : noAreas();
+  if (run.signal.aborted) return;
   // Rooms named like an area count as linked; what is in a linked room's area in Home
   // Assistant but not placed yet shows up in that room by itself.
   linkByName(site, site.areas);
@@ -453,19 +460,23 @@ export async function start(opts) {
 }
 
 // Wall screens and tablets: keep the screen on while the page is visible.
-function keepAwake() {
+// Ends with the run (signal): a restart in place asks again with its own listeners.
+function keepAwake(signal) {
   if (!('wakeLock' in navigator)) return;
   let lock = null;
   const request = async () => {
-    if (document.visibilityState !== 'visible' || lock) return;
+    if (document.visibilityState !== 'visible' || lock || signal.aborted) return;
     try {
-      lock = await navigator.wakeLock.request('screen');
+      const got = await navigator.wakeLock.request('screen');
+      if (signal.aborted) { got.release().catch(() => {}); return; }
+      lock = got;
       lock.addEventListener('release', () => { lock = null; });
     } catch { /* refused: battery saver, unsupported browser, or no user gesture yet */ }
   };
   request();
-  document.addEventListener('visibilitychange', request);
-  document.addEventListener('pointerdown', request, { once: true });
+  document.addEventListener('visibilitychange', request, { signal });
+  document.addEventListener('pointerdown', request, { once: true, signal });
+  signal.addEventListener('abort', () => { lock?.release().catch(() => {}); lock = null; });
 }
 
 function fullscreen(doc, on) {
