@@ -31,6 +31,18 @@ def _taken_paths(hass) -> set[str]:
     return set(hass.data.get("frontend_panels", {}))
 
 
+def _free_path(wanted: str, taken: set[str]) -> str:
+    """An address made from the name, when none was typed. Home Assistant has panels
+    of its own (`home`, `light`, `climate`, `security` …), so the default name "Home"
+    would otherwise be refused: such a name gets `-dash` added, then a number."""
+    if wanted not in taken:
+        return wanted
+    path, n = f"{wanted}-dash", 2
+    while path in taken:
+        path, n = f"{wanted}-dash-{n}", n + 1
+    return path
+
+
 class SmartHomeDashConfigFlow(ConfigFlow, domain=DOMAIN):
     """Create one dashboard."""
 
@@ -41,7 +53,9 @@ class SmartHomeDashConfigFlow(ConfigFlow, domain=DOMAIN):
         if user_input is not None:
             title = user_input[CONF_TITLE].strip()
             site = slugify(title) or "home"
-            url_path = (user_input.get(CONF_URL_PATH) or site.replace("_", "-")).strip().lower()
+            url_path = (user_input.get(CONF_URL_PATH) or "").strip().lower()
+            if not url_path:
+                url_path = _free_path(site.replace("_", "-"), _taken_paths(self.hass))
             yaml_sites = self.hass.data.get(DOMAIN, {}).get("yaml_sites", set())
             if not URL_PATH.match(url_path):
                 errors[CONF_URL_PATH] = "invalid_url_path"

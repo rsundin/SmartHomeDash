@@ -6,20 +6,23 @@ Plan for about an hour, most of it spent on the pictures.
 
 ## What you need
 
-- Home Assistant 2024.8 or newer, with an administrator account.
-- [HACS](https://hacs.xyz), or SSH or Samba access to copy files.
+- Home Assistant 2025.6 or newer, with an administrator account.
+- Home Assistant's **Marketplace** (2026.11 and newer; [HACS](https://hacs.xyz) before that), or SSH or Samba access to copy files.
 - **An overview picture** of the property from above. A drone photo taken at an angle works best; without a drone, [make one from a 3D map](overview-picture.md). Any size is fine; about 1200 to 2500 pixels wide keeps it sharp without being slow.
 - **A floor plan picture** per building or storey: a scanned drawing, an estate agent's plan or a realistic render seen from above, cropped to the outer walls.
 - Optional: an **evening picture**, the same view at dusk with every light off.
 
 ## 1. Install the integration
 
-**With HACS**
+**From the Marketplace** (Home Assistant 2026.11 and newer)
 
-1. HACS → three-dot menu → **Custom repositories**.
-2. Add the repository URL, category **Integration**.
-3. Find **SmartHomeDash** in HACS, choose **Download**.
-4. Restart Home Assistant.
+1. **Settings → Marketplace → Add from link.** The first time, the Marketplace shows a notice that community code is not reviewed by Home Assistant, and asks you to sign in with GitHub.
+2. Paste `https://github.com/rsundin/SmartHomeDash` and install **SmartHomeDash**.
+3. Setup starts right away: continue with step 2 below.
+
+New versions show up in the Marketplace like for any other integration. Restart Home Assistant after an update.
+
+*Before Home Assistant 2026.11:* HACS → three-dot menu → *Custom repositories* → add the repository URL with category **Integration** → download **SmartHomeDash** → restart Home Assistant.
 
 **Manually**
 
@@ -28,7 +31,7 @@ Copy `custom_components/smarthomedash` from this repository to `<config>/custom_
 ## 2. Add a dashboard
 
 1. **Settings → Devices & services → Add integration → SmartHomeDash.**
-2. Give it a name (shown in the sidebar; renaming it later in the setup guide or under the integration's **Configure** renames the sidebar entry too), choose **House** or **Apartment**, an icon and optionally an address.
+2. Give it a name (shown in the sidebar; renaming it later in the setup guide or under the integration's **Configure** renames the sidebar entry too), choose **House** or **Apartment**, an icon and optionally an address. Without one, the address is made from the name; if Home Assistant already uses it for a page of its own (as with *Home*), `-dash` is added.
 3. The dashboard appears in the sidebar. Add the integration again for another home.
 
 Each dashboard has its own folder, `<config>/smarthomedash/sites/<name>/`, holding its config and pictures. These files are only served to logged-in users. Removing the integration entry removes the panel but keeps the folder.
@@ -46,7 +49,7 @@ Open the dashboard. On the first visit the setup guide opens by itself; later it
 
 ### Basics
 
-The dashboard's name, the language on screen (Swedish or English) and the currency for prices.
+The dashboard's name, the language on screen and the currency for prices. Swedish and English are written by hand; Danish, German, Finnish, Norwegian (bokmål) and Dutch are machine-assisted and marked so in the list (corrections are welcome, see [translating.md](translating.md)). Numbers and times follow the language, for example `2,7 kW` in German. A new dashboard starts in Home Assistant's language when the dashboard has it, otherwise in English.
 
 **Start from my Home Assistant** is offered here, and under **Floor plans**, until the dashboard has floor plans of its own. It makes a floor plan for each floor in Home Assistant, with a tile for each area on that floor, linked to the area; a room with more devices gets a wider tile. Areas on no floor share a plan named *Other rooms* (or *Home* when Home Assistant has no floors). Lights, thermostats and temperature sensors show up in their tiles by themselves, and the area's sensors work as in a drawn room. The example pictures are replaced. **Save**, and the dashboard opens on the first floor.
 
@@ -99,6 +102,10 @@ Pick the sensors you have; leave the rest empty and their rows or cards are hidd
 
 Tick the scenes and scripts to show as buttons, and give them short names.
 
+**All on and all off** turns the **All on** and **All off** buttons on or off. They sit behind the lamp in the header (also on a wall screen in kiosk mode) and at the bottom of the lights card. Untick lights that the buttons should leave alone, such as garden lights on a schedule.
+
+**Goodnight** shows a button that leaves the lights on for a few minutes while you go to bed, then turns the same lights off. Set the minutes, and pick a script of your own to run when the lights go off (to lock up or turn the TV off) if you like.
+
 ### Wall screen
 
 All optional, for tablets and screens on the wall (see [configuration.md](configuration.md#wall-screens) for the details):
@@ -115,8 +122,10 @@ Opens placement mode (also available as **Placera** / **Place** in the header):
 2. Tap where it is. On a floor plan the room is found from the tap: a light is placed at that spot, a thermostat or sensor is linked to the room. On the overview picture a light becomes an outdoor lamp; tap again to add more fixtures switched by the same entity. Outdoor lamps in the same Home Assistant area share one switch in the lights card.
 3. To move something already placed, drag the lamp to its new spot; on a floor plan it can go into another room. On the overview picture each fixture of an outdoor lamp moves on its own. Tap a lamp to see which one it is: a tag over it shows its name and entity id, and it is selected in the list.
 4. Fine-tune a selected lamp with the arrow keys (Shift moves ten times as far); it is saved when you stop pressing.
-5. **Undo** and **Redo** (or Ctrl/Cmd+Z and Ctrl/Cmd+Shift+Z) step back through the changes in placement mode until you save or throw the draft away.
-6. **Save to Home Assistant.**
+5. **LED strips** are drawn as what they are. Select a placed light and pick **Line** or **Surface** under **Drawn as**. A line starts across the lamp's spot: drag its ends to where the strip starts and stops, and drag the small dot on the line to add a bend, for example around the corner of a worktop. A surface starts as a small rectangle: drag its corners over a ceiling cove or a backlit panel. **Done** puts it on the picture, where it glows along its whole length in the light's own colour. **Width** sets how wide a line is drawn. Drag a strip to move all of it, pick **Line** or **Surface** again to change its shape, and **Spot** makes it a round lamp again. Outdoor lamps on the overview picture can be drawn the same way.
+6. **Cameras** have a group of their own. Tap where a camera sits, anywhere on a floor plan or the overview picture. Once placed, **↺** and **↻** turn its field of view in steps of 45°, and **Motion sensor** picks the sensor that turns it red. A tap on a camera in the dashboard opens it.
+7. **Undo** and **Redo** (or Ctrl/Cmd+Z and Ctrl/Cmd+Shift+Z) step back through the changes in placement mode until you save or throw the draft away.
+7. **Save to Home Assistant.**
 
 New outdoor lamps are drawn as wall lamps. To make one a flood or deck light, change its `type` to `ground` in `site.json` (see [configuration.md](configuration.md)).
 
@@ -127,6 +136,31 @@ The last step, for administrators in the Home Assistant panel:
 - **Export**: **Download .zip** saves the dashboard as one file: `site.json` and every picture in its folder. Entity ids are in it, so keep it to yourself.
 - **Import**: **Choose .zip …** reads a file exported from SmartHomeDash into this dashboard, after you confirm. It replaces the settings and adds the pictures; pictures already there with other names stay. To move a dashboard to another Home Assistant, or copy it, add a new dashboard there (step 2) and import into it. Home Assistant checks the whole file first and imports nothing if any part fails: only `site.json` and jpg, png or webp pictures (checked by content), at most 100 MB unpacked, 25 MB per picture and 200 files, and no names that lead out of the dashboard's folder.
 - **Restore points**: every save keeps the version it replaced, up to the last 10 (`site.json.1` is the newest, up to `site.json.10`). Each is listed with when it was saved and how many floor plans and rooms it has; **Restore** makes it the current one, after you confirm. An import or a restore keeps the settings it replaced as a restore point too, so it can be undone the same way. Pictures are not part of a restore point.
+
+## The card
+
+The picture also works as a card in any other Home Assistant dashboard: the overview, one floor plan or one room. The card comes with the integration, so there is nothing more to install. After an update that adds or changes it, reload the browser page once.
+
+1. Open a dashboard, choose **Edit dashboard**, then **Add card**, and search for **SmartHomeDash**.
+2. Pick the **Dashboard** (every SmartHomeDash dashboard you have added is listed) and what to **Show**: the overview, a floor plan or a room.
+3. In a sections view, drag the card's corner to size it. In other views, set **Height** in pixels (400 if left empty).
+
+The same in YAML:
+
+```yaml
+type: custom:smarthomedash-card
+site: my-home          # the dashboard's folder name, as in step 2
+view: room:kitchen     # overview (default), plan:<floor plan id> or room:<room id>
+height: 400            # optional; not needed in a sections view
+```
+
+Good to know:
+
+- The card shows only the picture: no header, energy cards, warnings or setup. Tapping a building opens its floor plan, tapping a room opens the room's panel inside the card, and lamps and heating work as in the dashboard.
+- A card for a floor plan or a room stays on that floor plan. A card for the overview of a dashboard without an overview picture starts on its first floor plan.
+- From Home Assistant 2026.6, picking a lamp or a thermostat in **Add card** suggests the room it is in, if the lamp is placed in a room or the room is linked to the lamp's area.
+- Night mode, pinch zoom and light mode for older tablets work as in the dashboard. Kiosk mode, idle mode and the doorbell camera belong to the dashboard itself and are not part of the card.
+- Everyone who can see the dashboard you put the card in sees the picture, also when the SmartHomeDash dashboard itself is set to administrators only: that setting hides it from the sidebar, and the card is your choice to show it. Changing the setup stays with administrators, in the dashboard.
 
 ## Tips for the pictures
 
@@ -156,6 +190,14 @@ sensibly in each room. Soft light. Crop exactly to the outer walls. No text or l
 ## Evening
 
 After sunset (or with the header button set to night) the pictures are dimmed, the evening picture replaces the day picture if there is one, and lamp light on the overview and on the floor plans stands out.
+
+## Text size and accessibility
+
+**Text size.** The **Aa** button in the header steps between normal, large (15 % larger) and extra large (30 % larger). It scales the header, the cards, the room panel, warnings and buttons together, touch targets included, and the labels and lamps on the picture. The choice is remembered on that device only, for every dashboard there, so a wall screen in the hall can have large text while your phone stays as it is. The button is hidden in kiosk mode: set the size first, then start kiosk mode. A card in another dashboard follows the same choice. The setup guide and placement mode keep their normal size.
+
+**Keyboard.** Tab moves through the header, the buildings, rooms and lamps on the picture, and the cards. Enter or Space opens a building or a room and switches a lamp. Escape closes the room panel, and then goes back to the overview. When the room panel closes, focus returns to the room it was opened from.
+
+**Screen readers.** Buildings, rooms and lamps are buttons with names. Lamps say whether they are on, rooms say their temperature, and the price chart and the temperature graph are read as a sentence (now, lowest, highest).
 
 ## Wall screens and tablets
 

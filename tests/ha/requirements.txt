@@ -1,0 +1,6 @@
+# Tests against a real Home Assistant (roadmap Q7), newest version. Needs Python 3.14.
+# The plugin pins one Home Assistant version per release: 0.13.375 is Home Assistant
+# 2026.10.4. Raise both lines together (the frontend version is the one in
+# homeassistant/components/frontend/manifest.json of that release).
+pytest-homeassistant-custom-component==0.13.375
+home-assistant-frontend==20260930.5

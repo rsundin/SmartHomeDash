@@ -30,3 +30,15 @@ LAYOUT_APARTMENT = "apartment"  # floor plans only
 
 DEFAULT_ICON = "mdi:home-lightbulb"
 DEFAULT_REPOSITORY = "rsundin/SmartHomeDash"
+
+# Dashboard languages (frontend/js/i18n.js LANGUAGES) and the locale a new dashboard
+# gets for each when Home Assistant's language names no region.
+LOCALES = {
+    "sv": "sv-SE",
+    "en": "en-GB",
+    "da": "da-DK",
+    "de": "de-DE",
+    "fi": "fi-FI",
+    "nb": "nb-NO",
+    "nl": "nl-NL",
+}

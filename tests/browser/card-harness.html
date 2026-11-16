@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SmartHomeDash card harness</title>
+<style>
+  /* A light page, like a Home Assistant dashboard with the default theme. */
+  body { margin: 0; padding: 12px; background: #fafafa; font: 14px sans-serif; }
+  #cards { display: grid; gap: 12px; }
+  ha-card { background: #fff; border: 1px solid #ddd; border-radius: 12px; }
+  .fit-rows { height: 320px; } /* a sections view gives the card its height */
+</style>
+</head>
+<body>
+<div id="cards"></div>
+<div id="editors"></div>
+<!--
+  A stand-in for a Home Assistant dashboard, to test frontend/card.js the way Home
+  Assistant uses it: it loads the card's module, creates <smarthomedash-card> elements,
+  calls setConfig() and sets a `hass` object on them. Served from the repository root.
+
+  The `hass` object is built from the test data (adapters/mock.js): states, panels for
+  the two example dashboards, fetchWithAuth for the site files, callService.
+
+  For the tests:
+    window.harness.ready               resolves when `hass` is built
+    window.harness.addCard(config, { grid })   adds a card (grid: inside a sections view)
+    window.harness.addEditor(config)   adds the card's editor; its <ha-form> is a stand-in
+    window.harness.configs             configs the editors sent with config-changed
+    window.harness.calls               [domain, service, data] of every callService
+    window.harness.fetched             site files asked for through fetchWithAuth
+    window.harness.setState(id, state) change a state and hand every card a new `hass`
+    window.harness.card                the card's module: suggest(), viewOptions(), dashboards()
+-->
+<script type="module">
+const FRONTEND = '../../custom_components/smarthomedash/frontend/';
+const API = '/api/smarthomedash/sites/';
+const harness = window.harness = { configs: [], calls: [], fetched: [], ready: null, hass: null };
+
+// Home Assistant's own elements, as far as the card uses them.
+customElements.define('ha-card', class extends HTMLElement {});
+customElements.define('ha-form', class extends HTMLElement {
+  // The test changes a field the way a user would: the form reports the whole value.
+  change(patch) {
+    this.dispatchEvent(new CustomEvent('value-changed', { detail: { value: { ...this.data, ...patch } }, bubbles: true, composed: true }));
+  }
+});
+
+async function build() {
+  const [{ Store }, { createMockAdapter }, { loadSite }, card] = await Promise.all([
+    import(`${FRONTEND}js/store.js`),
+    import(`${FRONTEND}js/adapters/mock.js`),
+    import(`${FRONTEND}js/site.js`),
+    import(`${FRONTEND}card.js?v=test`),
+  ]);
+  harness.card = card;
+  const filesOf = (site) => ({ get: (path) => fetch(`../../sites/${site}/${path}`, { cache: 'no-store' }) });
+  // Test states for both examples in one Home Assistant.
+  const store = new Store();
+  const mocks = [];
+  for (const id of ['example-house', 'example-apartment']) {
+    const mock = createMockAdapter(await loadSite(id, { loader: filesOf(id) }));
+    const own = new Store();
+    await mock.connect(own, () => {});
+    for (const s of own.all()) store.update(s);
+    mocks.push([mock, own]);
+  }
+  const elements = () => document.querySelectorAll('smarthomedash-card, smarthomedash-card-editor');
+  const publish = () => {
+    harness.hass = { ...harness.hass, states: Object.fromEntries(store.all().map((s) => [s.entity_id, s])) };
+    for (const n of elements()) n.hass = harness.hass;
+  };
+  harness.hass = {
+    language: new URLSearchParams(location.search).get('lang') || 'en',
+    user: { is_admin: true },
+    config: { version: '2026.11.0' },
+    states: {},
+    // Registries as recent Home Assistant versions hand them over: the bedroom lamp is in an area.
+    areas: { bedroom_area: { area_id: 'bedroom_area', name: 'Bedroom' } },
+    entities: { 'light.bedroom': { entity_id: 'light.bedroom', area_id: 'bedroom_area' } },
+    devices: {},
+    floors: {},
+    panels: {
+      'my-house': { url_path: 'my-house', title: 'Example house', component_name: 'custom', config: { site: 'example-house', _panel_custom: { name: 'smarthomedash-panel' } } },
+      flat: { url_path: 'flat', title: 'Apartment', component_name: 'custom', config: { site: 'example-apartment', _panel_custom: { name: 'smarthomedash-panel' } } },
+      lovelace: { url_path: 'lovelace', title: 'Overview', component_name: 'lovelace', config: {} },
+    },
+    async fetchWithAuth(path) {
+      harness.fetched.push(path);
+      if (!path.startsWith(API)) return new Response('', { status: 404 });
+      return fetch(`../../sites/${path.slice(API.length)}`, { cache: 'no-store' });
+    },
+    async callService(domain, service, data) {
+      harness.calls.push([domain, service, data]);
+      for (const [mock, own] of mocks) {
+        await mock.call(domain, service, data);
+        for (const id of [].concat(data?.entity_id ?? [])) { const s = own.get(id); if (s) store.update(s); }
+      }
+      publish();
+    },
+    callWS: async () => { throw new Error('not in the harness'); },
+    hassUrl: (path) => path,
+  };
+  publish();
+
+  harness.setState = (id, state) => { store.update({ ...store.get(id), state }); publish(); };
+  harness.addCard = (config, { grid = false } = {}) => {
+    const n = document.createElement('smarthomedash-card');
+    n.setConfig(config);
+    n.hass = harness.hass;
+    const slot = document.createElement('div');
+    if (grid) slot.className = 'fit-rows';
+    slot.append(n);
+    document.getElementById('cards').append(slot);
+    return n;
+  };
+  harness.addEditor = (config) => {
+    const n = customElements.get('smarthomedash-card').getConfigElement();
+    n.addEventListener('config-changed', (e) => harness.configs.push(e.detail.config));
+    n.setConfig(config);
+    n.hass = harness.hass;
+    document.getElementById('editors').append(n);
+    return n;
+  };
+}
+harness.ready = build();
+</script>
+</body>
+</html>

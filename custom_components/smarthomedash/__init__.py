@@ -25,8 +25,11 @@ What it registers:
   kept versions of site.json with restore (admins only).
 - One sidebar panel per dashboard, loading the code in an iframe and handing it the
   logged-in `hass` object, so no access token is needed.
+- A card for other dashboards (`custom:smarthomedash-card`), added as a frontend module.
+- The `smarthomedash.goodnight` action (any logged-in user): turns the dashboard's
+  lights off after a few minutes; see goodnight.py.
 - The `smarthomedash.update` action (admins), installing the latest version from
-  GitHub; see updater.py. Installations through HACS update through HACS instead.
+  GitHub; see updater.py. Installations through the Marketplace (HACS) update through it instead.
 """
 
 from __future__ import annotations
@@ -45,7 +48,7 @@ import homeassistant.helpers.config_validation as cv
 from homeassistant.helpers.service import async_register_admin_service
 from homeassistant.helpers.typing import ConfigType
 
-from . import updater
+from . import goodnight, updater
 from .const import (
     CONF_ICON,
     CONF_LAYOUT,
@@ -58,6 +61,7 @@ from .const import (
     DOMAIN,
     FRONTEND_URL,
     LAYOUT_APARTMENT,
+    LOCALES,
     PANEL_ELEMENT,
     SITE_ID,
     URL_PATH,
@@ -120,6 +124,7 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     frontend.async_remove_panel(hass, url_path)
     hass.data[DOMAIN]["sites"].discard(dash[CONF_SITE])
     hass.data[DOMAIN]["entries"].pop(entry.entry_id, None)
+    goodnight.async_stop(hass, dash[CONF_SITE])
     return True
 
 
@@ -208,7 +213,12 @@ async def _async_setup_shared(hass: HomeAssistant, conf: dict) -> dict:
     hass.http.register_view(FrontendView(hass, root / "frontend"))
     hass.http.register_view(SitesView(hass, sites_dir))
     hass.http.register_view(BackupView(hass, sites_dir))
-    # Installations through HACS update through HACS. The update action is only for
+    # The card for other dashboards (frontend/card.js): loaded with every dashboard, so
+    # `custom:smarthomedash-card` is there without adding a resource by hand.
+    frontend.add_extra_js_url(hass, f"{FRONTEND_URL}/card.js?v={data['version']}")
+    # Goodnight (goodnight.py): the dashboard's countdown before everything turns off.
+    goodnight.async_register(hass)
+    # Installations through the Marketplace (HACS) update through it. The update action is only for
     # setups that point at a repository themselves (a private fork, a token).
     if conf.get("github_token") or conf.get("repository"):
         _register_update_action(hass)
@@ -240,6 +250,14 @@ async def _async_add_dashboard(hass: HomeAssistant, dash: dict) -> None:
     )
 
 
+def dashboard_language(language: str | None) -> str:
+    """The dashboard language for Home Assistant's language ("de", "nb", "en-GB" …):
+    the same one when the dashboard has it (frontend/js/i18n.js LANGUAGES), else English."""
+    base = (language or "").lower().replace("_", "-").split("-")[0]
+    base = "nb" if base in ("no", "nn") else base
+    return base if base in LOCALES else "en"
+
+
 def _create_starter_site(sites_dir: Path, dash: dict, language: str, currency: str) -> None:
     """A new dashboard starts from the example house: its pictures, buildings, rooms,
     windows and solar panels, without any entities (those are the user's own).
@@ -248,7 +266,8 @@ def _create_starter_site(sites_dir: Path, dash: dict, language: str, currency: s
     path = folder / "site.json"
     if path.exists():
         return
-    swedish = (language or "").lower().startswith("sv")
+    code = dashboard_language(language)
+    swedish = code == "sv"
     apartment = dash.get(CONF_LAYOUT) == LAYOUT_APARTMENT
     example = Path(__file__).parent / "example"
     stem = "apartment" if apartment else "site"
@@ -265,8 +284,8 @@ def _create_starter_site(sites_dir: Path, dash: dict, language: str, currency: s
         starter = {"floorplans": [], "energy": {}, "scenes": []}
     starter.update({
         "name": dash.get(CONF_TITLE, "SmartHomeDash"),
-        "language": "sv" if swedish else "en",
-        "locale": "sv-SE" if swedish else (language or "en-GB"),
+        "language": code,
+        "locale": language if language and "-" in language else LOCALES[code],
         "currency": currency or "EUR",
         "setup_pending": True,
     })
@@ -291,7 +310,9 @@ def _strip_entities(site: dict) -> None:
     """Remove every entity link from the example, keeping the drawn geometry."""
     overview = site.get("overview") or {}
     overview["zones"] = []
+    overview.pop("cameras", None)
     for plan in site.get("floorplans", []):
+        plan.pop("cameras", None)
         for room in plan.get("rooms", []):
             room["lights"] = []
             room.pop("climate", None)

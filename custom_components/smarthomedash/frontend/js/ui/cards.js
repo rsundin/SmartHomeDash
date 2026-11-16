@@ -5,6 +5,7 @@ import { el, sv, fmt, hhmm, num } from '../util.js';
 import { isOn, zoneLevel, kw, priceSlots, priceSlotsTomorrow, slotAt, cheapestWindow, dayBounds, nordpoolSlots, roomTemp, climate, heating, comfort } from '../entities.js';
 import { areaOf, areaName } from '../areas.js';
 import { t } from '../i18n.js';
+import { allLightsOn, allOnButton, allOffButton, goodnightOn, goodnightButton } from './lights.js';
 import { readPower, splitPower, powerSentence } from '../power.js';
 
 
@@ -102,7 +103,7 @@ function priceCard({ site, store, adapter }) {
     if (!ok.length) { range.textContent = t('cards.noPrices'); chart.replaceChildren(); best.textContent = ''; level.textContent = ''; return; }
     const lo = ok.reduce((a, b) => (b.value < a.value ? b : a));
     const hi = ok.reduce((a, b) => (b.value > a.value ? b : a));
-    range.textContent = t('cards.priceRange', { lo: fmt(lo.value, 2, site.locale), loH: hhmm(lo.start), hi: fmt(hi.value, 2, site.locale), hiH: hhmm(hi.start) });
+    range.textContent = t('cards.priceRange', { lo: fmt(lo.value, 2, site.locale), loH: hhmm(lo.start, site.locale), hi: fmt(hi.value, 2, site.locale), hiH: hhmm(hi.start, site.locale) });
     // Cheap or dear in the slot running now, compared with the rest of the day.
     const avg = ok.reduce((a, b) => a + b.value, 0) / ok.length;
     const rel = value == null ? null : (value - avg) / (avg || 1);
@@ -171,7 +172,12 @@ function priceBars(slots, [d0, d1], cur, lo, hi, win = null) {
   const pad = (n) => String(n).padStart(2, '0');
   const label = (ms) => { const d = new Date(ms); return `${pad(d.getHours())}:${pad(d.getMinutes())}`; };
   const quarters = slots.length > 30;
-  return sv('svg', { viewBox: `0 0 ${W} ${H}`, class: `pbars${quarters ? ' is-quarters' : ''}`, role: 'img', 'aria-label': t(quarters ? 'cards.priceChartQuarter' : 'cards.priceChart') },
+  // The bars in words, for screen readers: the price now, the lowest and the highest.
+  const priced = slots.filter((s) => s.value != null);
+  const low = priced.reduce((a, b) => (b.value < a.value ? b : a), priced[0]);
+  const high = priced.reduce((a, b) => (b.value > a.value ? b : a), priced[0]);
+  const summary = !priced.length ? '' : `. ${cur?.value != null ? `${t('cards.priceSummaryNow', { now: cur.value.toFixed(2) })} ` : ''}${t('cards.priceSummary', { low: low.value.toFixed(2), lowAt: label(low.start), high: high.value.toFixed(2), highAt: label(high.start) })}`;
+  return sv('svg', { viewBox: `0 0 ${W} ${H}`, class: `pbars${quarters ? ' is-quarters' : ''}`, role: 'img', 'aria-label': `${t(quarters ? 'cards.priceChartQuarter' : 'cards.priceChart')}${summary}` },
     slots.map((s) => {
       if (s.value == null) return null;
       const rel = hi === lo ? 0.5 : (s.value - lo) / (hi - lo);
@@ -219,21 +225,8 @@ function lightsCard({ site, store, adapter }) {
   const scenes = el('div', { class: 'scenes' },
     site.scenes.map((s) => el('button', { class: 'chip', type: 'button', onclick: () => adapter.call(s.entity.split('.')[0], 'turn_on', { entity_id: s.entity }) }, s.name)));
 
-  // "All off" asks for a second tap instead of a dialog.
-  let armed = null;
-  const allOff = el('button', { class: 'chip chip-danger', type: 'button' }, t('cards.allOff'));
-  allOff.addEventListener('click', () => {
-    if (!armed) {
-      allOff.textContent = t('cards.allOffConfirm');
-      allOff.classList.add('is-armed');
-      armed = setTimeout(() => { armed = null; allOff.textContent = t('cards.allOff'); allOff.classList.remove('is-armed'); }, 3500);
-      return;
-    }
-    clearTimeout(armed); armed = null;
-    allOff.textContent = t('cards.allOff'); allOff.classList.remove('is-armed');
-    adapter.call('homeassistant', 'turn_off', { entity_id: site.index.lights });
-  });
-  scenes.append(allOff);
+  if (allLightsOn(site)) scenes.append(allOnButton({ site, adapter }), allOffButton({ site, adapter }));
+  if (goodnightOn(site)) scenes.append(goodnightButton({ site, adapter }));
 
   return card(t('cards.lights'), list, scenes);
 }

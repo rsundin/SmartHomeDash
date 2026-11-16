@@ -18,6 +18,7 @@
 import { el, storage, syncPause } from '../util.js';
 import { t } from '../i18n.js';
 import { nameOf } from '../entities.js';
+import { openCamera, closeCamera, cameraOpen } from './camera.js';
 
 const LITE_KEY = 'shd:lite';
 
@@ -88,7 +89,7 @@ export function createWall({ site, store, adapter, goHome, kiosk, enterKiosk, si
   const idle = cfg.idle ?? {};
   const bells = [].concat(cfg.doorbell ?? []).filter((b) => b?.entity && b?.camera);
   const timers = [];
-  signal.addEventListener('abort', () => { timers.forEach(clearInterval); closeBell(); dimmer.remove(); sheet.remove(); dim(false); });
+  signal.addEventListener('abort', () => { timers.forEach(clearInterval); closeCamera(); dimmer.remove(); sheet.remove(); dim(false); });
 
   // ---------- idle
   let last = Date.now();
@@ -111,7 +112,7 @@ export function createWall({ site, store, adapter, goHome, kiosk, enterKiosk, si
     syncPause();
   }
   const touched = () => { last = Date.now(); away = false; if (!dimmer.hidden) wake(); };
-  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { closeBell(); closeSheet(); } }, { signal });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { closeCamera(); closeSheet(); } }, { signal });
   for (const type of ['pointerdown', 'keydown', 'wheel']) document.addEventListener(type, touched, { capture: true, passive: true, signal });
 
   function wake() {
@@ -120,7 +121,7 @@ export function createWall({ site, store, adapter, goHome, kiosk, enterKiosk, si
   }
   const night = () => inWindow(new Date(), idle.dim_from, idle.dim_to);
   function check() {
-    if (!kiosk() || bell) { dim(false); return; }
+    if (!kiosk() || cameraOpen()) { dim(false); return; }
     const quiet = Date.now() - last;
     if (backAfter > 0 && quiet >= backAfter && !away) { away = true; goHome(); }
     const dimAfter = backAfter > 0 ? backAfter : 120000;
@@ -143,8 +144,7 @@ export function createWall({ site, store, adapter, goHome, kiosk, enterKiosk, si
     });
   }
 
-  // ---------- doorbell
-  let bell = null;
+  // ---------- doorbell (the window is ui/camera.js)
   const prev = new Map();
   for (const b of bells) {
     store.watch([b.entity], () => {
@@ -154,57 +154,13 @@ export function createWall({ site, store, adapter, goHome, kiosk, enterKiosk, si
     });
   }
 
-  function cameraUrl(id, stream) {
-    const pic = store.get(id)?.attributes?.entity_picture;
-    if (!pic) return '';
-    const path = stream ? pic.replace('/api/camera_proxy/', '/api/camera_proxy_stream/') : pic;
-    return path.startsWith('/') ? (adapter.url?.(path) ?? path) : path;
-  }
-
   function ring(b) {
-    closeBell();
     wake();
-    const seconds = Math.max(5, Number(b.seconds ?? 60));
-    const name = b.name ?? nameOf(b.camera, { store, site }, '');
-    const img = el('img', { class: 'bell-cam', alt: t('wall.camera', { name }) });
-    let stills = null;
-    // A live picture where the camera allows it; otherwise a new still every two seconds.
-    img.addEventListener('error', () => {
-      if (stills) return;
-      const next = () => { img.src = `${cameraUrl(b.camera, false)}${cameraUrl(b.camera, false).includes('?') ? '&' : '?'}t=${Date.now()}`; };
-      stills = setInterval(next, 2000);
-      next();
-    }, { once: true });
-    img.src = cameraUrl(b.camera, true);
-    const left = el('span', { class: 'muted small' });
-    const box = el('div', { class: 'bell', role: 'dialog', 'aria-label': t('wall.ringing') },
-      el('div', { class: 'bell-card' },
-        el('header', { class: 'panel-head' },
-          el('div', {}, el('p', { class: 'eyebrow' }, t('wall.ringing')), el('h2', { class: 'panel-title' }, name || t('wall.door'))),
-          el('button', { class: 'icon-btn', type: 'button', 'aria-label': t('settings.close'), onclick: closeBell }, '×')),
-        img,
-        left));
-    box.addEventListener('click', (e) => { if (e.target === box) closeBell(); });
-    const until = Date.now() + seconds * 1000;
-    const tick = () => {
-      const s = Math.ceil((until - Date.now()) / 1000);
-      if (s <= 0) { closeBell(); return; }
-      left.textContent = t('wall.closesIn', { s });
-    };
-    tick();
-    const countdown = setInterval(tick, 1000);
-    bell = { box, img, stop: () => { clearInterval(countdown); clearInterval(stills); } };
-    document.body.append(box);
-  }
-
-  function closeBell() {
-    if (!bell) return;
-    bell.stop();
-    // Empty the picture so the browser drops the live stream.
-    bell.img.removeAttribute('src');
-    bell.box.remove();
-    bell = null;
-    last = Date.now();
+    openCamera({
+      site, store, adapter, ids: [b.camera], seconds: Math.max(5, Number(b.seconds ?? 60)),
+      eyebrow: t('wall.ringing'), title: (b.name ?? nameOf(b.camera, { store, site }, '')) || t('wall.door'),
+      onClose: () => { last = Date.now(); },
+    });
   }
 
   // ---------- the wall screen sheet (the Kiosk mode button): kiosk mode, light mode on

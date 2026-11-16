@@ -1,4 +1,5 @@
-// Edit a drawn shape (a room or a building) on its picture, from the setup guide.
+// Edit a drawn shape (a room or a building) on its picture, from the setup guide, or an
+// LED strip in placement mode: an open line (`open`, two points or more) or a surface.
 //
 //   drag a corner           moves it (snapping to other shapes when Snap is on)
 //   drag an edge's marker   adds a corner there
@@ -27,7 +28,12 @@ export function snapToggle(onChange = () => {}) {
 // Snap distance: about 14 screen pixels, in the picture's own units.
 export const snapRadius = (svg) => 14 / Math.abs(svg.getScreenCTM()?.a || 1);
 
-export function editShape({ src, size: [w, h], shapes, points, title, step = 1, kind = 'room' }, onDone) {
+// `view` = [x, y, width, height] is the part of the drawing shown (default: the picture
+// from 0,0); `image` = { src, x, y, w, h } places the picture when it does not fill it.
+export function editShape({ src = null, size: [w, h], view = [0, 0, w, h], image = null, shapes, points, title, step = 1, kind = 'room', open = false, help = t('shape.help') }, onDone) {
+  const [vx, vy, vw, vh] = view;
+  const least = open ? 2 : 3;
+  const pic = image ?? (src ? { src, x: 0, y: 0, w, h } : null);
   const others = shapes.map((s) => s.points).filter((p) => p?.length > 2);
   let poly = points.map(([x, y]) => [x, y]);
   let shift = [0, 0];
@@ -37,12 +43,12 @@ export function editShape({ src, size: [w, h], shapes, points, title, step = 1, 
   const restore = (s) => { ({ poly, shift } = JSON.parse(s)); if (sel?.corner >= poly.length) sel = null; redraw(); };
   const record = () => { history.push(snapshot()); };
 
-  const scale = Math.max(w, h) / 160;
-  const shape = sv('polygon', { class: 'shape-body', 'stroke-width': scale * 0.45 });
+  const scale = Math.max(vw, vh) / 160;
+  const shape = sv(open ? 'polyline' : 'polygon', { class: `shape-body${open ? ' is-open' : ''}`, 'stroke-width': scale * (open ? 1.4 : 0.45) });
   const mids = sv('g', { class: 'shape-mids' });
   const corners = sv('g', { class: 'shape-corners' });
-  const svgEl = sv('svg', { viewBox: `0 0 ${w} ${h}`, class: 'draw-svg shape-svg', preserveAspectRatio: 'xMidYMid meet', tabindex: 0, 'aria-label': title },
-    sv('image', { href: src, width: w, height: h }),
+  const svgEl = sv('svg', { viewBox: `${vx} ${vy} ${vw} ${vh}`, class: 'draw-svg shape-svg', preserveAspectRatio: 'xMidYMid meet', tabindex: 0, 'aria-label': title },
+    pic ? sv('image', { href: pic.src, x: pic.x, y: pic.y, width: pic.w, height: pic.h, preserveAspectRatio: 'none' }) : null,
     shapes.map((s) => sv('g', { class: `draw-shape draw-${s.kind}` },
       sv('polygon', { points: pts(s.points), 'stroke-width': scale * 0.35 }),
       s.label ? sv('text', { x: centroid(s.points)[0], y: centroid(s.points)[1], 'font-size': scale * 2.4, 'text-anchor': 'middle' }, s.label) : null)),
@@ -53,7 +59,7 @@ export function editShape({ src, size: [w, h], shapes, points, title, step = 1, 
   const doneBtn = el('button', { class: 'chip chip-primary', type: 'button', onclick: () => finish() }, t('setup.drawDone'));
   const overlay = el('div', { class: `draw shape-edit shape-${kind}` },
     el('div', { class: 'draw-bar' },
-      el('div', {}, el('strong', {}, title), el('p', { class: 'muted small' }, t('shape.help'))),
+      el('div', {}, el('strong', {}, title), el('p', { class: 'muted small' }, help)),
       el('div', { class: 'row' }, snapToggle(), msg, undoBtn, redoBtn,
         el('button', { class: 'chip', type: 'button', onclick: () => close() }, t('setup.cancel')),
         doneBtn)),
@@ -65,7 +71,8 @@ export function editShape({ src, size: [w, h], shapes, points, title, step = 1, 
     corners.replaceChildren(...poly.map(([x, y], i) => sv('circle', {
       class: `shape-corner${sel?.corner === i ? ' is-selected' : ''}`, cx: x, cy: y, r: scale * 1.2, 'stroke-width': scale * 0.3, 'data-i': i,
     })));
-    mids.replaceChildren(...poly.map(([x, y], i) => {
+    // A line has no edge from its last point back to its first.
+    mids.replaceChildren(...poly.slice(0, open ? -1 : undefined).map(([x, y], i) => {
       const [x2, y2] = poly[(i + 1) % poly.length];
       return sv('circle', { class: 'shape-mid', cx: (x + x2) / 2, cy: (y + y2) / 2, r: scale * 0.75, 'data-i': i });
     }));
@@ -73,10 +80,10 @@ export function editShape({ src, size: [w, h], shapes, points, title, step = 1, 
     redoBtn.disabled = !history.redo.length;
   }
   const round = (p) => [Math.round(p[0]), Math.round(p[1])];
-  const inBounds = ([x, y]) => [Math.min(Math.max(x, 0), w), Math.min(Math.max(y, 0), h)];
+  const inBounds = ([x, y]) => [Math.min(Math.max(x, vx), vx + vw), Math.min(Math.max(y, vy), vy + vh)];
 
   function removeCorner(i) {
-    if (poly.length <= 3) { msg.textContent = t('shape.minCorners'); return false; }
+    if (poly.length <= least) { msg.textContent = t(open ? 'shape.minPoints' : 'shape.minCorners'); return false; }
     record();
     poly.splice(i, 1);
     sel = null;

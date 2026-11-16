@@ -11,8 +11,8 @@ Everything except `name` and at least one floor plan is optional. A card whose e
 | Field | Type | Description |
 | --- | --- | --- |
 | `name` | text | Shown in the header |
-| `language` | text | Dashboard language: `sv` (default) or `en` |
-| `locale` | text | Number and time format, default `sv-SE` |
+| `language` | text | Dashboard language: `sv` (default), `en`, `da`, `de`, `fi`, `nb` or `nl`. Danish, German, Finnish, Norwegian and Dutch are machine-assisted; see [translating.md](translating.md) |
+| `locale` | text | Number and time format. Default: the language's own (`sv-SE`, `en-GB`, `da-DK`, `de-DE`, `fi-FI`, `nb-NO`, `nl-NL`) |
 | `currency` | text | For price and cost, default `SEK` |
 | `comfort` | `{ low, high }` | Temperature range for rooms without a thermostat, default 19–23 °C |
 | `overview` | object | The overview image, see below. Leave out to open straight into the floor plan |
@@ -21,6 +21,8 @@ Everything except `name` and at least one floor plan is optional. A card whose e
 | `weather` | entity | A `weather.*` entity |
 | `climates` | list | Climate devices that are not a room, such as a heat pump: `{ "entity": "climate.heat_pump", "name": "Heat pump" }`. Shown in the heating card |
 | `scenes` | list | Buttons for scenes or scripts: `{ "entity": "script.we_are_here", "name": "We're here" }` |
+| `all_lights` | object | The **All on** and **All off** buttons in the header and the lights card. They switch every light on the dashboard, including the ones found in linked areas. `{ "exclude": ["light.garden"] }` leaves lights out (garden lights on a schedule, a night light); `{ "enabled": false }` hides the buttons. All on takes one tap, all off two |
+| `goodnight` | object | The **Goodnight** button beside All on and All off: the lights stay as they are for `minutes` (default 5), then the same lights as All off turn off and the script in `then` runs, if set. `{ "minutes": 5, "then": "script.lock_up" }`; `{ "enabled": false }` hides the button. See [Goodnight](#goodnight) |
 | `wall_screen` | object | Doorbell camera, idle mode and light mode for wall screens, see [Wall screens](#wall-screens) |
 | `mock` | object | Test data only, for example sunrise and sunset times. `mock.prices` sets the test prices: `{ "minutes": 15, "format": "raw" }` (`minutes` 60 or 15; `format` `list`, `raw` with start and end times, or `action` for the Nord Pool action). `mock.devices` gives test entities a device, named the Home Assistant 2026.11 way: `[{ "id": "kitchen_hub", "name": "Kitchen", "entities": { "light.kitchen_ceiling": "Ceiling" } }]` shows that light as "Kitchen Ceiling" (`null` for the device's name alone). `mock.floors` and `mock.areas` replace the test floors and areas made from the plans and rooms: `[{ "floor_id": "ground", "name": "Ground floor", "level": 0 }]` and `[{ "area_id": "kitchen", "name": "Kitchen", "floor_id": "ground", "entities": ["light.kitchen_ceiling"] }]`. An entry in `mock.entities` can carry `"entity_category": "diagnostic"` or `"hidden": true`, as Home Assistant's entity registry does |
 
@@ -82,8 +84,17 @@ Each lamp lights up when any of the zone's lights is on, brighter at higher brig
 | `wall` | A fixture on a facade: light washes the wall and pools on the ground below |
 | `ground` | A deck or flood light: a flat pool of light |
 | `point` | A round glow (default) |
+| `line` | An LED strip: a line that glows along its whole length, through the points in `line` |
+| `area` | A lit surface, such as a backlit sign or a deck with strips under it: the polygon in `area` glows |
 
-`size` is in image pixels. The shorthand `"glow": [[x, y, size], ...]` gives round lamps.
+`size` is in image pixels. A strip has no `at`; it takes its shape from `line` or `area`:
+
+```json
+{ "type": "line", "line": [[380, 560], [470, 600], [560, 590]], "width": 6 }
+{ "type": "area", "area": [[600, 520], [660, 520], [660, 560], [600, 560]] }
+```
+
+`width` is how wide the line is drawn, in image pixels (6 without it). A tap anywhere on the strip switches the zone, like any other lamp. The shorthand `"glow": [[x, y, size], ...]` gives round lamps.
 
 ### windows
 
@@ -136,6 +147,9 @@ Each panel outline glows green while the panels produce, stronger as production 
 - `label` moves the room name when the middle of the room is a poor spot, such as in an L-shaped room.
 - `temperature` is a temperature sensor; `climate` is the thermostat that gets controlled. With both, the sensor value is shown.
 - `lights[].at` is where the lamp is. Tap to switch, hold to open the room.
+- An LED strip is drawn as what it is. Give the light `"line": [[x, y], [x, y], ...]` (two points or more, for a strip under the kitchen cabinets or along a stair) or `"area": [[x, y], ...]` (three corners or more, for a lit ceiling cove or a backlit panel) instead of `at`:
+  `{ "entity": "light.kitchen_strip", "line": [[1000, 1080], [4050, 1080], [4050, 1700]], "width": 140 }`.
+  It glows along its whole length in the light's own colour and brightness. A tap anywhere on it switches it, and holding it opens the room. `width` is how wide a line is drawn, in the plan's units; without it the line is a little slimmer than a lamp. In light mode the strip is a plain coloured line or surface without the soft glow.
 - A light can be a `light.*` or a `switch.*` entity. Only `light.*` entities get a dimmer.
 - `sensors` lists doors, windows, locks, presence and alarm sensors for the room. A room with `ha_area` also gets every such sensor in its area automatically, so the list is only needed without areas. Recognised by their device class: `door`, `window`, `opening` and `garage_door` (shown open or closed), `motion`, `occupancy` and `presence` (a faint outline on the room while someone is there), `smoke`, `gas`, `carbon_monoxide`, `moisture` and `safety` (alarms), `battery`; and every `lock.*`. Open doors and windows, unlocked locks and alarms get an icon on the floor plan and a badge on the building in the overview picture; the room panel lists them all. Locks are shown, not controlled.
 - A room without `ha_area` whose name matches an area exactly (ignoring case and accents) is treated as linked to it.
@@ -143,6 +157,19 @@ Each panel outline glows green while the panels produce, stronger as production 
 - Covers (`cover.*`) in a room are blinds and curtains: the room panel has up, stop and down and a position slider, and the room's windows on the overview picture glow less while they are closed. Garage doors and gates (`device_class` `garage`, `gate`, `door`) count as doors instead.
 - A floor plan's `ha_floor` links it to a Home Assistant floor by its floor id: the plan then shows the floor's name, and linked plans are listed in floor order.
 - `"layout": "tiles"` marks a plan from the setup guide's **Start from my Home Assistant**: no picture and no walls, each room drawn as a tile, and the lights found in a room's area set out in a row along the bottom of its tile. Uploading a picture for the plan removes it. A room with `"redraw": true` still has its tile's shape stretched over the new picture and waits to be drawn; the guide offers a **Draw** button for it.
+
+### cameras
+
+```json
+"cameras": [{ "entity": "camera.garden", "at": [715, 480], "angle": 45, "motion": "binary_sensor.garden_motion", "name": "Garden" }]
+```
+
+On a floor plan, in plan units; the same list under `overview` places cameras on the overview picture, in image pixels. Placement mode writes it.
+
+- A camera icon marks the spot. A tap opens the camera window: live where Home Assistant can stream the camera as MJPEG, otherwise a still renewed every two seconds, and always stills in light mode. With several cameras on the same plan, arrows step between them. The window closes after two minutes, on ×, a tap outside or Escape.
+- `angle` draws a field-of-view wedge, in degrees: 0 points right, 90 down. Without it only the icon is drawn.
+- The wedge and the icon turn red while `motion` is on. Without `motion`, the camera's own `motion_detected` attribute is used where the camera has one.
+- Everything goes through Home Assistant's camera proxy with the viewer's own login. No camera address or password goes in site.json.
 
 ### Warnings
 
@@ -170,6 +197,27 @@ A row above the picture shows, most serious first: alarms (smoke, gas, carbon mo
 - `grid_power` above zero is bought from the grid and `battery_power` above zero is the battery discharging. If your sensors count the other way, set `"grid_invert": true` or `"battery_invert": true` under `energy`, or tick **Direction** in the setup guide's Energy step, which shows how each one reads right now.
 - `"energy_flow": false` and `"weather_effects": false` turn them off.
 - With the header set to Auto, the day picture fades into the evening picture from 3° above the horizon to 6° below it (`sun.sun` elevation). The `weather` entity adds a light veil for cloud, fog, rain or snow.
+
+## Goodnight
+
+```json
+"goodnight": { "minutes": 5, "then": "script.lock_up" }
+```
+
+- A tap on **Goodnight** (behind the lamp in the header, or in the lights card) starts a countdown. Every open screen of the dashboard shows "Goodnight: everything off in 4:12" with **Cancel**. Tapping Goodnight again starts the countdown over.
+- The countdown runs in Home Assistant, so a tablet that sleeps or reloads does not stop it. A restart of Home Assistant does stop it.
+- It is the action `smarthomedash.goodnight`, so it can also be started from an automation, a voice command or an NFC tag:
+
+```yaml
+action: smarthomedash.goodnight
+data:
+  site: home                 # the dashboard's folder name
+  entity_id: [light.hall, light.kitchen]
+  minutes: 5
+  then: script.lock_up       # optional
+```
+
+  `cancel: true` stops a countdown. While one runs, the state `smarthomedash.goodnight_<site>` is `on` with the time in `ends_at`; it is what the screens show.
 
 ## Wall screens
 
@@ -228,14 +276,16 @@ Power may be in W or kW; the unit is read from the entity. `battery_soc` is show
 
 ## Placement mode
 
-In the Home Assistant panel, administrators tap **Placera** in the header (or open `/<url_path>/edit`). On the standalone page, add `#edit` to the address. A panel lists every light, temperature sensor, thermostat and switch in Home Assistant (on test data: the ones in the config plus `mock.entities`), in that order, not placed first. What matters less is folded away under **Show n more** in each group, and search still finds it: switches (most are plugs and settings, not lamps; a switch can still be placed as a lamp), a device's own diagnostic or hidden entities, and temperature sensors in no room or in a room that already shows another one.
+In the Home Assistant panel, administrators tap **Placera** in the header (or open `/<url_path>/edit`). On the standalone page, add `#edit` to the address. A panel lists every light, temperature sensor, thermostat, camera and switch in Home Assistant (on test data: the ones in the config plus `mock.entities`), in that order, not placed first. What matters less is folded away under **Show n more** in each group, and search still finds it: switches (most are plugs and settings, not lamps; a switch can still be placed as a lamp), a device's own diagnostic or hidden entities, and temperature sensors in no room or in a room that already shows another one.
 
 - **Place:** pick an entity, then tap where it is. On a floor plan the room is found from the tap: a light is placed at that spot, a thermostat or sensor is linked to the room. On the overview a light becomes an outdoor lamp; tap again to add more fixtures on the same switch.
+- **LED strips:** a placed light has **Drawn as** with **Spot**, **Line** and **Surface**. Line and Surface open the same drawing as for rooms: drag the ends or corners, drag the dot on an edge to add a bend, hold a point to remove it. A line has a **Width** field. Dragging a strip on the picture moves all of it, and **Spot** makes it a round lamp again.
+- **Cameras** go anywhere on a floor plan or the overview, not only in a room. A placed camera gets **↺** and **↻** to turn its field of view, and a **Motion sensor** list.
 - **Remove placement** takes the selected entity out of every room and zone.
 - **Missing in Home Assistant** lists the entities in site.json that Home Assistant does not know, with where each is used. **Remove from the dashboard** takes one out of rooms, zones, windows, sensor lists, scenes, heating devices and the screen's wake sensors. Energy, weather and doorbell entities are changed in the setup guide or in the file.
 - **Draw area:** click corners to get a polygon for `area`, `outline` or a solar panel.
 
-Changes are kept as a draft in that browser and shown immediately. In the panel, **Spara i Home Assistant** writes `site.json` (the last 10 versions are kept as `site.json.1`, the newest, to `site.json.10`, and can be restored under *Backup* in the setup guide). Home Assistant checks the file before writing it: the top-level keys must have the types in this reference, floor plans and rooms must be objects, and every `area`, `outline` and solar panel must be at least three `[x, y]` number pairs. A file that fails is not written, and the message says where, for example `floorplans[0].rooms[2].area should be a list of at least three [x, y] number pairs`. **Kopiera site.json** puts the result on the clipboard instead; **Släng utkast** goes back to the saved file.
+Changes are kept as a draft in that browser and shown immediately. In the panel, **Spara i Home Assistant** writes `site.json` (the last 10 versions are kept as `site.json.1`, the newest, to `site.json.10`, and can be restored under *Backup* in the setup guide). Home Assistant checks the file before writing it: the top-level keys must have the types in this reference, floor plans and rooms must be objects, and every `area`, `outline` and solar panel must be at least three `[x, y]` number pairs. An LED strip's `line` must be at least two pairs, its `area` at least three, and its `width` a number above zero. A file that fails is not written, and the message says where, for example `floorplans[0].rooms[2].area should be a list of at least three [x, y] number pairs`. **Kopiera site.json** puts the result on the clipboard instead; **Släng utkast** goes back to the saved file.
 
 ## Pictures
 

@@ -1,7 +1,8 @@
 // Placement mode, opened by adding #edit to the address.
 //
-// Place:  pick a light, switch, thermostat or temperature sensor from the list,
-//         then tap where it is. On a floor plan the room is found from the tap
+// Place:  pick a light, switch, thermostat, temperature sensor or camera from the list,
+//         then tap where it is. A camera can go anywhere on a plan or the overview, and
+//         gets a direction (its field-of-view wedge) and a motion sensor in the list. On a floor plan the room is found from the tap
 //         (point in polygon); on the overview a light becomes an outdoor lamp.
 //         Tapping a lamp already on a picture selects it and shows its name tag.
 // Draw:   click corners to get a polygon for site.json (rooms, buildings, panels).
@@ -11,7 +12,8 @@
 // Undo and Redo (also Ctrl/Cmd+Z, Shift+Z) step back through the draft until it is
 // saved or thrown away. Arrow keys nudge the selected lamp; Shift moves it further.
 
-import { el, sv, svgPoint, inside, storage, createHistory, undoKey, arrowStep } from '../util.js';
+import { el, sv, svgPoint, inside, bbox, storage, createHistory, undoKey, arrowStep, stripOf, stripCentre } from '../util.js';
+import { editShape } from './shape.js';
 import { draftKey, missingFilterKey } from '../site.js';
 import { t } from '../i18n.js';
 import { areaOf, areaName } from '../areas.js';
@@ -26,6 +28,7 @@ const KINDS = [
   { id: 'lights', label: 'editor.kindLights', match: (s) => s.entity_id.startsWith('light.') },
   { id: 'temperature', label: 'editor.kindTemp', match: (s) => s.entity_id.startsWith('sensor.') && (s.attributes?.device_class === 'temperature' || /°C|°F/.test(s.attributes?.unit_of_measurement || '')) },
   { id: 'climate', label: 'editor.kindClimate', match: (s) => s.entity_id.startsWith('climate.') },
+  { id: 'cameras', label: 'editor.kindCameras', match: (s) => s.entity_id.startsWith('camera.') },
   { id: 'switches', label: 'editor.kindSwitches', match: (s) => s.entity_id.startsWith('switch.'), folded: true },
 ];
 // Switches are placed as lamps.
@@ -46,6 +49,7 @@ export function createEditor({ site, store, saveSite = null, reload = () => loca
   if (kept && kept.at !== loaded) storage.set(histKey, null);
   let mode = 'place';
   let selected = null;
+  let selLamp = 0; // which lamp of an outdoor zone was tapped (a zone can have several)
   let filter = '';
   const unfolded = new Set(); // groups showing their less important entities too
   // Opened from the missing-devices warning: list only the devices Home Assistant does not know.
@@ -65,6 +69,9 @@ export function createEditor({ site, store, saveSite = null, reload = () => loca
     }
     const device = (raw.climates ?? []).find((c) => c.entity === id);
     if (device) return device.name ?? id;
+    const camPlan = (raw.floorplans ?? []).find((p) => (p.cameras ?? []).some((c) => c.entity === id));
+    if (camPlan) return camPlan.name ?? camPlan.id;
+    if ((raw.overview?.cameras ?? []).some((c) => c.entity === id)) return t('editor.overview');
     const zone = (raw.overview?.zones ?? []).find((z) => (z.lights ?? []).includes(id));
     return zone ? `${t('editor.outdoor')}: ${zone.name}` : null;
   }
@@ -77,6 +84,10 @@ export function createEditor({ site, store, saveSite = null, reload = () => loca
         if (room.temperature === id) delete room.temperature;
       }
     }
+    for (const plan of raw.floorplans ?? []) {
+      if (plan.cameras) { plan.cameras = plan.cameras.filter((c) => c.entity !== id); if (!plan.cameras.length) delete plan.cameras; }
+    }
+    if (raw.overview?.cameras) { raw.overview.cameras = raw.overview.cameras.filter((c) => c.entity !== id); if (!raw.overview.cameras.length) delete raw.overview.cameras; }
     if (raw.overview?.zones) {
       for (const z of raw.overview.zones) z.lights = (z.lights ?? []).filter((x) => x !== id);
       raw.overview.zones = raw.overview.zones.filter((z) => z.lights.length);
@@ -93,6 +104,7 @@ export function createEditor({ site, store, saveSite = null, reload = () => loca
     }
     for (const w of raw.overview?.windows ?? []) if (w.lights) w.lights = drop(w.lights);
     for (const b of raw.overview?.buildings ?? []) if (b.sensors) b.sensors = drop(b.sensors);
+    for (const c of [...(raw.floorplans ?? []).flatMap((p) => p.cameras ?? []), ...(raw.overview?.cameras ?? [])]) if (c.motion === id) delete c.motion;
     if (raw.climates) {
       raw.climates = raw.climates.filter((c) => c.entity !== id);
       for (const c of raw.climates) if (c.temperature === id) delete c.temperature;
@@ -117,7 +129,7 @@ export function createEditor({ site, store, saveSite = null, reload = () => loca
     storage.set(draftKey(site.id), raw);
     storage.set(viewKey, currentView());
     // Keep the selection and the message across the reload, so the moved lamp stays marked.
-    storage.set(selKey, { id: selected, message });
+    storage.set(selKey, { id: selected, lamp: selLamp, message });
     status.textContent = message;
     setTimeout(reload, 350);
   }
@@ -127,14 +139,23 @@ export function createEditor({ site, store, saveSite = null, reload = () => loca
   function placeInPlan(plan, at, id = selected) {
     const kind = kindOf(id);
     const rawPlan = (raw.floorplans ?? []).find((p) => p.id === plan.id);
+    if (kind === 'cameras' && rawPlan) return placeCamera(() => (rawPlan.cameras ??= []), at, id, rawPlan.name ?? rawPlan.id);
     const room = (rawPlan?.rooms ?? []).find((r) => inside(at, r.area));
     if (!room) { status.textContent = t('editor.outsideRooms'); return false; }
     selected = id;
-    const existing = (room.lights ?? []).find((l) => l.entity === id);
+    const existing = planLight(id)?.light;
     unplace(id);
     if (kind === 'lights') {
       room.lights ??= [];
-      room.lights.push({ entity: id, name: existing?.name ?? nameOf(id), at: at.map(Math.round) });
+      const strip = stripOf(existing);
+      if (strip) {
+        // An LED strip keeps its shape: all of it moves so that its middle is at the new place.
+        const from = stripCentre(strip.points);
+        moveStrip(existing, [at[0] - from[0], at[1] - from[1]]);
+        room.lights.push(existing);
+      } else {
+        room.lights.push({ entity: id, name: existing?.name ?? nameOf(id), at: at.map(Math.round) });
+      }
     } else if (kind === 'climate') {
       room.climate = id;
     } else if (kind === 'temperature') {
@@ -144,9 +165,138 @@ export function createEditor({ site, store, saveSite = null, reload = () => loca
     return true;
   }
 
+  // ---------- a camera: anywhere on a plan or the overview, keeping its direction and motion sensor
+  function cameraEntry(id) {
+    return [...(raw.floorplans ?? []).flatMap((p) => p.cameras ?? []), ...(raw.overview?.cameras ?? [])].find((c) => c.entity === id) ?? null;
+  }
+  // list() is read after unplace(), which replaces the lists it takes the camera out of.
+  function placeCamera(list, at, id, where) {
+    const old = cameraEntry(id);
+    unplace(id);
+    selected = id;
+    list().push({ ...(old ?? {}), entity: id, at: at.map(Math.round) });
+    save(t('editor.placedIn', { name: nameOf(id), room: where }));
+    return true;
+  }
+  // ---------- LED strips: a light drawn as a line or a surface
+  function planLight(id) {
+    for (const plan of raw.floorplans ?? []) {
+      for (const room of plan.rooms ?? []) {
+        const light = (room.lights ?? []).find((l) => l.entity === id);
+        if (light) return { plan, room, light };
+      }
+    }
+    return null;
+  }
+  function zoneLamp(id) {
+    const zone = (raw.overview?.zones ?? []).find((z) => (z.lights ?? []).includes(id));
+    const lamp = zone?.lamps?.[selLamp] ?? zone?.lamps?.[0];
+    return lamp ? { zone, lamp } : null;
+  }
+  // Move every point of a strip, and its middle, by d.
+  function moveStrip(l, d) {
+    const strip = stripOf(l);
+    if (!strip) return;
+    const moved = strip.points.map(([x, y]) => [Math.round(x + d[0]), Math.round(y + d[1])]);
+    l[strip.kind] = moved;
+    l.at = stripCentre(moved).map(Math.round);
+  }
+  // What the shape editor needs to show the picture the light is on.
+  function shapeStage(target) {
+    if (target.plan) {
+      const { plan } = target;
+      const rooms = plan.rooms ?? [];
+      const b = bbox([plan.outline ?? rooms.flatMap((r) => r.area ?? []), ...rooms.map((r) => r.area ?? [])].filter((p) => p.length));
+      const pad = Math.max(b.w, b.h) * 0.06;
+      const pic = plan.image ? (typeof plan.image === 'string' ? { src: plan.image } : plan.image) : null;
+      const [ix, iy, iw, ih] = pic?.bounds ?? [b.x, b.y, b.w, b.h];
+      return {
+        size: [b.w, b.h], view: [b.x - pad, b.y - pad, b.w + pad * 2, b.h + pad * 2],
+        image: pic ? { src: site.asset(pic.src), x: ix, y: iy, w: iw, h: ih } : null,
+        shapes: rooms.filter((r) => r.area?.length > 2).map((r) => ({ points: r.area, label: r.name, kind: 'room' })),
+        step: plan.unit === 'px' ? 1 : 10, span: Math.max(b.w, b.h),
+      };
+    }
+    const [w, h] = raw.overview.size ?? site.overview.size;
+    return {
+      size: [w, h], image: raw.overview.image ? { src: site.asset(raw.overview.image), x: 0, y: 0, w, h } : null,
+      shapes: (raw.overview.buildings ?? []).filter((b) => b.area?.length > 2).map((b) => ({ points: b.area, label: b.name, kind: 'building' })),
+      step: 1, span: Math.max(w, h),
+    };
+  }
+  // Draw the selected light as a line or a surface: opens the shape editor on a first
+  // shape around where the lamp is, or on the strip as it is; nothing changes until Done.
+  function drawStrip(id, kind) {
+    const target = planLight(id) ?? zoneLamp(id);
+    if (!target) return;
+    const l = target.light ?? target.lamp;
+    const stage = shapeStage(target);
+    const now = stripOf(l);
+    const [x, y] = l.at ?? (now ? stripCentre(now.points) : [0, 0]);
+    const r = Math.round(stage.span / 14);
+    const start = now?.kind === kind ? now.points
+      : now && kind === 'area' && now.points.length > 2 ? now.points
+      : now && kind === 'line' ? now.points
+      : kind === 'line' ? [[x - r, y], [x + r, y]]
+      : [[x - r, y - r / 2], [x + r, y - r / 2], [x + r, y + r / 2], [x - r, y + r / 2]];
+    const name = nameOf(id);
+    document.body.append(editShape({
+      ...stage, points: start, open: kind === 'line', kind: 'strip',
+      title: t(kind === 'line' ? 'editor.stripLineTitle' : 'editor.stripAreaTitle', { name }),
+      help: t(kind === 'line' ? 'editor.stripLineHelp' : 'editor.stripAreaHelp'),
+    }, (points) => {
+      delete l.line; delete l.area;
+      l[kind] = points;
+      l.at = stripCentre(points).map(Math.round);
+      if (target.lamp) l.type = kind;
+      save(t('editor.stripDrawn', { name }));
+    }));
+  }
+  // Back to a round lamp, in the middle of where the strip was.
+  function spotAgain(id) {
+    const target = planLight(id) ?? zoneLamp(id);
+    const l = target?.light ?? target?.lamp;
+    const strip = stripOf(l);
+    if (!strip) return;
+    l.at = stripCentre(strip.points).map(Math.round);
+    delete l.line; delete l.area; delete l.width;
+    if (target.lamp) { l.type = 'wall'; l.size ??= 30; }
+    save(t('editor.stripSpot', { name: nameOf(id) }));
+  }
+  function shapeControls(id) {
+    const target = planLight(id) ?? zoneLamp(id);
+    const l = target?.light ?? target?.lamp;
+    if (!l) return null;
+    const strip = stripOf(l);
+    const kind = strip?.kind ?? 'spot';
+    const btn = (k, label, fn) => el('button', { class: `chip${k === kind ? ' is-active' : ''}`, type: 'button', 'data-action': `shape-${k}`, 'aria-pressed': String(k === kind), onclick: fn }, label);
+    const width = strip?.kind === 'line' ? el('input', { class: 'setup-input editor-strip-width', type: 'number', min: 1, step: 1, value: l.width ?? '', placeholder: t('editor.stripWidthAuto'), 'aria-label': t('editor.stripWidth') }) : null;
+    width?.addEventListener('change', () => {
+      const v = Number(width.value);
+      if (v > 0) l.width = v; else delete l.width;
+      save(t('editor.stripWidthSet', { name: nameOf(id) }));
+    });
+    return el('div', { class: 'editor-cam editor-strip' },
+      el('div', { class: 'row' },
+        el('span', { class: 'small' }, t('editor.stripShape')),
+        btn('spot', t('editor.stripSpotBtn'), () => spotAgain(id)),
+        btn('line', t('editor.stripLineBtn'), () => drawStrip(id, 'line')),
+        btn('area', t('editor.stripAreaBtn'), () => drawStrip(id, 'area'))),
+      width ? el('label', { class: 'small' }, t('editor.stripWidth'), width) : null,
+      strip ? el('p', { class: 'muted small' }, t('editor.stripHint')) : null);
+  }
+
+  function setCamera(id, change, message) {
+    const c = cameraEntry(id);
+    if (!c) return;
+    change(c);
+    save(message);
+  }
+
   // ---------- place on the overview (outdoor lamp)
   function placeOutdoor(at) {
     const id = selected;
+    if (kindOf(id) === 'cameras' && raw.overview) { placeCamera(() => (raw.overview.cameras ??= []), at, id, t('editor.overview')); return; }
     if (kindOf(id) !== 'lights') { status.textContent = t('editor.onlyLightsOutdoor'); return; }
     raw.overview.zones ??= [];
     let zone = raw.overview.zones.find((z) => (z.lights ?? []).includes(id));
@@ -326,10 +476,30 @@ export function createEditor({ site, store, saveSite = null, reload = () => loca
     selBox.replaceChildren(
       el('p', { class: 'small' }, el('strong', {}, nameOf(id)), ` · ${where ?? t('editor.unplaced')}`,
         el('span', { class: 'editor-sel-id' }, id)),
-      where ? el('button', { class: 'chip', type: 'button', onclick: () => { unplace(id); save(t('editor.removed', { name: nameOf(id) })); } }, t('editor.remove')) : null);
-    status.textContent = kindOf(id) === 'lights' ? t('editor.tapWhereLight') : t('editor.tapWhere');
+      where ? el('button', { class: 'chip', type: 'button', onclick: () => { unplace(id); save(t('editor.removed', { name: nameOf(id) })); } }, t('editor.remove')) : null,
+      where && kindOf(id) === 'cameras' ? cameraControls(id) : null,
+      where && kindOf(id) === 'lights' ? shapeControls(id) : null);
+    status.textContent = kindOf(id) === 'lights' ? t('editor.tapWhereLight') : kindOf(id) === 'cameras' ? t('editor.tapWhereCamera') : t('editor.tapWhere');
     renderList();
     list.querySelector('.is-selected')?.scrollIntoView?.({ block: 'nearest' });
+  }
+
+  // The direction of a placed camera's wedge, in 45° steps, and its motion sensor.
+  function cameraControls(id) {
+    const c = cameraEntry(id);
+    const turn = (d) => setCamera(id, (x) => { x.angle = (((x.angle ?? 0) + d) % 360 + 360) % 360; }, t('editor.cameraTurned', { name: nameOf(id) }));
+    const motions = store.all().filter((s) => s.entity_id.startsWith('binary_sensor.') && ['motion', 'occupancy', 'presence'].includes(s.attributes?.device_class))
+      .map((s) => [s.entity_id, `${nameOf(s.entity_id)} · ${s.entity_id}`]).sort((a, b) => a[1].localeCompare(b[1], site.locale));
+    const motion = el('select', { class: 'setup-input', 'aria-label': t('editor.cameraMotion') },
+      [['', t('editor.cameraMotionNone')], ...motions].map(([v, label]) => el('option', { value: v, selected: v === (c?.motion ?? '') }, label)));
+    motion.addEventListener('change', () => setCamera(id, (x) => { if (motion.value) x.motion = motion.value; else delete x.motion; }, t('editor.cameraMotionSet', { name: nameOf(id) })));
+    return el('div', { class: 'editor-cam' },
+      el('div', { class: 'row' },
+        el('span', { class: 'small' }, t('editor.cameraDirection')),
+        el('button', { class: 'chip', type: 'button', 'data-action': 'cam-left', 'aria-label': t('editor.cameraLeft'), onclick: () => turn(-45) }, '↺'),
+        el('button', { class: 'chip', type: 'button', 'data-action': 'cam-right', 'aria-label': t('editor.cameraRight'), onclick: () => turn(45) }, '↻'),
+        Number.isFinite(c?.angle) ? el('button', { class: 'chip', type: 'button', 'data-action': 'cam-none', onclick: () => setCamera(id, (x) => { delete x.angle; }, t('editor.cameraTurned', { name: nameOf(id) })) }, t('editor.cameraNoWedge')) : null),
+      el('label', { class: 'small' }, t('editor.cameraMotion'), motion));
   }
 
   function removeMissing(id) {
@@ -345,6 +515,7 @@ export function createEditor({ site, store, saveSite = null, reload = () => loca
     let id = node.dataset.entity;
     if (node.dataset.drag === 'lamp') id = (raw.overview?.zones ?? []).find((z) => z.id === node.dataset.zone)?.lights?.[0];
     if (!id) return;
+    selLamp = Number(node.dataset.lamp) || 0;
     select(id);
     status.textContent = t('editor.picked', { name: nameOf(id) });
   }
@@ -356,7 +527,7 @@ export function createEditor({ site, store, saveSite = null, reload = () => loca
   function lampNode(id) {
     const zones = (raw.overview?.zones ?? []).filter((z) => (z.lights ?? []).includes(id)).map((z) => z.id);
     const nodes = [...document.querySelectorAll('[data-drag]')].filter((n) =>
-      n.dataset.drag === 'light' ? n.dataset.entity === id : zones.includes(n.dataset.zone));
+      n.dataset.drag === 'light' || n.dataset.drag === 'camera' ? n.dataset.entity === id : zones.includes(n.dataset.zone));
     return nodes.find((n) => { const r = n.getBoundingClientRect(); return r.width > 0 && r.height > 0; }) ?? null;
   }
   function placeTag() {
@@ -424,7 +595,7 @@ export function createEditor({ site, store, saveSite = null, reload = () => loca
   function lampSpot(id) {
     for (const plan of raw.floorplans ?? []) {
       for (const room of plan.rooms ?? []) {
-        const light = (room.lights ?? []).find((l) => l.entity === id && l.at);
+        const light = (room.lights ?? []).find((l) => l.entity === id && (l.at || stripOf(l)));
         if (light) return { plan, light, step: plan.unit === 'px' ? 1 : 10 };
       }
     }
@@ -449,10 +620,12 @@ export function createEditor({ site, store, saveSite = null, reload = () => loca
     const { id, spot, d } = nudge0;
     nudge = null;
     if (spot.light) {
-      const at = [spot.light.at[0] + d[0], spot.light.at[1] + d[1]];
+      const from = stripOf(spot.light) ? stripCentre(stripOf(spot.light).points) : spot.light.at;
+      const at = [from[0] + d[0], from[1] + d[1]];
       if (!placeInPlan(spot.plan, at, id)) nudge0.node.removeAttribute('transform');
     } else {
-      spot.lamp.at = [spot.lamp.at[0] + d[0], spot.lamp.at[1] + d[1]];
+      if (stripOf(spot.lamp)) moveStrip(spot.lamp, d);
+      else spot.lamp.at = [spot.lamp.at[0] + d[0], spot.lamp.at[1] + d[1]];
       save(t('editor.moved', { name: spot.zone.name }));
     }
   }
@@ -485,6 +658,7 @@ export function createEditor({ site, store, saveSite = null, reload = () => loca
   const resumed = storage.get(selKey);
   storage.set(selKey, null);
   if (resumed?.id) {
+    selLamp = Number(resumed.lamp) || 0;
     select(resumed.id);
     if (resumed.message) status.textContent = resumed.message;
   }
@@ -518,7 +692,7 @@ export function createEditor({ site, store, saveSite = null, reload = () => loca
         drag.moved = true;
         drag.node.classList.add('is-dragging');
         dragNode = drag.node;
-        const r = Number(drag.node.querySelector?.('.fp-lamp-hit')?.getAttribute('r') ?? drag.node.getAttribute('r') ?? 12);
+        const r = Number(drag.node.querySelector?.('.fp-lamp-hit, .cam-hit')?.getAttribute('r') ?? drag.node.getAttribute('r') ?? 12);
         drag.ghost = sv('circle', { class: 'drag-ghost', r: Math.max(r * 0.8, 6) });
         svg.append(drag.ghost);
       }
@@ -541,14 +715,22 @@ export function createEditor({ site, store, saveSite = null, reload = () => loca
       dragged = true; // the click that follows is not a placement
       setTimeout(() => { dragged = false; }, 0);
       d.ghost?.remove();
-      const at = snap(svgPoint(svg, e));
-      if (d.node.dataset.drag === 'light' && plan) {
-        placeInPlan(plan, at, d.node.dataset.entity);
+      const p1 = svgPoint(svg, e);
+      const at = snap(p1);
+      if (d.node.dataset.drag === 'camera') {
+        setCamera(d.node.dataset.entity, (c) => { c.at = at; }, t('editor.moved', { name: nameOf(d.node.dataset.entity) }));
+      } else if (d.node.dataset.drag === 'light' && plan) {
+        // A strip is grabbed anywhere along it: it moves as far as the finger did.
+        const strip = stripOf(planLight(d.node.dataset.entity)?.light);
+        const c = strip && stripCentre(strip.points);
+        placeInPlan(plan, c ? snap({ x: c[0] + p1.x - d.start[0], y: c[1] + p1.y - d.start[1] }) : at, d.node.dataset.entity);
       } else if (d.node.dataset.drag === 'lamp') {
         const zone = (raw.overview?.zones ?? []).find((z) => z.id === d.node.dataset.zone);
         const lamp = zone?.lamps?.[Number(d.node.dataset.lamp)];
         if (!lamp) { d.node.removeAttribute('transform'); return; }
-        lamp.at = at;
+        if (stripOf(lamp)) moveStrip(lamp, [p1.x - d.start[0], p1.y - d.start[1]]);
+        else lamp.at = at;
+        selLamp = Number(d.node.dataset.lamp) || 0;
         selected = zone.lights?.[0] ?? selected;
         save(t('editor.moved', { name: zone.name }));
       }

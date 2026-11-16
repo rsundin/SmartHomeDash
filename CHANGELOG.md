@@ -1,5 +1,110 @@
 # Changelog
 
+## 0.8.28
+
+More languages.
+
+- **Danish, German, Finnish, Norwegian (bokmål) and Dutch.** Pick one under **Basics** in the setup guide. They are machine-assisted and marked so in the list; corrections from native speakers are welcome, and `docs/translating.md` shows how (one JSON file per language, edited on GitHub)
+- **Numbers and times follow the language**: `2,7 kW` and `08.58` in Danish, `2.7 kW` in English. A site.json without `locale` uses the language's own, and picking a language in the guide sets it
+- **A new dashboard starts in Home Assistant's language** when the dashboard has it (Norwegian `no` and `nn` give bokmål), otherwise in English. The card for other dashboards shows its editor and messages in the user's language the same way
+- The price card's cheapest and dearest hours now use the site's time format too
+- New tests: every language file has the same keys and placeholders as English, the machine-assisted ones say so, the card and the starter site know every language; both examples and the setup guide open in each language with no raw keys and the right number format
+- Python changed (the starter site's language), so restart Home Assistant once after updating
+
+## 0.8.27
+
+LED strips drawn as what they are.
+
+- **A light can be a line or a surface.** In placement mode a placed light has **Drawn as**: **Spot**, **Line** or **Surface**. A line follows a strip under the kitchen cabinets or along a stair, with as many bends as it needs; a surface covers a lit ceiling cove or a backlit panel. They are drawn with the same tool as rooms
+- **It glows along its whole length** in the light's own colour and brightness, on the floor plan and on the overview picture. **Width** sets how wide a line is drawn
+- **Tap anywhere on it** to switch it, hold to open the room, like a lamp. Drag it in placement mode to move all of it; **Spot** makes it a round lamp again
+- **Light mode** draws a plain coloured line or surface without the soft glow, so older tablets keep up
+- The example house has a strip under the kitchen cabinets. In site.json a strip is a light with `line` or `area` instead of `at`, and on the overview a zone lamp with `"type": "line"` or `"area"`; see docs/configuration.md. The file is checked for them before it is saved, so restart Home Assistant once after updating
+- New tests: drawing a line and a surface in placement mode, bending, width, dragging and undo, switching by a tap anywhere on the strip, its colour and brightness following the light, light mode without blur, strips on the overview, and the performance budget with strips on the large test site
+
+## 0.8.26
+
+Larger text, the keyboard and screen readers.
+
+- **Text size per device.** A new **Aa** button in the header steps between normal, large and extra large. The header, cards, room panel, warnings and buttons grow together, touch targets included, and so do the labels and lamps on the picture. The choice stays on that device, so the wall screen can have large text while a phone keeps its own. Checked at 390 px wide: nothing sticks out
+- **Keyboard.** Space now opens buildings and rooms like Enter does. The closed room panel is no longer in the Tab order (it could take focus while off screen), and when it closes, focus returns to the room it was opened from
+- **Screen readers.** Lamps on the picture say whether they are on, rooms say their temperature, and the price chart and the temperature graph are read as a sentence with the value now, the lowest and the highest. The notices above the header are a region of their own
+- **Contrast.** The small labels in the cards (INDOOR, OUTDOOR and the like) were too faint, 3.6:1; they are now 6.6:1. Text on the picture was measured against its backing in day and evening and already passed
+- New tests: axe-core on both examples (start view, floor plan, room panel, evening, desktop and phone), a keyboard-only run that opens a room and switches a lamp, names and states for screen readers, contrast of the text on the picture, and large and extra large text on a phone. The browser tests now need `axe-core` as well as Playwright
+## 0.8.25
+
+Cameras on the picture.
+
+- **Place cameras** on a floor plan or the overview picture in placement mode. They have a group of their own in the list and can go anywhere, also outside the rooms
+- **A tap opens the camera** in the window the doorbell uses: live where Home Assistant streams it, otherwise a new still every two seconds. With several cameras on a plan, arrows step between them. It closes after two minutes, on ×, a tap outside or Escape
+- **Which way it looks.** ↺ and ↻ in placement mode turn a field-of-view wedge in steps of 45°. The wedge turns red while the camera's motion sensor is on, or while the camera itself reports motion
+- **Light mode shows stills**, also for the doorbell, so an older tablet does not have to play a stream
+- The example house has a camera in the garden and one on the driveway. A new dashboard from the example starts without them
+- site.json is checked for cameras before it is saved: a `camera.*` entity and an `[x, y]` spot. Cameras that Home Assistant does not know show up under the missing devices
+- New tests: the wedge on motion, opening and stepping through cameras, stills in light mode, placing, turning, linking a motion sensor and dragging in placement mode, and the doorbell in the same window
+
+## 0.8.23
+
+Goodnight: one tap, and the lights stay on while you go to bed.
+
+- **A Goodnight button** behind the lamp in the header and in the lights card. The lights stay as they are for five minutes, then the same lights as **All off** turn off
+- **The countdown on every screen.** "Goodnight: everything off in 4:12" with **Cancel**, on every open screen of the dashboard, also in kiosk mode
+- **It runs in Home Assistant**, not in the browser: a tablet that sleeps or reloads does not stop it. It is the new action `smarthomedash.goodnight`, so automations, voice and NFC tags can start it too. Restart Home Assistant once after updating
+- **Set under Buttons** in the setup guide: show it or not, the minutes, and a script of your own to run when the lights go off (to lock up, turn the TV off, lower the heating). SmartHomeDash does not write any scripts or automations into your configuration
+- The action is open to every logged-in user, like switching a lamp, and only turns off lights and switches and runs a script (SECURITY.md)
+- New tests: under Home Assistant, the countdown turning the lights off and running the script on time, cancelling, starting over, refusing other entities and stopping on unload; in the browser, the countdown, Cancel, a countdown started elsewhere, and the setup guide's settings
+
+## 0.8.22
+
+All lights on and off with one button.
+
+- **All on, beside All off.** The lights card had **All off**; it now has **All on** too. All on takes one tap, All off still asks for a second tap so nobody is left in the dark by mistake
+- **In the header, also on wall screens.** A lamp button in the header opens both, so they are one tap away from the picture and the floor plan without scrolling to the lights card. It stays in kiosk mode, and the lamp lights up while any light is on. Not shown in the card for other dashboards
+- **Choose what "all" means.** Under **Buttons** in the setup guide, the buttons can be turned off, and lights can be left out of them (garden lights on a schedule, a night light). In site.json: `"all_lights": { "enabled": false, "exclude": ["light.garden"] }`. "All" is every light on the dashboard, including the ones found in linked areas
+- New tests: on in one tap and off in two from the header, an excluded light left alone from the lights card, the header control in kiosk mode on a phone, and turning the buttons off in the setup guide
+
+## 0.8.21
+
+The picture as a card in any Home Assistant dashboard.
+
+- **New card: `custom:smarthomedash-card`.** Shows the overview, one floor plan or one room of a SmartHomeDash dashboard inside any other dashboard. It comes with the integration and is added to every dashboard by itself: find it under **Add card**, pick the dashboard and what to show. Reload the browser page once after updating
+- **Only the picture.** No header, energy cards or warnings. Tapping a building opens its floor plan, tapping a room opens the room panel inside the card, and lamps and heating work as in the dashboard. A card for a floor plan or a room stays there
+- **Sized by the dashboard.** In a sections view the card takes the size you drag it to (full width and six rows to start with). In other views it is 400 px high, or the **Height** you set
+- **Suggested in the card picker** (Home Assistant 2026.6 and newer): picking a lamp or a thermostat that is in a room of a dashboard suggests a card for that room
+- **The same code as the dashboard.** The card runs the dashboard in a frame of its own, as the sidebar panel does, so its styles and fonts cannot disturb Home Assistant's and nothing in the dashboard itself changed. Site files still come through Home Assistant's login; the card cannot change anything in the setup
+- A dashboard that cannot be found now says "Cannot find …/site.json" also when the texts had not arrived yet (it could show the bare key `site.notFound`)
+- New tests: the card in a stand-in Home Assistant dashboard on a phone and a desktop, the three kinds of view, lamps through Home Assistant's services, the editor, the suggestions, and under a real Home Assistant that the card's files are served and its module is added once
+
+## 0.8.20
+
+A tidier codebase for what comes next. Nothing looks or works differently.
+
+- **One file per language.** The texts moved from `i18n.js` to `frontend/i18n/en.json` and `sv.json`. The dashboard fetches English and the site's own language before it draws anything, so a site in English no longer downloads the Swedish texts and the other way round. Adding a language is now one new file and one line
+- **The setup guide in one module per step.** `ui/setup.js` (837 lines) became `ui/setup/`: the frame with undo, save and close, and a module each for basics, the overview picture, floor plans, energy, buttons, wall screen and lights, plus the shared helpers, drawing and the quick start
+- New tests: every language file has the same keys and placeholders, every text the code asks for exists, the standalone page lists every module, the texts are fetched once with the page's version, and a start that fails still shows its message as text
+## 0.8.19
+
+Tests against a real Home Assistant, and three faults they found.
+
+- **Adding a dashboard with the default name "Home" works again.** Home Assistant has a page of its own at `/home` (and `/light`, `/climate`, `/security`), so the name suggested by the form was refused with "address already in use". When no address is typed and the one made from the name is taken, `-dash` is added (`/home-dash`). An address you type yourself is still refused if it is taken. The YAML example in the README uses `my-home`
+- **Export, versions, import and restore answer "administrators only" on every Home Assistant version.** On Home Assistant 2024.12 and older, a user who is not an administrator got an internal error (500) from these addresses instead of the refusal. Nothing was exported or written, but the check depended on a detail of the web library
+- **New tests in `tests/ha/`** run the integration under Home Assistant itself (`pytest-homeassistant-custom-component`): setup from YAML and from the UI, the starter site for a house and an apartment, the config flow and its refusals, options (rename in place, reload for the rest), the views without a login, as an administrator and as another user, the sidebar following a name saved in the setup guide, diagnostics without anything that names the home, and unload, reload and removal. CI runs them on Home Assistant 2026.10.4 and on 2025.6.3
+- **Home Assistant 2025.6 or newer is now required** (was 2024.8). The tests show that the older versions never worked fully: **Configure** on the integration fails before 2024.12, and setups with `github_token` or `repository` in YAML do not start before 2025.6
+## 0.8.18
+
+A tap right after flicking the zoomed picture is no longer lost.
+
+- **The cause was real, not test timing:** with the picture zoomed in, a fast one-finger drag that lifts while still moving made the browser (Chromium: Chrome on Android, the companion app, Fully Kiosk) start a fling of its own, although the page does not scroll. While a fling runs, the browser swallows the next tap to "stop the fling", so a tap on **Reset zoom**, a lamp or a room within a moment after the flick did nothing. A drag that came to rest before lifting was never affected
+- The dashboard now consumes the finger movement itself while the picture is zoomed or pinched, so the browser never starts a scroll or fling there. One finger on the picture at normal size still scrolls the page as before
+- The pinch zoom test taps straight after the drag again, without the wait 0.8.13 added, and checks that movements are consumed only while zoomed or pinching. It passed 20 runs in a row; before the fix about 1 run in 25 lost the tap on the test machine
+## 0.8.17
+
+Install docs for the Marketplace, which replaced HACS in Home Assistant 2026.11.
+
+- README and the setup guide (`docs/setup.md`) install through **Settings → Marketplace → Add from link** with the repository's address. Setup starts right away; a restart is still needed after updates. Both mention the community-code notice and the GitHub sign-in that *Add from link* asks for, and point to SECURITY.md for what SmartHomeDash can reach
+- The HACS steps stay as a one-line note for Home Assistant before 2026.11
+- Updating refers to the Marketplace; `smarthomedash.update` is for setups without it
+- A test fails if README or the setup guide describe the old HACS menus outside that note
 ## 0.8.16
 
 Backups and moving a dashboard: export, import and restore points.

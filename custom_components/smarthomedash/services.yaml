@@ -4,3 +4,33 @@ update:
       default: false
       selector:
         boolean:
+goodnight:
+  fields:
+    site:
+      required: true
+      example: home
+      selector:
+        text:
+    entity_id:
+      selector:
+        entity:
+          multiple: true
+          domain:
+            - light
+            - switch
+    minutes:
+      default: 5
+      selector:
+        number:
+          min: 0
+          max: 120
+          step: 1
+          unit_of_measurement: min
+    then:
+      selector:
+        entity:
+          domain: script
+    cancel:
+      default: false
+      selector:
+        boolean:

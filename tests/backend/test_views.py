@@ -187,8 +187,27 @@ class SitesViewTest(unittest.TestCase):
             "overview.size should be [width, height] in numbers": {"overview": {"size": [100, True]}},
             "overview.buildings[0].area should be a list of at least three [x, y] number pairs":
                 {"overview": {"buildings": [{"id": "h", "area": [[0, 0, 1], [1, 0, 1], [1, 1, 1]]}]}},
+            "all_lights should be an object": {"all_lights": True},
+            "floorplans[0].cameras[0].entity should be a camera entity id":
+                {"floorplans": [{"id": "p", "cameras": [{"entity": "light.x", "at": [1, 2]}]}]},
+            "overview.cameras[0].at should be an [x, y] number pair": {"overview": {"cameras": [{"entity": "camera.x", "at": "here"}]}},
+            "goodnight.minutes should be a number from 0 to 120": {"goodnight": {"minutes": 600}},
+            "goodnight.then should be a script entity id": {"goodnight": {"then": "lock.front_door"}},
+            "all_lights.exclude should be a list of entity ids": {"all_lights": {"exclude": "light.garden"}},
             "overview.solar.panels[0] should be a list of at least three [x, y] number pairs":
                 {"overview": {"solar": {"panels": [[0, 0]]}}},
+            "floorplans[0].rooms[0].lights[0].line should be a list of at least two [x, y] number pairs":
+                {"floorplans": [{"id": "a", "rooms": [{"id": "b", "lights": [{"entity": "light.x", "line": [[1, 2]]}]}]}]},
+            "floorplans[0].rooms[0].lights[1].area should be a list of at least three [x, y] number pairs":
+                {"floorplans": [{"id": "a", "rooms": [{"id": "b", "lights": [
+                    {"entity": "light.x", "line": [[1, 2], [3, 4]], "width": 20},
+                    {"entity": "light.y", "area": [[1, 2], [3, 4]]}]}]}]},
+            "floorplans[0].rooms[0].lights[0].width should be a number above zero":
+                {"floorplans": [{"id": "a", "rooms": [{"id": "b", "lights": [{"entity": "light.x", "line": [[1, 2], [3, 4]], "width": 0}]}]}]},
+            "overview.zones[0].lamps[0].line should be a list of at least two [x, y] number pairs":
+                {"overview": {"zones": [{"id": "z", "lamps": [{"type": "line", "line": "along the fence"}]}]}},
+            "overview.zones[0].lamps should be a list":
+                {"overview": {"zones": [{"id": "z", "lamps": {"at": [1, 2]}}]}},
         }
         for reason, data in cases.items():
             with self.subTest(reason=reason):

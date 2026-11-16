@@ -1,5 +1,5 @@
-import { t } from './i18n.js';
-import { storage } from './util.js';
+import { t, languageReady, localeFor } from './i18n.js';
+import { storage, stripOf, stripCentre } from './util.js';
 
 // Loads sites/<id>/site.json and builds lookup indexes the views share.
 //
@@ -27,9 +27,10 @@ export async function loadSite(id, { useDraft = false, loader = null } = {}) {
   const fromDraft = !!raw;
   if (!raw) {
     const res = await source.get('site.json');
-    if (!res.ok) throw new Error(t('site.notFound', { path: `${base}site.json`, status: res.status }));
+    // The texts may still be on their way this early: wait, so the message is not a bare key.
+    if (!res.ok) { await languageReady(); throw new Error(t('site.notFound', { path: `${base}site.json`, status: res.status })); }
     try { raw = await res.json(); }
-    catch (e) { throw new Error(t('site.invalidJson', { path: `${base}site.json`, msg: e.message })); }
+    catch (e) { await languageReady(); throw new Error(t('site.invalidJson', { path: `${base}site.json`, msg: e.message })); }
   }
   const site = structuredClone(raw);
   site.raw = raw;
@@ -67,9 +68,10 @@ function assetPaths(raw) {
 }
 
 function index(site) {
-  // The dashboard itself is Swedish by default; set "language": "en" for English.
-  site.locale ??= 'sv-SE';
+  // The dashboard itself is Swedish by default; "language" picks another (i18n.js
+  // LANGUAGES), and numbers and dates follow that language unless "locale" says otherwise.
   site.language ??= 'sv';
+  site.locale ??= localeFor(site.language);
   site.currency ??= 'SEK';
   site.floorplans ??= [];
   site.scenes ??= [];
@@ -86,6 +88,9 @@ function index(site) {
     z.lights ??= [];
     // "lamps" is the full form; "glow": [[x, y, size], ...] is a shorthand for round lamps.
     z.lamps ??= (z.glow ?? []).map(([x, y, size]) => ({ at: [x, y], size, type: 'point' }));
+    // An LED strip (`line` or `area`) has its middle as its place, for everything that asks where a lamp is.
+    for (const l of z.lamps) { const strip = stripOf(l); if (strip) { l.at ??= stripCentre(strip.points); l.size ??= 30; } }
+    z.lamps = z.lamps.filter((l) => Array.isArray(l?.at));
     z.lights.forEach((id) => { lights.add(id); if (!names.has(id)) names.set(id, z.name); });
   }
   for (const plan of site.floorplans) {
@@ -115,6 +120,7 @@ function index(site) {
   }
 
   for (const sc of site.scenes) label(sc.entity, sc.name);
+  for (const c of [...site.floorplans.flatMap((p) => p.cameras ?? []), ...(site.overview?.cameras ?? [])]) label(c?.entity, c?.name);
   for (const b of [].concat(site.wall_screen?.doorbell ?? [])) { label(b?.entity, b?.name); label(b?.camera, b?.name); }
 
   site.index = {

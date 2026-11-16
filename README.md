@@ -21,7 +21,9 @@ A Home Assistant dashboard that shows your home as a picture. Lights glow where 
 
 ## Install
 
-**HACS:** HACS → *Custom repositories* → add this repository as an **Integration** → download **SmartHomeDash** → restart Home Assistant.
+**Marketplace (Home Assistant 2026.11 and newer):** **Settings → Marketplace → Add from link**, paste `https://github.com/rsundin/SmartHomeDash` and install **SmartHomeDash**. Setup starts right away. *Add from link* asks you to sign in with GitHub once, and the first visit shows a notice that community code is not reviewed by Home Assistant; what SmartHomeDash can reach is described in [SECURITY.md](SECURITY.md).
+
+*Before Home Assistant 2026.11:* HACS → *Custom repositories* → add this repository as an **Integration** → download **SmartHomeDash** → restart Home Assistant.
 
 **Manually:** copy `custom_components/smarthomedash` to `<config>/custom_components/`, then restart. With SSH: `scripts/deploy.sh user@host`.
 
@@ -44,6 +46,7 @@ Then **Settings → Devices & services → Add integration → SmartHomeDash**, 
 | Energy flow | One line per flow, from the sun, battery or grid to the house, car, battery or grid, in the colour of the source, with the kilowatts on it, plus a plain sentence in the energy card |
 | Dusk and weather | The day picture fades into the evening one as the sun sets; cloud, fog, rain and snow on the picture |
 | Cards | Weather, power now, energy today, hourly electricity price with the cheapest hours ahead, outdoor and indoor lights, scenes and scripts, heating per room |
+| Card for other dashboards | `custom:smarthomedash-card` shows the overview, a floor plan or a room inside any Home Assistant dashboard, with the room panel, lamps and heating working in the card. See [the card](docs/setup.md#the-card) |
 
 ## Wall screens and tablets
 
@@ -72,12 +75,12 @@ smarthomedash:
     - site: home               # folder under <config>/smarthomedash/sites/
       title: Home
       icon: mdi:home-lightbulb
-      url_path: home
+      url_path: my-home
 ```
 
 ## Updating
 
-Through HACS like any other integration. Without HACS, `smarthomedash.update` installs the latest version from GitHub; set `github_token` (a read-only token for a private fork) and optionally `repository` and `branch` under `smarthomedash:` in `configuration.yaml`. It keeps your `site.json`, adds new site files, and says whether Home Assistant needs a restart. The same action is available as **Uppdatera dashboarden** in placement mode.
+The Marketplace offers new versions like for any other integration (HACS before Home Assistant 2026.11); restart Home Assistant after updating. Without the Marketplace, `smarthomedash.update` installs the latest version from GitHub; set `github_token` (a read-only token for a private fork) and optionally `repository` and `branch` under `smarthomedash:` in `configuration.yaml`. It keeps your `site.json`, adds new site files, and says whether Home Assistant needs a restart. The same action is available as **Uppdatera dashboarden** in placement mode.
 
 ## Development
 
@@ -119,7 +122,7 @@ See [SECURITY.md](SECURITY.md) for how access is handled and how to report a pro
 
 ## Roadmap
 
-Next up: automated tests and a speed budget for old tablets, 15-minute electricity prices, a quick start from your Home Assistant areas, a card for any dashboard, more languages, people and appliances on the picture, and the house as a wall-screen screensaver. See [ROADMAP.md](ROADMAP.md).
+Next up: install docs for Home Assistant's new Marketplace, accessibility, people and appliances on the picture, the house as a wall-screen screensaver, and a summer house mode. See [ROADMAP.md](ROADMAP.md).
 
 ## Help, questions and ideas
 

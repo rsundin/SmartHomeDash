@@ -8,13 +8,14 @@
 // the way real light does: a wall lamp washes the facade and pools on the ground,
 // a lit room shows warm windows, producing solar panels glow green.
 
-import { el, sv, pts, centroid, bbox, press, clamp, fmt } from '../util.js';
+import { el, sv, pts, centroid, bbox, press, clamp, fmt, stripOf } from '../util.js';
 import { zoneLevel, kw } from '../entities.js';
 import { t } from '../i18n.js';
 import { mixColor, createTints } from '../glow.js';
 import { roomStatus, statusIds, isClosedCover } from '../status.js';
 import { ICONS } from './floorplan.js';
 import { createFlow } from './flow.js';
+import { cameraMarkers, openCamera } from '../ui/camera.js';
 
 export function createOverview({ site, store, adapter, onOpenBuilding }) {
   const ov = site.overview;
@@ -69,6 +70,7 @@ export function createOverview({ site, store, adapter, onOpenBuilding }) {
     const c = tint(mixColor(ids.map((id) => store.get(id)).filter(Boolean)));
     for (const n of g.querySelectorAll('[data-paint]')) n.setAttribute('fill', `url(#${k}-${n.dataset.paint}${c.suffix})`);
     for (const n of g.querySelectorAll('.ov-lamp-core')) n.style.fill = c.core ?? '';
+    for (const n of g.querySelectorAll('.ov-lamp-strip')) { n.style.setProperty('--lamp', c.glow ?? ''); n.style.setProperty('--lamp-core', c.core ?? ''); }
     for (const n of g.querySelectorAll('.ov-window-bloom')) n.style.fill = c.glow ?? '';
   };
 
@@ -92,6 +94,7 @@ export function createOverview({ site, store, adapter, onOpenBuilding }) {
 
   // ---------- lamps per zone
   const lampsG = sv('g', { class: 'ov-glows' });
+  const zoneBtns = new Map(); // zone id → its tappable lamps, for their on/off state
   for (const z of ov.zones) {
     const g = sv('g', { class: 'ov-zone', 'data-zone': z.id }, z.lamps.map((l) => lampShape(l, k)));
     lampsG.append(g);
@@ -99,6 +102,7 @@ export function createOverview({ site, store, adapter, onOpenBuilding }) {
       const lv = zoneLevel(store, z.lights);
       g.style.opacity = String(lv);
       g.classList.toggle('is-on', lv > 0);
+      for (const b of zoneBtns.get(z.id) ?? []) b.setAttribute('aria-pressed', String(lv > 0));
       paint(g, z.lights);
     });
   }
@@ -149,16 +153,21 @@ export function createOverview({ site, store, adapter, onOpenBuilding }) {
     const grp = sv('g', { class: 'ov-bgroup' }, poly, tag);
     if (tappable) {
       grp.addEventListener('click', () => onOpenBuilding(b));
-      poly.addEventListener('keydown', (e) => { if (e.key === 'Enter') onOpenBuilding(b); });
+      poly.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onOpenBuilding(b); } });
     }
     hits.append(grp);
   }
   const zoneHits = sv('g', { class: 'ov-zonehits' });
   for (const z of ov.zones) {
     for (const [li, l] of z.lamps.entries()) {
-      const [x, y] = l.at;
-      const c = sv('circle', { class: 'ov-zonehit', 'data-drag': 'lamp', 'data-zone': z.id, 'data-lamp': li, cx: x, cy: y, r: Math.max(l.size * 0.5, 16), tabindex: 0, role: 'button', 'aria-label': t('overview.toggle', { name: z.name }) },
+      const strip = stripOf(l);
+      const button = { 'data-drag': 'lamp', 'data-zone': z.id, 'data-lamp': li, tabindex: 0, role: 'button', 'aria-label': t('overview.toggle', { name: z.name }), 'aria-pressed': String(zoneLevel(store, z.lights) > 0) };
+      // A strip is tapped anywhere along it, or anywhere on its surface.
+      const c = strip ? sv(strip.kind === 'line' ? 'polyline' : 'polygon', { class: `ov-zonehit ov-striphit is-${strip.kind}`, points: pts(strip.points), style: `--w:${Math.max(stripWidth(l) * 2, 18)}`, ...button },
+        sv('title', {}, t('overview.toggleHint', { name: z.name })))
+        : sv('circle', { class: 'ov-zonehit', cx: l.at[0], cy: l.at[1], r: Math.max(l.size * 0.5, 16), ...button },
         sv('title', {}, t('overview.toggleHint', { name: z.name })));
+      zoneBtns.set(z.id, [...(zoneBtns.get(z.id) ?? []), c]);
       press(c, () => toggleZone(z));
       zoneHits.append(c);
     }
@@ -190,8 +199,13 @@ export function createOverview({ site, store, adapter, onOpenBuilding }) {
     });
   }
 
+  // Cameras on the overview picture (ui/camera.js).
+  const cams = (ov.cameras ?? []).filter((c) => c?.entity && Array.isArray(c.at));
+  const camsG = cameraMarkers({ cams, unit: Math.max(W, H) / 90, store, site,
+    onOpen: (i) => openCamera({ site, store, adapter, ids: cams.map((c) => c.entity), index: i }) });
+
   const upper = sv('svg', { viewBox: vb, class: 'ov-upper' },
-    defs, windowsG, solarG, createFlow({ site, store, ov, size: [W, H] }), lampsG, chip, badgesG, hits, zoneHits);
+    defs, windowsG, solarG, createFlow({ site, store, ov, size: [W, H] }), lampsG, chip, badgesG, hits, zoneHits, camsG);
 
   const weather = el('div', { class: 'ov-wx', 'aria-hidden': 'true' });
   const root = el('div', { class: `view ov${nightImg ? ' has-night-image' : ''}`, style: { aspectRatio: `${W} / ${H}` } }, lower, weather, upper);
@@ -207,7 +221,8 @@ export function createOverview({ site, store, adapter, onOpenBuilding }) {
   // outside the frame when the screen's shape differs from the photo's.
   const placed = [
     ...ov.buildings.map((b) => b.area),
-    ...ov.zones.flatMap((z) => z.lamps.map((l) => [l.at])),
+    ...ov.zones.flatMap((z) => z.lamps.map((l) => stripOf(l)?.points ?? [l.at])),
+    ...cams.map((c) => [c.at]),
     ...(ov.solar?.panels ?? []),
     ...(ov.windows ?? []).map((w) => w.area),
   ];
@@ -262,7 +277,23 @@ export function createOverview({ site, store, adapter, onOpenBuilding }) {
 //   wall:   fixture on a facade, washes the wall and pools on the ground below
 //   ground: flood or deck light, a flat pool of light
 //   point:  round glow (default)
+const stripWidth = (l) => (Number(l.width) > 0 ? Number(l.width) : 6);
+
 function lampShape(l, k) {
+  const strip = stripOf(l);
+  if (strip) {
+    // An LED strip: a blurred line with a bright thread, or a softly lit surface.
+    const w = stripWidth(l);
+    if (strip.kind === 'line') {
+      return sv('g', { class: 'ov-lamp ov-lamp-strip is-line' },
+        sv('polyline', { class: 'ov-strip-bloom', points: pts(strip.points), 'stroke-width': w * 2.4, filter: `url(#${k}-wide)` }),
+        sv('polyline', { class: 'ov-strip-bloom', points: pts(strip.points), 'stroke-width': w, filter: `url(#${k}-soft)` }),
+        sv('polyline', { class: 'ov-strip-thread', points: pts(strip.points), 'stroke-width': Math.max(1.2, w * 0.3) }));
+    }
+    return sv('g', { class: 'ov-lamp ov-lamp-strip is-area' },
+      sv('polygon', { class: 'ov-strip-bloom', points: pts(strip.points), 'stroke-width': w, filter: `url(#${k}-wide)` }),
+      sv('polygon', { class: 'ov-strip-face', points: pts(strip.points), filter: `url(#${k}-soft)` }));
+  }
   const [x, y] = l.at;
   const s = l.size ?? 30;
   const core = sv('circle', { cx: x, cy: y, r: Math.max(1.6, s * 0.07), class: 'ov-lamp-core' });

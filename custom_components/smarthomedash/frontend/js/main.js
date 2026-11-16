@@ -21,22 +21,26 @@ import { createSetup } from './ui/setup.js';
 import { createZoom } from './ui/zoom.js';
 import { createWall, liteMode } from './ui/wall.js';
 import { createReport } from './ui/report.js';
+import { createLightsMenu, createGoodnightBanner, allLightsOn, goodnightOn } from './ui/lights.js';
 import { loadAreas, applyAreaNames, noAreas, linkByName, autoPlace } from './areas.js';
 import { assignSensors, warnings, warningIds, configEntities } from './status.js';
 import { nameOf as entityName } from './entities.js';
 
 // The online demo sets data-demo on <body> (see .github/workflows/pages.yml).
+// Text size is a choice for the screen, not for one dashboard: one key for the whole device.
+const TEXT_KEY = 'shd:text';
 const DEMO = document.body?.dataset.demo === 'true';
 const REPO_URL = 'https://github.com/rsundin/SmartHomeDash';
-import { t, setLanguage } from './i18n.js';
+import { t, setLanguage, loadLanguage, languageReady } from './i18n.js';
 
 const params = new URLSearchParams(location.search);
 
 export function showFatal(app, e) {
   console.error(e);
-  app.replaceChildren(el('div', { class: 'fatal' },
+  // Starting may have failed before the texts arrived (i18n.js): show them once they have.
+  languageReady().then(() => app.replaceChildren(el('div', { class: 'fatal' },
     el('p', { class: 'eyebrow' }, t('app.startFailed')), el('p', {}, e.message),
-    el('p', { class: 'muted small' }, t('app.checkSiteJson'))));
+    el('p', { class: 'muted small' }, t('app.checkSiteJson')))));
 }
 
 if (!window.SHD_PANEL) {
@@ -69,8 +73,17 @@ export async function start(opts) {
   document.querySelectorAll('.setup, .editor').forEach((n) => n.remove());
   document.body.classList.remove('is-editing');
   const siteId = opts.siteId ?? (params.get('site') || document.body.dataset.defaultSite || 'example-apartment');
-  const editing = opts.editing ?? location.hash === '#edit';
+  // A card in another dashboard (card.js): only the picture, opened on one view.
+  // opts.embed = { view: 'overview' | 'plan:<id>' | 'room:<id>' }
+  const embed = opts.embed ?? null;
+  document.body.classList.toggle('is-embed', !!embed);
+  const editing = !embed && (opts.editing ?? location.hash === '#edit');
+  // The texts (i18n.js): English is fetched beside site.json, the site's language once it is known.
+  const english = loadLanguage('en');
+  english.catch(() => {}); // awaited below; a failed site load must not leave it unhandled
   const site = await loadSite(siteId, { useDraft: editing, loader: opts.loader });
+  run.site = site; // read by the browser tests
+  await Promise.all([english, loadLanguage(site.language)]);
   setLanguage(site.language);
   // Light mode for older tablets: no blur, blending or animation (see ui/wall.js).
   document.body.classList.toggle('is-lite', liteMode(site));
@@ -79,7 +92,7 @@ export async function start(opts) {
   // Connection, in order: a token saved under Anslutning, the Home Assistant login of
   // this browser (when served from HA), otherwise test data. ?mock forces test data.
   // The setup guide needs to save the config and upload pictures (panel, admins).
-  const canSetup = !!(opts.saveSite && opts.uploadFile && opts.navigateEdit);
+  const canSetup = !embed && !!(opts.saveSite && opts.uploadFile && opts.navigateEdit);
   let source, adapter;
   if (opts.adapter) {
     source = 'panel';
@@ -107,6 +120,25 @@ export async function start(opts) {
   // Report a problem: a prefilled GitHub issue, read before it leaves (ui/report.js).
   const report = createReport({ site, store, adapter, source });
   const helpBtn = el('button', { class: 'chip chip-help', type: 'button', title: t('report.button'), 'aria-label': t('report.button'), onclick: () => report.open() }, '?');
+  // Text size for this device: normal, large or extra large. CSS does the scaling (body[data-text]).
+  const TEXT_SIZES = ['normal', 'large', 'xlarge'];
+  let textSize = storage.get(TEXT_KEY, 'normal');
+  if (!TEXT_SIZES.includes(textSize)) textSize = 'normal';
+  const textBtn = el('button', { class: 'chip chip-text', type: 'button' });
+  const applyText = () => {
+    if (textSize === 'normal') delete document.body.dataset.text; else document.body.dataset.text = textSize;
+    const label = t('app.textSize', { size: t(`app.textSize.${textSize}`) });
+    textBtn.textContent = `Aa${'+'.repeat(TEXT_SIZES.indexOf(textSize))}`;
+    textBtn.title = label;
+    textBtn.setAttribute('aria-label', label);
+  };
+  applyText();
+  textBtn.addEventListener('click', () => {
+    textSize = TEXT_SIZES[(TEXT_SIZES.indexOf(textSize) + 1) % TEXT_SIZES.length];
+    storage.set(TEXT_KEY, textSize);
+    applyText();
+    toast(t('app.textSize', { size: t(`app.textSize.${textSize}`) }));
+  });
   const clock = el('time', { class: 'clock' });
   const tickClock = () => {
     const d = new Date();
@@ -135,16 +167,21 @@ export async function start(opts) {
       kiosk.exit();
     }
   }
+  // All lights on and off from the header (ui/lights.js); stays on wall screens in kiosk mode.
+  // Goodnight's countdown shows on every screen of this dashboard, with Cancel.
+  const goodnight = !embed && !editing ? createGoodnightBanner({ site, store, adapter, signal: run.signal }) : null;
+  const lightsMenu = !embed && !editing && (allLightsOn(site) || goodnightOn(site))
+    ? createLightsMenu({ site, store, adapter, signal: run.signal, onGoodnightError: goodnight?.failed }) : null;
   press(clock, null, () => { if (document.body.classList.contains('is-kiosk')) setKiosk(false); }, 2000);
   const header = el('header', { class: 'top' },
     el('div', { class: 'brand' }, el('p', { class: 'eyebrow' }, 'SmartHomeDash'), el('h1', {}, site.name)),
     viewNav,
-    el('div', { class: 'top-actions' }, clock, source === 'panel' ? null : status, site.overview || site.floorplans.length ? nightBtn : null, editing ? null : kioskBtn,
+    el('div', { class: 'top-actions' }, lightsMenu?.el, clock, source === 'panel' ? null : status, site.overview || site.floorplans.length ? nightBtn : null, textBtn, editing ? null : kioskBtn,
       opts.navigateEdit && !editing ? el('button', { class: 'chip', type: 'button', onclick: () => opts.navigateEdit(true) }, t('app.edit')) : null,
       canSetup && !editing ? el('button', { class: 'chip', type: 'button', onclick: () => openSetup() }, t('app.setup')) : null,
       source === 'panel' || DEMO ? null : el('button', { class: 'chip', type: 'button', onclick: () => settings.open() }, t('app.connection')),
       helpBtn));
-  keepAwake();
+  if (!embed) keepAwake(); // a card does not keep the whole screen on
 
   // ---- stage
   const stage = el('div', { class: 'stage' });
@@ -162,17 +199,18 @@ export async function start(opts) {
   const main = el('main', { class: 'layout' }, stageWrap, side);
   const alerts = el('div', { class: 'alerts', hidden: true, role: 'status', 'aria-live': 'polite' });
   app.replaceChildren(header, alerts, main, panel.el, settings.el, report.el);
+  if (goodnight) app.append(goodnight.el);
 
   // The online demo (GitHub Pages): say what it is and where to get it.
   if (DEMO) {
     const other = site.overview ? ['example-apartment', t('app.demoApartment')] : ['example-house', t('app.demoHouse')];
-    app.prepend(el('div', { class: 'banner banner-demo' },
+    app.prepend(el('aside', { class: 'banner banner-demo', 'aria-label': t('app.notice') },
       el('span', {}, t('app.demoBanner')),
       el('a', { class: 'chip', href: `?site=${other[0]}` }, other[1]),
       el('a', { class: 'chip chip-primary', href: REPO_URL, target: '_blank', rel: 'noopener' }, t('app.demoGet'))));
   // Make test data impossible to mistake for the real house.
   } else if (adapter.kind === 'mock' && !params.has('mock')) {
-    app.prepend(el('div', { class: 'banner banner-mock' },
+    app.prepend(el('aside', { class: 'banner banner-mock', 'aria-label': t('app.notice') },
       el('span', {}, t('app.mockBanner')),
       el('button', { class: 'chip chip-primary', type: 'button', onclick: () => settings.open() }, t('app.connectNow'))));
   }
@@ -182,7 +220,7 @@ export async function start(opts) {
     await adapter.connect(store, setStatus);
   } catch (e) {
     setStatus('error', e.message);
-    app.prepend(el('div', { class: 'banner' },
+    app.prepend(el('aside', { class: 'banner', role: 'alert', 'aria-label': t('app.notice') },
       t('app.connectFailed', { msg: e.message }),
       el('a', { href: '?mock' + (params.get('site') ? `&site=${site.id}` : '') }, t('app.showTestData'))));
   }
@@ -195,6 +233,7 @@ export async function start(opts) {
   site.autoPlaced = new Set(autoPlace(site, site.areas, store));
   // Doors, windows, locks, presence and alarms per room, from the room's area and site.json.
   assignSensors(site, store);
+  lightsMenu?.refresh(); // the area lights are known now
 
   // ---- views
   let view = null;
@@ -210,7 +249,7 @@ export async function start(opts) {
 
   // Wall screen / tablet in landscape: the image fills the stage instead of letterboxing.
   const wallScreen = window.matchMedia('(min-width: 1024px) and (orientation: landscape) and (min-height: 560px)');
-  const applyFit = () => overview?.setFit(wallScreen.matches && !editor ? 'slice' : 'meet');
+  const applyFit = () => overview?.setFit(wallScreen.matches && !editor && !embed ? 'slice' : 'meet');
   wallScreen.addEventListener?.('change', applyFit);
   applyFit();
 
@@ -277,8 +316,10 @@ export async function start(opts) {
     stage.dataset.view = id;
   }
 
+  // A card set to one floor plan or room stays on that plan: no way back to the overview.
+  let pinned = false;
   function showOverview() {
-    if (!overview) return;
+    if (!overview || pinned) return;
     panel.close();
     plans.forEach((p) => p.el.classList.remove('is-active'));
     overview.el.classList.add('is-active');
@@ -301,7 +342,7 @@ export async function start(opts) {
       if (!fp.el.classList.contains('is-active')) void fp.el.offsetWidth;
       plans.forEach((p) => p.el.classList.toggle('is-active', p === fp));
       overview?.el.classList.remove('is-active');
-      backBtn.hidden = !overview;
+      backBtn.hidden = !overview || pinned;
       hint.textContent = withZoomHint(t('app.hintPlan'));
       mark(`plan:${planId}`);
     }
@@ -373,9 +414,15 @@ export async function start(opts) {
   if (canSetup && !editing && (empty || (site.raw.setup_pending && !storage.get(SETUP_LATER, false)))) openSetup();
 
   const resume = editor?.initialView;
-  if (resume?.startsWith('plan:') && planById.has(resume.slice(5))) { if (overview) showOverview(); await showPlan(resume.slice(5)); }
+  // A card's view: a plan, or a room (its plan with the room open). One that no longer
+  // exists falls back to the dashboard's own start view.
+  const embedRoom = embed?.view?.startsWith('room:') ? site.index.rooms.get(embed.view.slice(5)) : null;
+  const embedPlan = embedRoom?.plan ?? (embed?.view?.startsWith('plan:') ? embed.view.slice(5) : null);
+  if (embedPlan && planById.has(embedPlan)) { pinned = true; await showPlan(embedPlan, embedRoom?.id); }
+  else if (resume?.startsWith('plan:') && planById.has(resume.slice(5))) { if (overview) showOverview(); await showPlan(resume.slice(5)); }
   else if (overview) showOverview();
   else showPlan(site.floorplans[0]?.id);
+  if (embedRoom && !embedRoom.plan) panel.open(embedRoom);
 
   // Wall screens: the doorbell camera, and back to the start view (dimmed at night) when idle.
   const home = () => {
@@ -385,7 +432,7 @@ export async function start(opts) {
     if (overview) showOverview(); else if (site.floorplans[0]) showPlan(site.floorplans[0].id);
     zoom.reset();
   };
-  wall = editing ? null : createWall({ site, store, adapter, goHome: home, kiosk: () => document.body.classList.contains('is-kiosk'), enterKiosk: () => setKiosk(true, true), signal: run.signal });
+  wall = editing || embed ? null : createWall({ site, store, adapter, goHome: home, kiosk: () => document.body.classList.contains('is-kiosk'), enterKiosk: () => setKiosk(true, true), signal: run.signal });
   // Test data: ?ring rings the first doorbell a moment after start.
   const bell = [].concat(site.wall_screen?.doorbell ?? [])[0];
   if (wall && adapter.kind === 'mock' && params.has('ring') && bell?.entity) {
@@ -399,7 +446,7 @@ export async function start(opts) {
 
   // Start in kiosk mode from ?kiosk or when this device was left in it. Full screen
   // needs a tap, so it follows on the first touch.
-  if (!editing && kiosk.wanted()) {
+  if (!editing && !embed && kiosk.wanted()) {
     setKiosk(true, false);
     document.addEventListener('pointerdown', () => kiosk.fullscreen(true), { once: true, signal: run.signal });
   }

@@ -62,6 +62,11 @@ class Response:
     def json(self):
         return json.loads(self.body)
 
+    def __len__(self):
+        # Like aiohttp's response, a mapping with nothing stored in it: it is falsy on
+        # older aiohttp, so `if response:` is not a way to ask whether there is one.
+        return 0
+
 
 class FileResponse(Response):
     def __init__(self, path, headers: dict | None = None):
@@ -137,6 +142,9 @@ _module("homeassistant.helpers")
 _anything("homeassistant.helpers.config_validation")
 _anything("homeassistant.helpers.service")
 _anything("homeassistant.helpers.aiohttp_client")
+_anything("homeassistant.helpers.event")
+_module("homeassistant.util")
+_anything("homeassistant.util.dt")
 _module("homeassistant.helpers.typing", ConfigType=dict)
 _anything("voluptuous")
 

@@ -1,5 +1,6 @@
 // A large, fictional site for the performance test (tests/browser/perf.test.js):
-// an overview with 3 buildings, 3 floor plans with 40 rooms, 120 lamps and 60 sensors.
+// an overview with 3 buildings, 3 floor plans with 40 rooms, 120 lamps (19 of them LED
+// strips drawn as lines or surfaces) and 60 sensors.
 //
 //   node tests/fixtures/perf-site.js > site.json     prints the site config
 //   require('./perf-site').perfSite()                returns it
@@ -65,8 +66,13 @@ function perfSite() {
         id,
         name: `Room ${n + 1}`,
         area: [[x, y], [x + w, y], [x + w, y + h], [x, y + h]].map(([a, b]) => [Math.round(a), Math.round(b)]),
+        // In every fourth room the first lamp is an LED strip along the top wall, and in
+        // every eighth the second is a lit surface: 10 lines and 5 surfaces in all.
         lights: Array.from({ length: lamps }, (_, k) => ({
-          entity: `light.${id}_${k + 1}`, name: `Lamp ${k + 1}`, at: [Math.round(x + (w * (k + 1)) / (lamps + 1)), Math.round(y + h * 0.75)],
+          entity: `light.${id}_${k + 1}`, name: `Lamp ${k + 1}`,
+          ...(n % 4 === 0 && k === 0 ? { line: [[x + w * 0.1, y + h * 0.12], [x + w * 0.9, y + h * 0.12], [x + w * 0.9, y + h * 0.4]].map(([a, b]) => [Math.round(a), Math.round(b)]), width: 8 }
+            : n % 8 === 0 && k === 1 ? { area: [[x + w * 0.3, y + h * 0.5], [x + w * 0.7, y + h * 0.5], [x + w * 0.7, y + h * 0.9], [x + w * 0.3, y + h * 0.9]].map(([a, b]) => [Math.round(a), Math.round(b)]) }
+              : { at: [Math.round(x + (w * (k + 1)) / (lamps + 1)), Math.round(y + h * 0.75)] }),
         })),
         temperature: `sensor.${id}_temperature`,
       };
@@ -86,7 +92,10 @@ function perfSite() {
   // Outdoor lamps in four zones of three, each lamp its own light.
   for (let z = 0; z < 4; z++) {
     const id = `outdoor_${z + 1}`;
-    const lamps = Array.from({ length: OUTDOOR / 4 }, (_, k) => ({ at: [120 + z * 300 + k * 60, 640], type: k === 1 ? 'ground' : 'wall', size: 30 }));
+    // The third lamp of each zone is an LED strip along the ground.
+    const lamps = Array.from({ length: OUTDOOR / 4 }, (_, k) => (k === 2
+      ? { type: 'line', line: [[120 + z * 300 + k * 60, 660], [120 + z * 300 + k * 60 + 110, 660]], width: 6 }
+      : { at: [120 + z * 300 + k * 60, 640], type: k === 1 ? 'ground' : 'wall', size: 30 }));
     site.overview.zones.push({ id, name: `Outdoor ${z + 1}`, lights: lamps.map((_, k) => `light.${id}_${k + 1}`), lamps });
   }
   // A lit window per building, from its first room.
