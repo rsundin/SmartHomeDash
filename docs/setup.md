@@ -136,6 +136,7 @@ The last step, for administrators in the Home Assistant panel:
 - **Export**: **Download .zip** saves the dashboard as one file: `site.json` and every picture in its folder. Entity ids are in it, so keep it to yourself.
 - **Import**: **Choose .zip …** reads a file exported from SmartHomeDash into this dashboard, after you confirm. It replaces the settings and adds the pictures; pictures already there with other names stay. To move a dashboard to another Home Assistant, or copy it, add a new dashboard there (step 2) and import into it. Home Assistant checks the whole file first and imports nothing if any part fails: only `site.json` and jpg, png or webp pictures (checked by content), at most 100 MB unpacked, 25 MB per picture and 200 files, and no names that lead out of the dashboard's folder.
 - **Restore points**: every save keeps the version it replaced, up to the last 10 (`site.json.1` is the newest, up to `site.json.10`). Each is listed with when it was saved and how many floor plans and rooms it has; **Restore** makes it the current one, after you confirm. An import or a restore keeps the settings it replaced as a restore point too, so it can be undone the same way. Pictures are not part of a restore point.
+- **Two people editing**: if someone else, or another tab, has saved the dashboard since you opened the setup guide or placement mode, saving asks first. **Save anyway** replaces their version, which stays as a restore point; **Cancel** saves nothing and keeps your changes on screen.
 
 ## The card
 

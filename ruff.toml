@@ -1,0 +1,17 @@
+# Lint for the Python side: `ruff check` (tests/run.sh lint, and the Lint job in CI).
+# Errors, unused or undefined names, likely bugs and security slips. No formatting or
+# import-order rules: the code keeps its own layout and line length.
+target-version = "py313"
+line-length = 160
+
+[lint]
+select = ["E", "W", "F", "B", "UP", "ASYNC", "S"]
+ignore = [
+  "E501",  # line length: readable long lines are fine here
+]
+
+[lint.per-file-ignores]
+# Tests assert, write to temp folders and use fixed fake tokens.
+"tests/**" = ["S", "E402"]
+"scripts/**" = ["S"]
+

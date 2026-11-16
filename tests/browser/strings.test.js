@@ -19,7 +19,7 @@ const RAW_KEY = /\b(app|setup|editor|cards|panel|status|flow|alerts|warn|wall|ba
 // follows the language.
 const withSite = (site, changes) => (p) => p.route(`**/sites/${site}/site.json`, async (route) => {
   const res = await route.fetch();
-  const { locale, ...json } = await res.json();
+  const { locale: _locale, ...json } = await res.json();
   await route.fulfill({ response: res, json: { ...json, ...changes } });
 });
 

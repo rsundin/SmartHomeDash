@@ -50,18 +50,33 @@ jobs:
       # The backend tests need only Python's standard library (3.12+, as on ubuntu-latest).
       # The system packages come from the Ubuntu mirrors, which sometimes fail to
       # resolve on the runners; try three times before giving up.
-      - name: Install Playwright and Chromium
+      - name: Install Playwright, Chromium and WebKit
         timeout-minutes: 15
         run: |
           npm install --no-save --no-package-lock playwright@1.63.0 axe-core@4.14.0
           for i in 1 2 3; do
-            npx playwright install --with-deps chromium && exit 0
+            npx playwright install --with-deps chromium webkit && exit 0
             echo "Install attempt $i failed; retrying in $((i * 20)) s"
             sleep $((i * 20))
             sudo apt-get update -q || true
           done
           exit 1
-      - run: tests/run.sh
+      # Lint has its own job; everything else, the WebKit run included, must be there.
+      - run: tests/run.sh backend
+      - run: tests/run.sh browser
+      - run: tests/run.sh webkit
+
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+      - run: pipx install ruff==0.16.9
+      - run: npm install --no-save --no-package-lock eslint@10.15.0 globals@17.14.0
+      - run: tests/run.sh lint
 
   home-assistant:
     # The integration under Home Assistant itself (tests/ha): the newest version, and

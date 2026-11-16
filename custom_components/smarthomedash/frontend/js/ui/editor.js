@@ -737,7 +737,7 @@ export function createEditor({ site, store, saveSite = null, reload = () => loca
       }
     };
     svg.addEventListener('pointerup', end, true);
-    svg.addEventListener('pointercancel', (e) => { dragNode = null; if (drag?.node) { drag.node.removeAttribute('transform'); drag.ghost?.remove(); } drag = null; }, true);
+    svg.addEventListener('pointercancel', () => { dragNode = null; if (drag?.node) { drag.node.removeAttribute('transform'); drag.ghost?.remove(); } drag = null; }, true);
   }
 
   return {

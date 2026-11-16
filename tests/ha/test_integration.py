@@ -370,7 +370,10 @@ async def test_goodnight_can_be_cancelled_and_restarted(hass: HomeAssistant, ent
     from pytest_homeassistant_custom_component.common import async_fire_time_changed, async_mock_service
 
     off = async_mock_service(hass, "homeassistant", "turn_off")
-    call = lambda **kw: hass.services.async_call(DOMAIN, "goodnight", {"site": "test_home", "entity_id": ["light.kitchen"], **kw}, blocking=True)
+
+    def call(**kw):
+        return hass.services.async_call(DOMAIN, "goodnight", {"site": "test_home", "entity_id": ["light.kitchen"], **kw}, blocking=True)
+
     await call(minutes=5)
     await call(cancel=True)
     assert hass.states.get("smarthomedash.goodnight_test_home").state == "off"

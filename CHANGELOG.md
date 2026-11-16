@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.8.31
+
+The last three points from the code review.
+
+- **Two people editing no longer overwrite each other without knowing.** A save now names the version of the dashboard it builds on. If someone else, or another tab, has saved since you opened the setup guide or placement mode, you are asked first: **Save anyway** replaces their version (it stays as a restore point under **Backup**), **Cancel** saves nothing and keeps your changes on screen. A draft in placement mode remembers the version it was started from
+- **Home Assistant's own texts in all seven languages.** The form for adding a dashboard, its settings and the names of the actions were Swedish and English only; Danish, German, Finnish, Norwegian (bokmål) and Dutch are added (machine-assisted, like the dashboard's own)
+- **A test run in WebKit**, the engine of Safari on an iPad: the overview, a floor plan, a room and a lamp, the setup guide and placement mode (`tests/run.sh webkit`, and in CI). The other browser tests still run in Chromium
+- **Lint**: `ruff` for the Python and `eslint` for the JavaScript, with rules that find mistakes (unused and undefined names, markup built from data), none about layout (`tests/run.sh lint`, and a **Lint** job in CI). It found one unused import and three unused names; nothing that changed how the dashboard works
+- Python changed, so restart Home Assistant once after updating
+
 ## 0.8.30
 
 Faster start in Home Assistant, from the same review.

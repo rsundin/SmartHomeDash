@@ -96,13 +96,11 @@ export function cameraMarkers({ cams, unit, store, site, onOpen }) {
     const [x, y] = c.at;
     const r = unit * 1.1;
     const parts = [];
-    let wedge = null;
     if (Number.isFinite(c.angle)) {
       // A 70° wedge, five icon sizes long, pointing along the angle.
       const len = unit * 6, half = (35 * Math.PI) / 180, a = (c.angle * Math.PI) / 180;
       const p = (d) => [x + Math.cos(a + d) * len, y + Math.sin(a + d) * len].map((v) => v.toFixed(1)).join(' ');
-      wedge = sv('path', { class: 'cam-wedge', d: `M${x} ${y} L${p(-half)} A${len} ${len} 0 0 1 ${p(half)} Z` });
-      parts.push(wedge);
+      parts.push(sv('path', { class: 'cam-wedge', d: `M${x} ${y} L${p(-half)} A${len} ${len} 0 0 1 ${p(half)} Z` }));
     }
     const marker = sv('g', { class: 'cam', 'data-drag': 'camera', 'data-entity': c.entity, tabindex: 0, role: 'button', 'aria-label': t('camera.open', { name: nameOf(c.entity, { store, site }, c.entity) }) },
       ...parts,
