@@ -1,0 +1,88 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Een dashboard toevoegen",
+        "description": "Elk dashboard krijgt een eigen paneel in de zijbalk. Foto's, plattegronden, verlichting, verwarming en energie stel je daarna in het paneel in.",
+        "data": {
+          "title": "Naam",
+          "icon": "Pictogram in de zijbalk",
+          "url_path": "Adres",
+          "require_admin": "Alleen voor beheerders",
+          "layout": "Type woning"
+        },
+        "data_description": {
+          "title": "Wordt in de zijbalk getoond, bijvoorbeeld Thuis of Zomerhuis.",
+          "url_path": "Het dashboard opent op je Home Assistant-adres, gevolgd door /adres. Laat leeg om de naam te gebruiken.",
+          "layout": "Een huis wordt getoond met een foto van buiten en plattegronden. Een appartement wordt alleen met zijn plattegrond getoond. Dit kan later onder Instellen worden gewijzigd."
+        }
+      }
+    },
+    "error": {
+      "invalid_url_path": "Gebruik alleen kleine letters, cijfers, - en _.",
+      "url_path_taken": "Een ander paneel gebruikt dit adres al.",
+      "site_in_yaml": "Een dashboard met deze naam is ingesteld in configuration.yaml."
+    },
+    "abort": {
+      "already_configured": "Er bestaat al een dashboard met deze naam."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Dashboardinstellingen",
+        "data": {
+          "title": "Naam",
+          "icon": "Pictogram in de zijbalk",
+          "require_admin": "Alleen voor beheerders"
+        }
+      }
+    }
+  },
+  "services": {
+    "update": {
+      "name": "Bijwerken",
+      "description": "Installeer de nieuwste SmartHomeDash vanaf GitHub. Een site.json die in Home Assistant is opgeslagen, blijft behouden.",
+      "fields": {
+        "overwrite_site": {
+          "name": "site.json overschrijven",
+          "description": "Vervang de opgeslagen site.json door die uit de repository (de oude blijft bewaard als site.json.bak)."
+        }
+      }
+    },
+    "goodnight": {
+      "name": "Welterusten",
+      "description": "Doe de lampen na een paar minuten uit. Elk geopend dashboard toont het aftellen en kan het annuleren.",
+      "fields": {
+        "site": {
+          "name": "Dashboard",
+          "description": "De mapnaam van het dashboard (zoals in het adres van de bestanden)."
+        },
+        "entity_id": {
+          "name": "Lampen",
+          "description": "Lampen en schakelaars die uitgaan als de tijd om is."
+        },
+        "minutes": {
+          "name": "Minuten",
+          "description": "Hoe lang de lampen eerst aan blijven."
+        },
+        "then": {
+          "name": "Daarna uitvoeren",
+          "description": "Een script dat wordt uitgevoerd als de lampen uitgaan, bijvoorbeeld om af te sluiten."
+        },
+        "cancel": {
+          "name": "Annuleren",
+          "description": "Stop een aftelling die loopt."
+        }
+      }
+    }
+  },
+  "selector": {
+    "layout": {
+      "options": {
+        "house": "Huis met een foto van buiten",
+        "apartment": "Appartement, alleen plattegrond"
+      }
+    }
+  }
+}
