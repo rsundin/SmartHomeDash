@@ -19,7 +19,7 @@ const standaloneLoader = (base) => ({
   async get(path) { return fetch(`${base}${path}`, { cache: 'no-store' }); },
 });
 
-export async function loadSite(id, { useDraft = false, loader = null } = {}) {
+export async function loadSite(id, { useDraft = false, loader = null, allPictures = false } = {}) {
   if (!/^[a-z0-9_-]+$/i.test(id)) throw new Error(t('site.invalidId', { id }));
   const base = `sites/${id}/`;
   const source = loader ?? standaloneLoader(base);
@@ -38,24 +38,49 @@ export async function loadSite(id, { useDraft = false, loader = null } = {}) {
   site.id = id;
   site.base = base;
   if (loader) {
-    // Authenticated files cannot be linked directly from <img>; fetch them once and use object URLs.
+    // Authenticated files cannot be linked directly from <img>; each is fetched once and
+    // used through an object URL.
     const urls = new Map();
-    await Promise.all(assetPaths(raw).map(async (p) => {
-      try {
-        const res = await loader.get(p);
-        if (res.ok) urls.set(p, URL.createObjectURL(await res.blob()));
-      } catch (e) { console.warn(`Could not load ${p}`, e); }
-    }));
+    const loading = new Map(); // path -> promise, settled when the picture is in (or failed)
+    let disposed = false;
+    const fetchOne = (p) => {
+      if (!loading.has(p)) {
+        loading.set(p, (async () => {
+          try {
+            const res = await loader.get(p);
+            if (!res.ok) return;
+            const blob = await res.blob();
+            if (!disposed) urls.set(p, URL.createObjectURL(blob));
+          } catch (e) { console.warn(`Could not load ${p}`, e); }
+        })());
+      }
+      return loading.get(p);
+    };
+    const all = assetPaths(raw);
     site.asset = (path) => urls.get(path) ?? '';
+    // Resolves when the given pictures (all of them without a list) can be shown with
+    // asset(). A picture that could not be fetched resolves too, and stays empty.
+    site.pictures = (paths = all) => Promise.all(paths.filter(Boolean).map(fetchOne)).then(() => {});
     // The pictures stay in memory until their addresses are released: main.js does so
     // when the dashboard restarts in place, or a wall screen would grow with every save.
-    site.dispose = () => { for (const u of urls.values()) URL.revokeObjectURL(u); urls.clear(); };
+    site.dispose = () => { disposed = true; for (const u of urls.values()) URL.revokeObjectURL(u); urls.clear(); };
+    // Only the overview's pictures are waited for, so a home with many floor plans and
+    // room photos shows as fast as a small one. The rest follow in the background, and
+    // whoever shows one waits for it with pictures() (main.js showPlan, the room panel).
+    // Placement mode shows every plan at once and asks for all of them.
+    const ov = raw.overview;
+    await site.pictures(allPictures ? all : [ov?.image, ov?.night_image]);
+    if (!allPictures) site.pictures();
   } else {
     // Files from the site folder get the dashboard version, past Home Assistant's long cache.
     site.asset = (path) => `${base}${path}${window.SHD_VERSION ? `?v=${encodeURIComponent(window.SHD_VERSION)}` : ''}`;
+    site.pictures = () => Promise.resolve();
   }
   return index(site);
 }
+
+// The picture of a floor plan, as the path asset() and pictures() take.
+export const planPicture = (plan) => (plan?.image ? (typeof plan.image === 'string' ? plan.image : plan.image.src) : null);
 
 // Every picture a site config refers to.
 function assetPaths(raw) {
@@ -64,7 +89,7 @@ function assetPaths(raw) {
   if (ov?.image) paths.add(ov.image);
   if (ov?.night_image) paths.add(ov.night_image);
   for (const plan of raw.floorplans ?? []) {
-    if (plan.image) paths.add(typeof plan.image === 'string' ? plan.image : plan.image.src);
+    paths.add(planPicture(plan));
     for (const room of plan.rooms ?? []) if (room.photo) paths.add(room.photo);
   }
   return [...paths].filter(Boolean);

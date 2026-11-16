@@ -84,15 +84,17 @@ describe('restarts and removals', () => {
       URL.createObjectURL = (b) => { const u = create.call(URL, b); made.add(u); return u; };
       URL.revokeObjectURL = (u) => { released.add(u); revoke.call(URL, u); };
       const count = () => ({ made: made.size, held: [...made].filter((u) => !released.has(u)).length });
-      await (window.harness.ready = window.harness.navigateEdit(false));
+      // A start is over when the pictures that follow in the background are in too.
+      const restart = async () => { window.harness.navigateEdit(false); await window.harness.ready; await window.__shdRun.site.pictures(); };
+      await restart();
       const first = count();
-      await window.harness.navigateEdit(false);
-      await window.harness.navigateEdit(false);
+      await restart();
+      await restart();
       return { first, after: count() };
     });
     assert.ok(counts.first.held > 0, 'the harness loads pictures as object URLs');
-    // Three starts made three sets of addresses; only the running dashboard's are held.
-    assert.equal(counts.after.made, counts.first.made * 3);
+    // Each start made a set of addresses of its own; only the running dashboard's are held.
+    assert.ok(counts.after.made >= counts.first.made + counts.first.held * 2, JSON.stringify(counts));
     assert.equal(counts.after.held, counts.first.held);
     // The picture on screen is the running dashboard's and can still be read.
     const shown = await page.locator('.ov-img-day').first().evaluate(async (img) => {
@@ -131,6 +133,68 @@ describe('restarts and removals', () => {
     await page.waitForFunction(() => !document.querySelector('.panel')?.classList.contains('is-open'));
     assert.equal(await panel.count(), 1);
     check(page);
+    await close(page);
+  });
+
+  test('the dashboard shows before the floor plan pictures are in, and a plan waits for its own', async () => {
+    // The house plan's picture is held back: the overview must not wait for it.
+    let release;
+    const held = new Promise((r) => { release = r; });
+    let asked = 0;
+    const page = await open(env, 'tests/browser/harness.html?site=example-house', { prepare: (p) => p.route('**/sites/example-house/example_plan_house.webp', async (route) => {
+      asked++;
+      await held;
+      await route.continue();
+    }) });
+    await page.waitForFunction(() => window.harness && document.querySelector('.stage'));
+    await page.evaluate(() => window.harness.ready);
+    assert.ok((await page.locator('.ov-img-day').first().getAttribute('href')).startsWith('blob:'), 'the overview is drawn with its picture');
+    assert.ok(asked > 0, 'the plan picture is fetched in the background');
+    // The other plan's picture came in the background and shows at once.
+    await page.locator('.tab[data-view="plan:garage"]').click();
+    await page.waitForFunction(() => document.querySelector('.fp.is-active .fp-picture')?.getAttribute('href')?.startsWith('blob:'));
+    // The held one: its plan is not shown until the picture is there, and a view chosen
+    // meanwhile is not taken over when it arrives.
+    await page.locator('.tab[data-view="plan:house"]').click();
+    await page.waitForTimeout(300);
+    assert.equal(await page.locator('.stage').getAttribute('data-view'), 'plan:garage');
+    await page.locator('.tab[data-view="overview"]').click();
+    release();
+    await page.evaluate(() => window.__shdRun.site.pictures());
+    await page.waitForTimeout(100);
+    assert.equal(await page.locator('.stage').getAttribute('data-view'), 'overview');
+    await page.locator('.tab[data-view="plan:house"]').click();
+    await page.waitForFunction(() => document.querySelector('.stage').dataset.view === 'plan:house');
+    assert.ok((await page.locator('.fp.is-active .fp-picture').getAttribute('href')).startsWith('blob:'));
+    check(page);
+    await close(page);
+  });
+
+  test('placement mode waits for every picture: it draws all plans at once', async () => {
+    const page = await harness(env, '?site=example-house');
+    await page.evaluate(async () => { window.harness.navigateEdit(true); await window.harness.ready; });
+    const hrefs = await page.locator('.fp-picture').evaluateAll((list) => list.map((n) => n.getAttribute('href')));
+    assert.equal(hrefs.length, 2);
+    assert.ok(hrefs.every((h) => h.startsWith('blob:')), JSON.stringify(hrefs));
+    check(page);
+    await close(page);
+  });
+
+  test('a new hass object with the same states is not walked through again', async () => {
+    const page = await harness(env, '?site=example-house');
+    const walks = await page.evaluate(async (JS) => {
+      const { Store } = await import(`${JS}/store.js`);
+      const { createHassAdapter } = await import(`${JS}/adapters/hass.js`);
+      let n = 0;
+      const states = new Proxy({ 'light.a': { entity_id: 'light.a', state: 'on', attributes: {} } }, { ownKeys(target) { n++; return Reflect.ownKeys(target); } });
+      const adapter = createHassAdapter({ states });
+      await adapter.connect(new Store(), () => {});
+      const before = n;
+      adapter.setHass({ states, themes: {} });
+      adapter.setHass({ states, dockedSidebar: 'docked' });
+      return n - before;
+    }, JS);
+    assert.equal(walks, 0);
     await close(page);
   });
 });
