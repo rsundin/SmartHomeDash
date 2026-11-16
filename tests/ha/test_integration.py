@@ -252,6 +252,18 @@ async def test_admin_reads_and_writes(hass: HomeAssistant, entry, hass_client, s
     assert "setup_pending" not in saved
     assert (sites_in_tmp / "test_home" / "site.json.1").is_file(), "the replaced file is kept as a restore point"
 
+    # Two editors: a save based on a version that is no longer the file's is refused.
+    current = await client.get(f"{SITES}/test_home/site.json")
+    base = current.headers["ETag"]
+    site["name"] = "First"
+    resp = await client.put(f"{SITES}/test_home/site.json", data=json.dumps(site), headers={"If-Match": base})
+    assert resp.status == HTTPStatus.OK, await resp.text()
+    assert (await resp.json())["version"] == (await client.get(f"{SITES}/test_home/site.json")).headers["ETag"]
+    site["name"] = "Second"
+    resp = await client.put(f"{SITES}/test_home/site.json", data=json.dumps(site), headers={"If-Match": base})
+    assert resp.status == HTTPStatus.PRECONDITION_FAILED
+    assert json.loads((sites_in_tmp / "test_home" / "site.json").read_text(encoding="utf-8"))["name"] == "First"
+
     assert (await client.put(f"{SITES}/test_home/site.json", data=b"not json")).status == HTTPStatus.BAD_REQUEST
     assert (await client.put(f"{SITES}/test_home/new.png", data=PNG)).status == HTTPStatus.OK
     assert (await client.put(f"{SITES}/test_home/fake.png", data=b"<html>")).status >= 400
@@ -358,7 +370,10 @@ async def test_goodnight_can_be_cancelled_and_restarted(hass: HomeAssistant, ent
     from pytest_homeassistant_custom_component.common import async_fire_time_changed, async_mock_service
 
     off = async_mock_service(hass, "homeassistant", "turn_off")
-    call = lambda **kw: hass.services.async_call(DOMAIN, "goodnight", {"site": "test_home", "entity_id": ["light.kitchen"], **kw}, blocking=True)
+
+    def call(**kw):
+        return hass.services.async_call(DOMAIN, "goodnight", {"site": "test_home", "entity_id": ["light.kitchen"], **kw}, blocking=True)
+
     await call(minutes=5)
     await call(cancel=True)
     assert hass.states.get("smarthomedash.goodnight_test_home").state == "off"

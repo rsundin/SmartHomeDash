@@ -126,13 +126,16 @@ class SmartHomeDashPanel extends HTMLElement {
         editing: !!this._editing && !!navigateEdit,
         adapter: this._adapter,
         loader: { get: (path) => this._hass.fetchWithAuth(`${API}/${siteId}/${path}`) },
-        saveSite: async (raw) => {
+        // `base` is the version the changes build on (site.version): Home Assistant refuses
+        // the save with 412 if the file has been saved by someone else since.
+        saveSite: async (raw, base = null) => {
           const res = await this._hass.fetchWithAuth(`${API}/${siteId}/site.json`, {
             method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json', ...(base ? { 'If-Match': base } : {}) },
             body: JSON.stringify(raw, null, 2),
           });
-          if (!res.ok) throw new Error(await failure(res));
+          if (!res.ok) throw Object.assign(new Error(await failure(res)), { conflict: res.status === 412 });
+          return res.json().catch(() => null);
         },
         reload: () => this._boot(),
         navigateEdit,

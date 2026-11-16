@@ -590,5 +590,9 @@
   "editor.cameraTurned": "{name} turned",
   "editor.cameraMotion": "Motion sensor",
   "editor.cameraMotionNone": "None (the camera's own, if it has one)",
-  "editor.cameraMotionSet": "Motion sensor for {name} saved"
+  "editor.cameraMotionSet": "Motion sensor for {name} saved",
+  "save.conflictTitle": "Changed elsewhere",
+  "save.conflict": "The dashboard has been saved by someone else, or in another tab, since you opened it here. Saving now replaces those changes with yours. The other version is kept as a restore point under Backup.",
+  "save.anyway": "Save anyway",
+  "save.conflictCancelled": "nothing was saved, the dashboard has been changed elsewhere"
 }

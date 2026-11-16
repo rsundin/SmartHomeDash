@@ -117,6 +117,28 @@ class StringsTest(unittest.TestCase):
         locales = dict(re.findall(r'"(\w+)": "([\w-]+)"', re.search(r"LOCALES = \{(.*?)\}", const, re.S).group(1)))
         self.assertEqual(locales, {code: entry["locale"] for code, entry in language_info().items()})
 
+    def test_home_assistant_has_its_own_texts_in_every_language(self):
+        # The texts Home Assistant shows itself (adding a dashboard, its settings, the
+        # actions): translations/<code>.json, with strings.json as the reference.
+        integration = ROOT / "custom_components" / "smarthomedash"
+
+        def flat(node, prefix=""):
+            for key, value in node.items():
+                if isinstance(value, dict):
+                    yield from flat(value, f"{prefix}{key}.")
+                else:
+                    yield f"{prefix}{key}", value
+
+        reference = dict(flat(json.loads((integration / "strings.json").read_text(encoding="utf-8"))))
+        found = {p.stem: dict(flat(json.loads(p.read_text(encoding="utf-8")))) for p in (integration / "translations").glob("*.json")}
+        self.assertEqual(sorted(found), sorted(languages()))
+        self.assertEqual(found["en"], reference, "translations/en.json is a copy of strings.json")
+        for code, strings in found.items():
+            self.assertEqual(sorted(strings), sorted(reference), f"translations/{code}.json")
+            for key, text in strings.items():
+                self.assertTrue(isinstance(text, str) and text.strip(), f"translations/{code}.json {key}")
+                self.assertEqual(PLACEHOLDER.findall(text), PLACEHOLDER.findall(reference[key]), f"translations/{code}.json {key}")
+
 
 class StandalonePageTest(unittest.TestCase):
     """index.html loads every file with ?v=<version>; a file it does not list is fetched

@@ -590,5 +590,9 @@
   "editor.cameraTurned": "{name} vreds",
   "editor.cameraMotion": "Rörelsesensor",
   "editor.cameraMotionNone": "Ingen (kamerans egen om den finns)",
-  "editor.cameraMotionSet": "Rörelsesensor för {name} sparad"
+  "editor.cameraMotionSet": "Rörelsesensor för {name} sparad",
+  "save.conflictTitle": "Ändrad på annat håll",
+  "save.conflict": "Dashboarden har sparats av någon annan, eller i en annan flik, sedan du öppnade den här. Sparar du nu ersätts de ändringarna med dina. Den andra versionen finns kvar som återställningspunkt under Säkerhetskopia.",
+  "save.anyway": "Spara ändå",
+  "save.conflictCancelled": "inget sparades, dashboarden har ändrats på annat håll"
 }

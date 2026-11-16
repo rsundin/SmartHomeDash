@@ -176,8 +176,9 @@ class User:
 class Request(dict):
     """The parts of an aiohttp request the views read."""
 
-    def __init__(self, body: bytes = b"", admin: bool = True, content_length: int | None = None, chunk: int = 64 * 1024):
+    def __init__(self, body: bytes = b"", admin: bool = True, content_length: int | None = None, chunk: int = 64 * 1024, headers: dict | None = None):
         super().__init__()
+        self.headers = headers or {}
         self["hass_user"] = User(admin)
         self.content = Stream(body, chunk)
         self.content_length = len(body) if content_length is None else content_length

@@ -8,6 +8,9 @@ import { storage, stripOf, stripCentre } from './util.js';
 // site.json. `site.raw` is an untouched copy of the config that the editor changes.
 
 export const draftKey = (id) => `shd:${id}:draft`;
+// The version of site.json a draft was started from, so saving it later can tell whether
+// the file has been saved by someone else in between.
+export const draftBaseKey = (id) => `shd:${id}:draftBase`;
 // Set by the missing-devices warning: placement mode then lists only those devices.
 export const missingFilterKey = (id) => `shd:${id}:editmissing`;
 
@@ -25,8 +28,12 @@ export async function loadSite(id, { useDraft = false, loader = null, allPicture
   const source = loader ?? standaloneLoader(base);
   let raw = useDraft ? storage.get(draftKey(id)) : null;
   const fromDraft = !!raw;
+  // The version of the file the config was read from (Home Assistant sends it as ETag);
+  // a save names it, and is refused if the file has changed since (main.js saveSite).
+  let version = fromDraft ? storage.get(draftBaseKey(id)) : null;
   if (!raw) {
     const res = await source.get('site.json');
+    version = res.headers?.get('ETag') ?? null;
     // The texts may still be on their way this early: wait, so the message is not a bare key.
     if (!res.ok) { await languageReady(); throw new Error(t('site.notFound', { path: `${base}site.json`, status: res.status })); }
     try { raw = await res.json(); }
@@ -35,6 +42,7 @@ export async function loadSite(id, { useDraft = false, loader = null, allPicture
   const site = structuredClone(raw);
   site.raw = raw;
   site.fromDraft = fromDraft;
+  site.version = version;
   site.id = id;
   site.base = base;
   if (loader) {

@@ -18,6 +18,7 @@ import { createSide } from './ui/cards.js';
 import { createSettings, connKey } from './ui/settings.js';
 import { createEditor } from './ui/editor.js';
 import { createSetup } from './ui/setup.js';
+import { confirmOverwrite } from './ui/conflict.js';
 import { createZoom } from './ui/zoom.js';
 import { createWall, liteMode } from './ui/wall.js';
 import { createReport } from './ui/report.js';
@@ -98,6 +99,19 @@ export async function start(opts) {
   // this browser (when served from HA), otherwise test data. ?mock forces test data.
   // The setup guide needs to save the config and upload pictures (panel, admins).
   const canSetup = !embed && !!(opts.saveSite && opts.uploadFile && opts.navigateEdit);
+  // Saving names the version of site.json the changes build on. If someone else (or
+  // another tab) has saved since, nothing is written until the user has chosen: save
+  // anyway, with the other version kept as a restore point, or cancel.
+  const saveSite = opts.saveSite ? async (raw) => {
+    let saved;
+    try { saved = await opts.saveSite(raw, site.version); }
+    catch (e) {
+      if (!e.conflict) throw e;
+      if (!(await confirmOverwrite())) throw new Error(t('save.conflictCancelled'));
+      saved = await opts.saveSite(raw, null);
+    }
+    if (saved?.version) site.version = saved.version;
+  } : null;
   let source, adapter;
   if (opts.adapter) {
     source = 'panel';
@@ -245,7 +259,7 @@ export async function start(opts) {
   // ---- views
   let view = null;
   const plans = new Map();
-  const editor = editing ? createEditor({ site, store, saveSite: opts.saveSite, reload: opts.reload, exit: opts.navigateEdit ? () => opts.navigateEdit(false) : null, update: opts.updateDashboard, reloadPage: opts.reloadPage }) : null;
+  const editor = editing ? createEditor({ site, store, saveSite, reload: opts.reload, exit: opts.navigateEdit ? () => opts.navigateEdit(false) : null, update: opts.updateDashboard, reloadPage: opts.reloadPage }) : null;
 
   // Rooms open on their floor plan; a device without a plan (heat pump) opens its panel directly.
   const openRoom = (room) => { if (room.plan) showPlan(room.plan, room.id); else panel.open(room); };
@@ -407,7 +421,7 @@ export async function start(opts) {
   function openSetup() {
     document.querySelectorAll('.setup').forEach((n) => n.remove());
     const setup = createSetup({
-      site, store, saveSite: opts.saveSite, uploadFile: opts.uploadFile, reload: opts.reload,
+      site, store, saveSite, uploadFile: opts.uploadFile, reload: opts.reload,
       openPlacement: () => opts.navigateEdit(true),
       openReport: () => report.open(),
       backup: opts.backup,

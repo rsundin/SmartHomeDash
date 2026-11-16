@@ -67,11 +67,15 @@ const backup = params.has('nobackup') ? null : {
 const loader = {
   async get(path) {
     const last = harness.saved[harness.saved.length - 1];
-    if (path === 'site.json' && last) return new Response(JSON.stringify(last), { headers: { 'Content-Type': 'application/json' } });
-    return fetch(`../../sites/${siteId}/${path}`, { cache: 'no-store' });
+    if (path !== 'site.json') return fetch(`../../sites/${siteId}/${path}`, { cache: 'no-store' });
+    // With its version as ETag, as Home Assistant sends it: every save makes a new one.
+    const body = last ? JSON.stringify(last) : await (await fetch(`../../sites/${siteId}/site.json`, { cache: 'no-store' })).text();
+    return new Response(body, { headers: { 'Content-Type': 'application/json', ETag: version() } });
   },
 };
 
+// The version of site.json; a test saves "as someone else" by pushing to harness.saved.
+const version = () => `"v${harness.saved.length}"`;
 const timers = [];
 async function boot() {
   harness.starts++;
@@ -97,7 +101,12 @@ async function boot() {
       editing: harness.editing,
       adapter,
       loader,
-      saveSite: async (raw) => { harness.saved.push(structuredClone(raw)); },
+      // Like the panel: refused when `base` is no longer the file's version.
+      saveSite: async (raw, base = null) => {
+        if (base && base !== version()) throw Object.assign(new Error('site.json was not saved: it has been changed since it was opened here'), { conflict: true });
+        harness.saved.push(structuredClone(raw));
+        return { saved: true, version: version() };
+      },
       uploadFile: async (name) => { harness.uploads.push(name); },
       backup,
       reload: () => (harness.ready = boot()),

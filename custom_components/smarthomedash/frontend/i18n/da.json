@@ -591,5 +591,9 @@
   "editor.cameraTurned": "{name} drejet",
   "editor.cameraMotion": "Bevægelsessensor",
   "editor.cameraMotionNone": "Ingen (kameraets egen, hvis det har en)",
-  "editor.cameraMotionSet": "Bevægelsessensor for {name} gemt"
+  "editor.cameraMotionSet": "Bevægelsessensor for {name} gemt",
+  "save.conflictTitle": "Ændret et andet sted",
+  "save.conflict": "Dashboardet er blevet gemt af en anden, eller i en anden fane, siden du åbnede det her. Gemmer du nu, erstattes de ændringer med dine. Den anden version beholdes som gendannelsespunkt under Sikkerhedskopi.",
+  "save.anyway": "Gem alligevel",
+  "save.conflictCancelled": "intet blev gemt, dashboardet er ændret et andet sted"
 }

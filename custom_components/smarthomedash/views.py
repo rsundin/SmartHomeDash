@@ -2,12 +2,14 @@
 
 from __future__ import annotations
 
+import hashlib
 import io
 import json
 import logging
 import os
 import re
 import tempfile
+import threading
 import time
 import zipfile
 from http import HTTPStatus
@@ -258,9 +260,11 @@ class FrontendView(HomeAssistantView):
 class SitesView(HomeAssistantView):
     """Site config and pictures, for logged-in users only.
 
-    GET  <site>/<file>       read a file
+    GET  <site>/<file>       read a file; site.json comes with its version as ETag
     PUT  <site>/site.json    save the config (admins); the last 10 versions are kept
-                             as site.json.1 (newest) … site.json.10
+                             as site.json.1 (newest) … site.json.10. With If-Match, the
+                             save is refused (412) if the file is no longer that version:
+                             someone else saved since it was read
     PUT  <site>/<name>.jpg   upload a picture (admins): jpg, png or webp
     """
 
@@ -281,7 +285,13 @@ class SitesView(HomeAssistantView):
         path = self._path(site, filename)
         if path is None or not await self._hass.async_add_executor_job(path.is_file):
             return web.Response(status=HTTPStatus.NOT_FOUND)
-        return web.FileResponse(path, headers={"Cache-Control": "no-store", **_NOSNIFF})
+        headers = {"Cache-Control": "no-store", **_NOSNIFF}
+        if filename == "site.json":
+            # Sent as bytes with the version of exactly those bytes, so an editor can say
+            # which version its changes are based on when it saves.
+            data = await self._hass.async_add_executor_job(path.read_bytes)
+            return web.Response(body=data, headers={**headers, "Content-Type": "application/json", "ETag": config_version(data)})
+        return web.FileResponse(path, headers=headers)
 
     async def put(self, request: web.Request, site: str, filename: str) -> web.Response:
         if not request["hass_user"].is_admin:
@@ -306,14 +316,18 @@ class SitesView(HomeAssistantView):
         problem = validate_site(data)
         if problem:
             return self.json_message(f"site.json was not saved: {problem}", HTTPStatus.BAD_REQUEST)
-        text = json.dumps(data, ensure_ascii=False, indent=2) + "\n"
-        await self._hass.async_add_executor_job(write_atomic, path, text.encode("utf-8"), True)
+        text = (json.dumps(data, ensure_ascii=False, indent=2) + "\n").encode("utf-8")
+        base = request.headers.get("If-Match")
+        if not await self._hass.async_add_executor_job(save_config, path, text, base):
+            return self.json_message(
+                "site.json was not saved: it has been changed since it was opened here", HTTPStatus.PRECONDITION_FAILED
+            )
         _LOGGER.info("Saved site.json for site %s", site)
         if isinstance(data.get("name"), str):
             # The sidebar title follows the name set in the setup guide.
             from . import async_site_renamed
             async_site_renamed(self._hass, site, data["name"])
-        return self.json({"saved": True})
+        return self.json({"saved": True, "version": config_version(text)})
 
     async def _put_picture(self, request: web.Request, site: str, path: Path) -> web.Response:
         if request.content_length and request.content_length > MAX_UPLOAD:
@@ -326,6 +340,26 @@ class SitesView(HomeAssistantView):
         await self._hass.async_add_executor_job(write_atomic, path, data, False)
         _LOGGER.info("Saved picture %s for site %s", path.name, site)
         return self.json({"saved": True, "file": path.name})
+
+
+def config_version(data: bytes) -> str:
+    """The version of a site.json, as an ETag: it changes when the content does."""
+    return f'"{hashlib.sha256(data).hexdigest()[:20]}"'
+
+
+_SAVE_LOCK = threading.Lock()
+
+
+def save_config(path: Path, data: bytes, base: str | None) -> bool:
+    """Write site.json and keep the replaced one as a restore point. With `base` (a
+    version from config_version), only if the file still is that version: False if not.
+
+    One save at a time, so two editors saving at the same moment cannot both pass the check."""
+    with _SAVE_LOCK:
+        if base and path.is_file() and config_version(path.read_bytes()) != base:
+            return False
+        write_atomic(path, data, True)
+    return True
 
 
 def _version(path: Path, n: int) -> Path:

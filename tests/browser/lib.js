@@ -6,7 +6,7 @@ const net = require('node:net');
 const path = require('node:path');
 const assert = require('node:assert/strict');
 const { before, after } = require('node:test');
-const { chromium } = require('playwright');
+const playwright = require('playwright');
 
 const ROOT = path.resolve(__dirname, '..', '..');
 
@@ -48,13 +48,14 @@ async function startServer() {
   return { url: `http://127.0.0.1:${port}/`, stop: () => proc.kill() };
 }
 
-// One server and one browser per test file.
+// One server and one browser per test file. Chromium unless another engine is named
+// (tests/webkit/ runs a few of the same steps in WebKit, the engine of Safari).
 // Call inside describe().
-function setup() {
+function setup(engine = 'chromium') {
   const env = {};
   before(async () => {
     env.server = await startServer();
-    env.browser = await chromium.launch();
+    env.browser = await playwright[engine].launch();
   });
   after(async () => {
     await env.browser?.close();

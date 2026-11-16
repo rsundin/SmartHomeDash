@@ -591,5 +591,9 @@
   "editor.cameraTurned": "{name} gedraaid",
   "editor.cameraMotion": "Bewegingssensor",
   "editor.cameraMotionNone": "Geen (die van de camera zelf, als hij er een heeft)",
-  "editor.cameraMotionSet": "Bewegingssensor voor {name} opgeslagen"
+  "editor.cameraMotionSet": "Bewegingssensor voor {name} opgeslagen",
+  "save.conflictTitle": "Elders gewijzigd",
+  "save.conflict": "Het dashboard is door iemand anders, of in een ander tabblad, opgeslagen sinds je het hier opende. Als je nu opslaat, worden die wijzigingen vervangen door de jouwe. De andere versie blijft bewaard als herstelpunt onder Back-up.",
+  "save.anyway": "Toch opslaan",
+  "save.conflictCancelled": "er is niets opgeslagen, het dashboard is elders gewijzigd"
 }
