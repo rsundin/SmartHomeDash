@@ -385,6 +385,11 @@ async def test_goodnight_refuses_other_entities_and_runs_for_any_user(hass: Home
     for bad in ({"entity_id": ["lock.front_door"]}, {"then": "automation.x"}, {"minutes": 500}, {"site": "../x"}):
         with pytest.raises(vol.Invalid):
             await hass.services.async_call(DOMAIN, "goodnight", {"site": "test_home", **bad}, blocking=True)
+    # Only for a dashboard that exists: no state or timer for a made-up site.
+    from homeassistant.exceptions import ServiceValidationError
+    with pytest.raises(ServiceValidationError):
+        await hass.services.async_call(DOMAIN, "goodnight", {"site": "no_such_site", "minutes": 5}, blocking=True)
+    assert hass.states.get("smarthomedash.goodnight_no_such_site") is None
     # Not an admin action: like switching a lamp, any logged-in user may start it.
     await hass.services.async_call(DOMAIN, "goodnight", {"site": "test_home", "minutes": 5}, blocking=True,
                                    context=Context(user_id=hass_read_only_user.id))

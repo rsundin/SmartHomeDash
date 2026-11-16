@@ -118,7 +118,8 @@ _module(
     SupportsResponse=MagicMock(),
     callback=callback,
 )
-_module("homeassistant.exceptions", HomeAssistantError=HomeAssistantError)
+_module("homeassistant.exceptions", HomeAssistantError=HomeAssistantError,
+        ServiceValidationError=type("ServiceValidationError", (HomeAssistantError,), {}))
 _module("homeassistant.components")
 _module("homeassistant.components.http", HomeAssistantView=HomeAssistantView)
 _anything("homeassistant.components.frontend")

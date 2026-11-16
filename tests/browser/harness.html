@@ -79,6 +79,7 @@ async function boot() {
   timers.splice(0).forEach(clearInterval);
   const site = await loadSite(siteId, { useDraft: harness.editing, loader });
   const mock = createMockAdapter(site);
+  site.dispose?.(); // only read for the test data; the dashboard loads the site itself
   const realInterval = window.setInterval;
   const adapter = {
     ...mock,

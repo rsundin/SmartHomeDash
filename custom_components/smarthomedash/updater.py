@@ -35,8 +35,21 @@ from .views import read_limited
 _LOGGER = logging.getLogger(__name__)
 
 MAX_DOWNLOAD = 100 * 1024 * 1024
-# Files whose change needs a Home Assistant restart to take effect.
-RESTART_FILES = ("__init__.py", "config_flow.py", "const.py", "views.py", "updater.py", "manifest.json", "services.yaml", "strings.json")
+# What Home Assistant reads once, at start: a change to any of it needs a restart. Every
+# Python file counts, so a new module cannot be forgotten here; the dashboard's own files
+# (frontend/, example/, brand/) are read when they are asked for.
+RESTART_FILES = ("manifest.json", "services.yaml", "strings.json")
+RESTART_PATTERNS = ("*.py", "translations/*.json")
+
+
+def restart_needed(old: Path, new: Path) -> bool:
+    """True if installing `new` over `old` changes, adds or removes a file that Home
+    Assistant only reads when it starts."""
+    names = set(RESTART_FILES)
+    for folder in (old, new):
+        for pattern in RESTART_PATTERNS:
+            names.update(p.relative_to(folder).as_posix() for p in folder.glob(pattern))
+    return any(_differs(old / name, new / name) for name in sorted(names))
 
 
 @dataclass
@@ -84,7 +97,7 @@ def install(archive: bytes, integration_dir: Path, sites_dir: Path, sites: list[
         if not (new_integration / "manifest.json").is_file():
             raise HomeAssistantError("The repository has no custom_components/smarthomedash")
 
-        restart = any(_differs(integration_dir / f, new_integration / f) for f in RESTART_FILES)
+        restart = restart_needed(integration_dir, new_integration)
         _replace_dir(new_integration, integration_dir)
 
         added: list[str] = []

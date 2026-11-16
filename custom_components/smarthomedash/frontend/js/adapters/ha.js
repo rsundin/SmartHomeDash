@@ -53,6 +53,8 @@ export function createHaAdapter({ url, token }) {
         } else if (m.type === 'event') {
           const s = m.event?.data?.new_state;
           if (s) store.update(s);
+          // No new state: the entity was removed from Home Assistant.
+          else if (m.event?.data?.entity_id) store.remove(m.event.data.entity_id);
         }
       };
 
