@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.8.30
+
+Faster start in Home Assistant, from the same review.
+
+- **The dashboard shows as soon as the overview's pictures are in.** In the Home Assistant panel every picture of the site (each floor plan, each room photo) was fetched before anything was drawn. Now only the overview's are waited for; the rest follow in the background, and a floor plan opened before its picture has arrived waits for that one picture. A home with many plans and photos starts as fast as a small one. Placement mode still fetches everything first, since it shows all plans at once
+- **Changing view while another is on its way no longer jumps back.** Tapping a building and then something else during the roof animation could end on the first plan
+- **Less work per update from Home Assistant.** An update that changes no state (a theme, the sidebar) is skipped, and comparing the states makes no list of them first. The gain is small: about 0.9 ms down to 0.55 ms per update with 3000 entities
+- Frontend only: reload the dashboard after updating
+
 ## 0.8.29
 
 Five fixes from a review of the whole code.

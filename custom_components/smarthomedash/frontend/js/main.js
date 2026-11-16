@@ -8,7 +8,7 @@
 
 import { el, storage, wait, reducedMotion, press, paused, syncPause } from './util.js';
 import { Store } from './store.js';
-import { loadSite, missingFilterKey } from './site.js';
+import { loadSite, missingFilterKey, planPicture } from './site.js';
 import { createHaAdapter, haLogin } from './adapters/ha.js';
 import { createMockAdapter } from './adapters/mock.js';
 import { createOverview } from './views/overview.js';
@@ -81,7 +81,7 @@ export async function start(opts) {
   // The texts (i18n.js): English is fetched beside site.json, the site's language once it is known.
   const english = loadLanguage('en');
   english.catch(() => {}); // awaited below; a failed site load must not leave it unhandled
-  const site = await loadSite(siteId, { useDraft: editing, loader: opts.loader });
+  const site = await loadSite(siteId, { useDraft: editing, loader: opts.loader, allPictures: editing });
   // A newer start() took over while this one was loading (a quick restart in place):
   // leave the page to it, and here and below draw nothing more.
   if (run.signal.aborted) { site.dispose?.(); return; }
@@ -325,8 +325,12 @@ export async function start(opts) {
 
   // A card set to one floor plan or room stays on that plan: no way back to the overview.
   let pinned = false;
+  // Counts the changes of view: one that waited (for the roof to lift, for a picture)
+  // gives way if another came after it.
+  let turn = 0;
   function showOverview() {
     if (!overview || pinned) return;
+    turn++;
     panel.close();
     plans.forEach((p) => p.el.classList.remove('is-active'));
     overview.el.classList.add('is-active');
@@ -338,12 +342,19 @@ export async function start(opts) {
 
   async function showPlan(planId, roomId) {
     if (!planById.has(planId)) return;
+    const mine = ++turn;
     if (view !== `plan:${planId}`) {
+      // The plan's picture may still be on its way (site.js fetches the overview first):
+      // it is asked for now and waited for while the roof lifts.
+      const pic = planPicture(planById.get(planId));
+      const ready = pic && !site.asset(pic) ? site.pictures([pic]) : null;
       const b = site.overview?.buildings.find((x) => x.floorplan === planId);
       if (view === 'overview' && b && !reducedMotion()) {
         overview.lift(b.id);
         await wait(520);
       }
+      if (ready) await ready;
+      if (mine !== turn || run.signal.aborted) return;
       const fp = buildPlan(planId);
       // A plan built just now starts hidden, so it fades in like the others.
       if (!fp.el.classList.contains('is-active')) void fp.el.offsetWidth;

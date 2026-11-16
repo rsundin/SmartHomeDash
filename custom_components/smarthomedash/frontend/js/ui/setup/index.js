@@ -41,7 +41,17 @@ export function createSetup({ site, store, saveSite, uploadFile, reload, openPla
   cfg.energy ??= {};
   cfg.scenes ??= [];
   const previews = new Map(); // path -> object URL for pictures uploaded in this session
-  const picture = (path) => previews.get(path) ?? site.asset(path);
+  // Opened right after start, a picture may still be on its way (site.js): the step that
+  // asked for it is drawn again when the pictures are in.
+  let awaited = false;
+  const picture = (path) => {
+    const src = previews.get(path) ?? site.asset(path);
+    if (!src && path && !awaited) {
+      awaited = true;
+      site.pictures().then(() => { awaited = false; if (root.isConnected && site.asset(path)) render(); });
+    }
+    return src;
+  };
   const areas = site.areas ?? noAreas();
   let step = STEPS[0];
   let dirty = false;

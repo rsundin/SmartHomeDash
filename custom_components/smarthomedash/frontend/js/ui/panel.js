@@ -36,7 +36,13 @@ export function createPanel({ site, store, adapter }) {
     current = room;
     title.textContent = room.name;
     body.replaceChildren();
-    if (room.photo) body.append(el('img', { class: 'room-photo', src: site.asset(room.photo), alt: room.name, loading: 'lazy' }));
+    if (room.photo) {
+      const photo = el('img', { class: 'room-photo', alt: room.name, loading: 'lazy' });
+      // The photo may still be on its way right after start (site.js): it is added when it is in.
+      if (site.asset(room.photo)) photo.src = site.asset(room.photo);
+      else { photo.hidden = true; site.pictures([room.photo]).then(() => { if (site.asset(room.photo)) { photo.src = site.asset(room.photo); photo.hidden = false; } }); }
+      body.append(photo);
+    }
     if (room.climate || room.temperature) body.append(climateSection(room));
     if (room.lights.length) body.append(lightsSection(room));
     if (room.status?.cover.length) body.append(coversSection(room));

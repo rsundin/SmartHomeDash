@@ -11,8 +11,11 @@ export function createHassAdapter(initialHass) {
 
   function sync() {
     const states = hass?.states ?? {};
-    if (!store) return;
-    for (const [id, s] of Object.entries(states)) {
+    // Home Assistant also hands over a new `hass` when something else than a state
+    // changed (a theme, the sidebar, the connection): the states are then the same object.
+    if (!store || states === last) return;
+    for (const id in states) {
+      const s = states[id];
       if (last[id] !== s) store.update(s);
     }
     // Entities removed from Home Assistant since the last object.
