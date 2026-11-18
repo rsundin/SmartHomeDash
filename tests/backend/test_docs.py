@@ -32,5 +32,25 @@ class InstallDocsTest(unittest.TestCase):
             self.assertIn("https://github.com/rsundin/planview-dash", text, name)
 
 
+class LaunchDocsTest(unittest.TestCase):
+    """Roadmap G1: the recording in the README, and the docs it links to."""
+
+    def test_readme_pictures_and_docs_exist(self):
+        text = (ROOT / "README.md").read_text()
+        refs = re.findall(r'src="(docs/[^"]+)"|\]\(((?:docs/)?[\w./-]+\.md)(?:#[\w-]*)?\)', text)
+        paths = {a or b for a, b in refs}
+        self.assertIn("docs/images/demo.webp", paths)
+        self.assertIn("docs/sharing.md", paths)
+        for p in sorted(paths):
+            self.assertTrue((ROOT / p).is_file(), f"README.md refers to {p}, which does not exist")
+
+    def test_recording_is_an_animated_webp_of_reasonable_size(self):
+        data = (ROOT / "docs/images/demo.webp").read_bytes()
+        self.assertEqual((data[:4], data[8:12]), (b"RIFF", b"WEBP"))
+        self.assertIn(b"ANIM", data[:64], "not an animated WebP")
+        # The README loads it on every visit; keep it light.
+        self.assertLess(len(data), 3_000_000)
+
+
 if __name__ == "__main__":
     unittest.main()

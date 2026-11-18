@@ -23,7 +23,7 @@ What is planned next, roughly in order. Plans change; ideas and votes are welcom
 - **More languages**: German, Norwegian, Danish, Finnish and Dutch, machine-assisted with corrections welcome, and a guide for translators. Done in 0.8.28.
 - **A listing in Home Assistant's Marketplace**, so PlanView Dash can be found without a link. Ready in 0.8.32, under the new name PlanView Dash in 0.8.33; the request to the catalog follows the release.
 - **Accessibility and large text**: text size per device, keyboard use, screen reader names. Done in 0.8.26.
-- **Launch**: a short recording in the README and a post on the Home Assistant forum.
+- **Launch**: a short recording in the README, ready-made posts for the Home Assistant forum and Reddit, and a guide to sharing your dashboard without private details. Done in 0.8.34; the posts follow the release.
 
 ## Whole-house control
 
