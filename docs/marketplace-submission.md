@@ -37,7 +37,7 @@ The backend test `tests/backend/test_marketplace.py` keeps the icon, `hacs.json`
    ```
 
    Their check sorts with `sorted(content, key=str.casefold)`; if neighbours have changed, place it where that puts it.
-5. **Open the pull request** against `hacs/default` `master` with the title and body below. Fill in the three links. Do not request reviews: their template says such pull requests are closed.
+5. **Open the pull request** against `hacs/default` `master` with the title and body below. The three links are filled in for v0.8.33 and the green **Validate** run on `main` it was released after (HACS and hassfest jobs). Write them as plain URLs: the hacs-bot counts links and closes a pull request with fewer than three, and placeholders do not count. After a new release, replace all three. Do not request reviews: their template says such pull requests are closed.
 6. **Mark it ready for review** when the links are in. A draft is not reviewed. Reviews can take weeks or months ([open queue](https://github.com/hacs/default/pulls?q=is%3Apr+is%3Aopen+draft%3Afalse+sort%3Acreated-asc)). Their bot runs the checks listed above; if one fails, fix it here, release again and update the links.
 
 ## Pull request text
@@ -62,9 +62,9 @@ Add rsundin/planview-dash
 
 ## Links
 
-Link to current release: <https://github.com/rsundin/planview-dash/releases/tag/v0.8.33>
-Link to successful HACS action (without the `ignore` key): <PASTE THE HACS JOB LINK FROM STEP 1>
-Link to successful hassfest action (if integration): <PASTE THE HASSFEST JOB LINK FROM STEP 1>
+Link to current release: https://github.com/rsundin/planview-dash/releases/tag/v0.8.33
+Link to successful HACS action (without the `ignore` key): https://github.com/rsundin/planview-dash/actions/runs/44271738294/job/134689797855
+Link to successful hassfest action (if integration): https://github.com/rsundin/planview-dash/actions/runs/44271738294/job/134689798622
 
 PlanView Dash is a picture-based dashboard: a photo or drawing of your own home with live lights, rooms, sensors and energy flow on it, set up in the Home Assistant UI. It ships as an integration (panel, config flow, a dashboard card and a goodnight action), with brand images in `custom_components/planview_dash/brand/`.
 ```
