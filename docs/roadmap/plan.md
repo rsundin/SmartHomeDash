@@ -19,7 +19,7 @@ Take these in order. L1, L2, H4 and L3 come before S5 because they are what the 
 11. **S6** A Marketplace listing
 12. **A1** Accessibility and large text
 13. **G1** Launch: show the project to the community
-14. **V1**–**V5** Hardening for 1.0, alongside G1 (proposed 18 November 2026, see [v1.md](v1.md)), then **V6** the 0.9.0 beta and **V7** the 1.0 checklist. No new features until 1.0.0 ships
+14. **V1**–**V5** Hardening for 1.0, alongside G1 (agreed 18 November 2026, see [v1.md](v1.md)), then **V6** the 0.9.0 beta and **V7** the 1.0 checklist. No new features until 1.0.0 ships
 15. **F1** Summer house mode, then **F2** warm-up before arrival
 16. **W2** Screen profiles and guest mode, then **W1** the house as screensaver
 17. **H2**, **H1**, **H3**, **H5**, **H6**, **E1**, then the rest in file order
@@ -232,7 +232,7 @@ Setup effort is the main barrier for every floor plan project [R5][R6][R11]. Pla
 
 ## 1.0 release: stable
 
-Features for 1.0 are in place; what is left is the promise that a dashboard set up today keeps working through 1.x, and core features that behave on any home. The reasoning, the promise itself and the owner's decisions are in [v1.md](v1.md). Path: V1–V5 as patch releases, V6 ships them as 0.9.0 (the beta), fixes only in 0.9.x, and 1.0.0 is the last 0.9.x once V7 is ticked.
+Features for 1.0 are in place; what is left is the promise that a dashboard set up today keeps working through 1.x, and core features that behave on any home. The reasoning, the promise itself and the owner's decisions (all accepted 18 November 2026) are in [v1.md](v1.md). Path: V1–V5 as patch releases, V6 ships them as 0.9.0 (the beta), fixes only in 0.9.x, and 1.0.0 is the last 0.9.x once V7 is ticked.
 
 ### V1: A versioned, frozen config format. Status: todo. Size: M
 - **Why:** `site.json` has no version field and nothing upgrades an older file. After 1.0 every format change must open old files unchanged.
@@ -245,8 +245,8 @@ Features for 1.0 are in place; what is left is the promise that a dashboard set 
 
 ### V2: Final public names, and the self-updater. Status: todo. Size: S
 - **Why:** after 1.0, action names, fields, card options, states and `configuration.yaml` keys cannot change in 1.x. `planview_dash.update` predates the Marketplace, is the only outside call, and is a second update path.
-- **What:** go through every name a user can type and rename now if needed (with a migration or a repairs notice). Per the owner's decision, remove `planview_dash.update`, `updater.py`, its options and the **Uppdatera dashboarden** button, with a changelog note; or keep it and move its messages into the translations.
-- **Done when:** the list of public names is in `docs/configuration.md` under a "Stable in 1.x" heading, and the updater is either gone (no test, doc or string refers to it) or translated.
+- **What:** go through every name a user can type and rename now if needed (with a migration or a repairs notice). Remove `planview_dash.update`, `updater.py`, its `configuration.yaml` options (`github_token`, `repository`, `branch`) and the **Uppdatera dashboarden** button (owner's decision, 18 November 2026), with a changelog note telling users to update through the Marketplace. Keep `migrate.py` (the move from SmartHomeDash) through 1.x.
+- **Done when:** the list of public names is in `docs/configuration.md` under a "Stable in 1.x" heading, and no code, test, doc or string refers to the updater.
 
 ### V3: Lights, temperature and energy flow on any home. Status: todo. Size: M
 - **Why:** the owner's three priorities were built against one home. No test covers `unavailable` or `unknown`, failed actions are silent, and power units and sign conventions vary.
@@ -263,7 +263,7 @@ Features for 1.0 are in place; what is left is the promise that a dashboard set 
 - **Done when:** the pages exist, are linked from the README and the **?** button's help, and `tests/backend/test_docs.py` checks the links.
 
 ### V5: Cleanups before the freeze. Status: todo. Size: S
-- **What:** Home Assistant (newest, oldest) as required checks (owner); newest Home Assistant in `tests/ha/requirements.txt` raised to 2026.11; the oldest supported version decided and `hacs.json` and `requirements-oldest.txt` set to match; a security pass over save, pictures, import and restore against `SECURITY.md`.
+- **What:** Home Assistant (newest, oldest) as required checks (owner); newest Home Assistant in `tests/ha/requirements.txt` raised to 2026.11; the oldest supported version stays 2025.6 (owner's decision) and the README says so; a security pass over save, pictures, import and restore against `SECURITY.md`.
 - **Done when:** CI runs the chosen versions, and the security pass is written up in the PR with any fixes made.
 
 ### V6: The 0.9.0 beta. Status: todo. Size: S. Depends: V1, V2, V3, V4, V5, G1
