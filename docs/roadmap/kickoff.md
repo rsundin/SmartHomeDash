@@ -1,6 +1,6 @@
 # Kickoff: start coding here
 
-A brief for a coding model (or a person) taking over SmartHomeDash development. Read this first, then `CLAUDE.md`, then the task in [plan.md](plan.md). It is written so you can start the first task within minutes, without exploring the whole codebase.
+A brief for a coding model (or a person) taking over PlanView Dash development. Read this first, then `CLAUDE.md`, then the task in [plan.md](plan.md). It is written so you can start the first task within minutes, without exploring the whole codebase.
 
 Status at the time of writing: version **0.8.16**, 13 November 2026. See [status-2026-11.md](status-2026-11.md).
 
@@ -55,7 +55,7 @@ python3.14 -m venv .venv-ha && .venv-ha/bin/pip install -r tests/ha/requirements
 ## 4. The code in one page
 
 ```
-custom_components/smarthomedash/
+custom_components/planview_dash/
   __init__.py      setup (YAML and config entries), panel registration, starter site, update action
   config_flow.py   add a dashboard from the UI; options (title, icon, admin-only)
   views.py         FrontendView (public code, no-cache) and SitesView (auth): site.json, pictures,
@@ -64,8 +64,8 @@ custom_components/smarthomedash/
   updater.py       install from a GitHub tarball (for setups without the Marketplace)
   example/         fictional house and apartment: pictures, site*.json, apartment*.json (en + sv)
   frontend/
-    panel.js       <smarthomedash-panel>: runs in HA's iframe, gets `hass`, calls main.start()
-    card.js        <smarthomedash-card> for other dashboards, its editor and card picker entry;
+    panel.js       <planview-dash-panel>: runs in HA's iframe, gets `hass`, calls main.start()
+    card.js        <planview-dash-card> for other dashboards, its editor and card picker entry;
                    the picture runs in a frame: card.html + card-frame.js → main.start({ embed })
     css/style.css  one stylesheet; tokens on :root; light mode under body.is-lite
     js/main.js     start(opts): loads the site, connects the adapter, builds header, stage, cards
@@ -127,7 +127,7 @@ Do them in this order, one pull request each. Briefs below add what you need bey
   - `CLAUDE.md:3, 31`
   - `__init__.py:29, 211` (comments)
   - `mock.js:46` (a comment; keep "HACS" there, since the Nord Pool HACS integration is still called that)
-- **New install text:** Settings → Marketplace → *Add from link* → `https://github.com/rsundin/SmartHomeDash` → install. Setup starts right away; a restart is still needed after updates. The first visit shows a community-code notice, and *Add from link* asks for a GitHub sign-in.
+- **New install text:** Settings → Marketplace → *Add from link* → `https://github.com/rsundin/planview-dash` → install. Setup starts right away; a restart is still needed after updates. The first visit shows a community-code notice, and *Add from link* asks for a GitHub sign-in.
 - **Keep** a one-line note for Home Assistant before 2026.11 (HACS custom repositories). `hacs.json` stays: the Marketplace still reads it. Check its `homeassistant` minimum (2024.8.0) against what the code really needs (registry names on `hass.entities` and floors need 2024.4+). Do not raise it without asking.
 - **Tests:** none needed for docs. Add a check in `tests/run.sh` (or a backend test) that fails if `README.md` or `docs/setup.md` mention "Custom repositories" outside the pre-2026.11 note.
 
@@ -173,11 +173,11 @@ Do them in this order, one pull request each. Briefs below add what you need bey
 
 ## 7. Second batch, notes ahead of time
 
-- **S4 (card), done in 0.8.21:** the card (`frontend/card.js`) does not run the dashboard in Home Assistant's own document. `start()` owns its whole document (`window.__shdRun`, `document.body` classes, global key listeners, the room panel on `document.body`, `@font-face` in `style.css`), so the card puts a frame in its shadow root (`card.html` + `card-frame.js`) and the frame calls `start({ embed: { view } })`, exactly as `panel.js` does in the panel's iframe. The card element only sizes the frame and hands it `hass` and the config (`contentWindow.shdCard.update`). `body.is-embed` in `style.css` hides everything but the picture. If a card without a frame is ever wanted (for example to follow Home Assistant's theme), that is the per-instance-root refactor: no globals, the stylesheet adopted into a shadow root, fonts declared on the document once.
+- **S4 (card), done in 0.8.21:** the card (`frontend/card.js`) does not run the dashboard in Home Assistant's own document. `start()` owns its whole document (`window.__pvdRun`, `document.body` classes, global key listeners, the room panel on `document.body`, `@font-face` in `style.css`), so the card puts a frame in its shadow root (`card.html` + `card-frame.js`) and the frame calls `start({ embed: { view } })`, exactly as `panel.js` does in the panel's iframe. The card element only sizes the frame and hands it `hass` and the config (`contentWindow.pvdCard.update`). `body.is-embed` in `style.css` hides everything but the picture. If a card without a frame is ever wanted (for example to follow Home Assistant's theme), that is the per-instance-root refactor: no globals, the stylesheet adopted into a shadow root, fonts declared on the document once.
 - **S5 (languages):** after Q8, each language is one JSON file. Mark machine-assisted translations in the file. The key-coverage test from Q8 covers them.
 - **A1, done in 0.8.26:** `tests/browser/a11y.test.js` loads `axe-core` into the page itself (`page.addScriptTag`), so the only new test dependency is `axe-core`, not `@axe-core/playwright`. New UI must pass it: accessible names, 4.5:1 contrast, nothing focusable inside something hidden. Text size is `body[data-text]` plus CSS `zoom` on the parts outside the picture (`style.css`, "text size per device").
 - **F1 (summer house mode)** depends on W2's screen profiles, so build W2 before F1 if the owner wants F1 early.
 
 ## 8. A prompt to start a session
 
-> You are taking over development of SmartHomeDash in this repository. Read `docs/roadmap/kickoff.md`, then `CLAUDE.md`, then the **Next up** list in `docs/roadmap/plan.md`. Set up the tests as in section 3 of the kickoff and run `tests/run.sh` once to see the baseline. Then work through the first batch (M1, Q6, Q7, Q8) in order, one branch and pull request per task, following "How to work" in the kickoff. After each pull request, report in one short paragraph what changed, how it was tested and anything the owner must do. Stop and ask when the kickoff says so.
+> You are taking over development of PlanView Dash in this repository. Read `docs/roadmap/kickoff.md`, then `CLAUDE.md`, then the **Next up** list in `docs/roadmap/plan.md`. Set up the tests as in section 3 of the kickoff and run `tests/run.sh` once to see the baseline. Then work through the first batch (M1, Q6, Q7, Q8) in order, one branch and pull request per task, following "How to work" in the kickoff. After each pull request, report in one short paragraph what changed, how it was tested and anything the owner must do. Stop and ask when the kickoff says so.

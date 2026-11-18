@@ -11,7 +11,7 @@ const { ROOT, setup, harness, close, check } = require('./lib');
 const COUNTER = 'light.kitchen_counter'; // a line strip in the example house
 const houseSite = () => JSON.parse(fs.readFileSync(path.join(ROOT, 'sites', 'example-house', 'site.json'), 'utf8'));
 const serve = (site) => (page) => page.route('**/sites/example-house/site.json', (route) => route.fulfill({ contentType: 'application/json', body: JSON.stringify(site) }));
-const draft = (page) => page.evaluate(() => JSON.parse(localStorage.getItem('shd:example-house:draft')));
+const draft = (page) => page.evaluate(() => JSON.parse(localStorage.getItem('pvd:example-house:draft')));
 const lightIn = (cfg, id) => cfg.floorplans.flatMap((p) => p.rooms).flatMap((r) => r.lights ?? []).find((l) => l.entity === id);
 const toPlan = async (page) => {
   await page.locator('.views .tab[data-view="plan:house"]').click();
@@ -235,7 +235,7 @@ describe('LED strips', () => {
     assert.equal(await shape.locator('.shape-mid').count(), 4);
     // Cancel changes nothing.
     await shape.locator('.chip', { hasText: 'Cancel' }).click();
-    assert.equal(await page.evaluate(() => localStorage.getItem('shd:example-house:draft')), null);
+    assert.equal(await page.evaluate(() => localStorage.getItem('pvd:example-house:draft')), null);
     await page.locator('.editor-strip [data-action="shape-area"]').click();
     await shape.locator('.chip-primary').click();
     await restarted(page, 2);

@@ -40,11 +40,11 @@ describe('Report a problem', () => {
     test(`${siteId}: the ? button opens a prefilled issue with no ids or names`, async () => {
       const page = await harness(env, `?site=${siteId}`);
       const url = await openReport(page);
-      assert.equal(`${url.origin}${url.pathname}`, 'https://github.com/rsundin/SmartHomeDash/issues/new');
+      assert.equal(`${url.origin}${url.pathname}`, 'https://github.com/rsundin/planview-dash/issues/new');
       assert.equal(url.searchParams.get('template'), 'bug_report.yml');
       assert.equal(url.searchParams.get('ha'), '2026.11.0');
       const text = url.searchParams.get('dashboard');
-      assert.match(text, /^SmartHomeDash: /m);
+      assert.match(text, /^PlanView Dash: /m);
       assert.match(text, /^Home Assistant: 2026\.11\.0$/m);
       assert.match(text, /^Opened as: Home Assistant panel$/m);
       assert.match(text, /^Screen: \d+×\d+/m);
@@ -56,7 +56,7 @@ describe('Report a problem', () => {
       const leaked = privateWords(siteId).filter((w) => all.includes(w));
       assert.deepEqual(leaked, [], 'no entity ids or names in the issue');
       // Questions go to Discussions.
-      assert.equal(await page.locator('#report-discuss').getAttribute('href'), 'https://github.com/rsundin/SmartHomeDash/discussions');
+      assert.equal(await page.locator('#report-discuss').getAttribute('href'), 'https://github.com/rsundin/planview-dash/discussions');
       check(page);
       await close(page);
     });
@@ -80,7 +80,7 @@ describe('Report a problem', () => {
     const prepare = (page) => page.route('**/sites/example-house/site.json', (route) => route.fulfill({ contentType: 'application/json', body: JSON.stringify(site) }));
     const page = await harness(env, '?site=example-house', { prepare });
     await page.evaluate(async () => {
-      const m = await import('../../custom_components/smarthomedash/frontend/js/ui/report.js');
+      const m = await import('../../custom_components/planview_dash/frontend/js/ui/report.js');
       m.noteProblem('site.json was not saved: floorplans[0].rooms[2].area should be a list of at least three [x, y] number pairs');
     });
     const url = await openReport(page);

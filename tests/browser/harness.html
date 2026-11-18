@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>SmartHomeDash test harness</title>
-<link rel="stylesheet" href="../../custom_components/smarthomedash/frontend/css/style.css">
+<title>PlanView Dash test harness</title>
+<link rel="stylesheet" href="../../custom_components/planview_dash/frontend/css/style.css">
 <style>html, body { height: 100%; }</style>
 </head>
 <body>
@@ -31,8 +31,8 @@
                                   an import of a file named bad*.zip fails like Home Assistant
 -->
 <script type="module">
-window.SHD_PANEL = true; // main.js must not start the standalone page by itself
-const FRONTEND = '../../custom_components/smarthomedash/frontend/js/';
+window.PVD_PANEL = true; // main.js must not start the standalone page by itself
+const FRONTEND = '../../custom_components/planview_dash/frontend/js/';
 const [{ start, showFatal }, { loadSite }, { createMockAdapter }] = await Promise.all([
   import(`${FRONTEND}main.js`),
   import(`${FRONTEND}site.js`),
@@ -52,7 +52,7 @@ harness.backup = {
   ],
 };
 const backup = params.has('nobackup') ? null : {
-  async exportZip() { harness.backup.exports++; return { blob: new Blob(['PK'], { type: 'application/zip' }), name: `smarthomedash-${siteId}-test.zip` }; },
+  async exportZip() { harness.backup.exports++; return { blob: new Blob(['PK'], { type: 'application/zip' }), name: `planview-dash-${siteId}-test.zip` }; },
   async importZip(file) {
     if (file.name.startsWith('bad')) throw new Error('Nothing was imported: evil.html is not site.json or a jpg, png or webp picture');
     harness.backup.imports.push(file.name);

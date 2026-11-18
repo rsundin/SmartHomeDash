@@ -198,7 +198,7 @@ describe('accessibility', () => {
     assert.equal(await btn.getAttribute('aria-label'), 'Text size: large');
     await btn.click();
     assert.equal(await page.evaluate(() => document.body.dataset.text), 'xlarge');
-    assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem('shd:text'))), 'xlarge');
+    assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem('pvd:text'))), 'xlarge');
     await settled(page);
     // Text and touch targets grow by 30 %. The labels on the picture grow too, a little
     // less on this screen because the wider cards leave the picture less room.
@@ -215,7 +215,16 @@ describe('accessibility', () => {
     assert.equal(await page.evaluate(() => document.body.dataset.text), 'xlarge');
     await page.locator('.top-actions .chip-text').click();
     assert.equal(await page.evaluate(() => document.body.dataset.text ?? null), null);
-    assert.equal(await page.evaluate(() => localStorage.getItem('shd:text')), '"normal"');
+    assert.equal(await page.evaluate(() => localStorage.getItem('pvd:text')), '"normal"');
+    check(page);
+    await close(page);
+  });
+
+  test('settings kept under the name before PlanView Dash move over once', async () => {
+    const page = await harness(env, '?site=example-house', { storage: { 'shd:text': 'xlarge', 'shd:example-house:night': 'day' } });
+    assert.equal(await page.evaluate(() => document.body.dataset.text), 'xlarge');
+    assert.deepEqual(await page.evaluate(() => Object.keys(localStorage).filter((k) => k.startsWith('shd:'))), []);
+    assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem('pvd:example-house:night'))), 'day');
     check(page);
     await close(page);
   });
@@ -223,7 +232,7 @@ describe('accessibility', () => {
   for (const site of SITES) {
     for (const text of ['large', 'xlarge']) {
       test(`${text} text on a 390 px phone, ${site}: nothing sticks out, the room panel fits`, async () => {
-        const page = await harness(env, `?site=${site}`, { width: 390, height: 844, touch: true, storage: { 'shd:text': text } });
+        const page = await harness(env, `?site=${site}`, { width: 390, height: 844, touch: true, storage: { 'pvd:text': text } });
         assert.equal(await page.evaluate(() => document.body.dataset.text), text);
         await settled(page);
         await assertNoOverflow(page, `${site} ${text}`);

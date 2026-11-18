@@ -5,7 +5,7 @@ const { describe, test } = require('node:test');
 const assert = require('node:assert/strict');
 const { setup, harness, close, check, centre } = require('./lib');
 
-const UTIL = '../../custom_components/smarthomedash/frontend/js/util.js';
+const UTIL = '../../custom_components/planview_dash/frontend/js/util.js';
 
 // Screen position of a point in the shape editor's picture coordinates.
 const toScreen = (page, [x, y]) => page.locator('.shape-svg').evaluate((svg, [x, y]) => {
@@ -234,7 +234,7 @@ describe('editor comforts', () => {
     await page.waitForTimeout(600);
     const id = 'light.office';
     const at = () => page.evaluate((id) => {
-      const d = JSON.parse(localStorage.getItem('shd:example-house:draft'));
+      const d = JSON.parse(localStorage.getItem('pvd:example-house:draft'));
       return d.floorplans.flatMap((p) => p.rooms).flatMap((r) => r.lights).find((l) => l.entity === id).at;
     }, id);
     const restarted = async (n) => {
@@ -267,7 +267,7 @@ describe('editor comforts', () => {
     // Saving to Home Assistant ends the history.
     await page.locator('aside.editor .chip', { hasText: 'Save to Home Assistant' }).click();
     await restarted(5);
-    assert.equal(await page.evaluate(() => localStorage.getItem('shd:example-house:edithistory')), null);
+    assert.equal(await page.evaluate(() => localStorage.getItem('pvd:example-house:edithistory')), null);
     assert.equal(await page.locator('aside.editor .editor-undo').isDisabled(), true);
     check(page);
     await close(page);

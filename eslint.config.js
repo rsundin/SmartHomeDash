@@ -47,7 +47,7 @@ module.exports = [
   { ignores: ['node_modules/**', '.venv*/**'] },
   // The dashboard: ES modules in the browser.
   {
-    files: ['custom_components/smarthomedash/frontend/**/*.js'],
+    files: ['custom_components/planview_dash/frontend/**/*.js'],
     languageOptions: { ecmaVersion: 'latest', sourceType: 'module', globals: { ...globals.browser } },
     rules: mistakes,
   },

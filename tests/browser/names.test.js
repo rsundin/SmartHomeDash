@@ -7,7 +7,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { ROOT, setup, harness, close, check } = require('./lib');
 
-const ENTITIES = '../../custom_components/smarthomedash/frontend/js/entities.js';
+const ENTITIES = '../../custom_components/planview_dash/frontend/js/entities.js';
 
 describe('names', () => {
   const env = setup();

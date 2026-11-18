@@ -110,8 +110,8 @@ The community's top complaint is slow dashboards [R22][R23]. Work through Claude
   - Rewrite install steps in README and `docs/setup.md`: Marketplace → Add from link → repository URL → install, which goes straight into the setup flow.
   - Keep a short note for Home Assistant before 2026.11 (HACS custom repositories).
   - Check that `hacs.json`, `manifest.json` and the release notes give the Marketplace what it shows: minimum Home Assistant version, a clear description, brand images (`brand/` in the integration; also in home-assistant/brands under S6).
-  - Mention in README that the Marketplace shows a community-code notice, and what SmartHomeDash accesses (SECURITY.md).
-  - The setup guide's "Update" texts and `smarthomedash.update` docs refer to the Marketplace instead of HACS.
+  - Mention in README that the Marketplace shows a community-code notice, and what PlanView Dash accesses (SECURITY.md).
+  - The setup guide's "Update" texts and `planview_dash.update` docs refer to the Marketplace instead of HACS.
 - **Done when:** every mention of HACS menus is replaced or marked "before 2026.11"; a fresh install following the README works on Home Assistant 2026.11 (owner checks once).
 
 ### Q6: The lost tap after a drag. Status: done (v0.8.18). Size: S
@@ -140,7 +140,7 @@ The community's top complaint is slow dashboards [R22][R23]. Work through Claude
 
 ## 1.0: Nearly zero setup
 
-Setup effort is the main barrier for every floor plan project [R5][R6][R11]. SmartHomeDash is already the easiest. This milestone makes it effortless and lets it reach every dashboard.
+Setup effort is the main barrier for every floor plan project [R5][R6][R11]. PlanView Dash is already the easiest. This milestone makes it effortless and lets it reach every dashboard.
 
 ### S1: Quick start from Home Assistant floors and areas. Status: done (v0.8.12). Size: L. Depends: Q3
 - **Why:** HA builds dashboards from areas automatically [R1]. A new user should get something useful before drawing anything.
@@ -154,12 +154,12 @@ Setup effort is the main barrier for every floor plan project [R5][R6][R11]. Sma
 ### S7: Report a problem and get help. Status: done (v0.8.14). Size: S. Next after 0.8.13 (placed here so it is picked before S2)
 - **Why:** Problems in real homes should reach the repo with what is needed to solve them, without users having to know where to go or leaking details about their home. A bug report template exists but nothing in the dashboard points to it, and there is no place for questions or ideas that are not bugs.
 - **What:**
-  - **Report a problem** in the dashboard menu and the setup guide: opens a new GitHub issue with the bug template filled in with SmartHomeDash version, Home Assistant version, browser, screen size, kiosk or light mode, and the config check messages (Q5), never entity ids, names or pictures. The user sees the text before it leaves.
+  - **Report a problem** in the dashboard menu and the setup guide: opens a new GitHub issue with the bug template filled in with PlanView Dash version, Home Assistant version, browser, screen size, kiosk or light mode, and the config check messages (Q5), never entity ids, names or pictures. The user sees the text before it leaves.
   - Home Assistant **Download diagnostics** for the integration (`diagnostics.py`, `async_redact_data`): version, options, site count and sizes, counts of rooms, lamps and sensors per site, missing entities as counts only.
   - Issue templates: the bug report asks for diagnostics and device (wall tablet, phone, browser); a feature request template; `config.yml` links questions to Discussions.
   - **GitHub Discussions** (Q&A, Ideas, Show and tell) for questions, wishes and screenshots, linked from README and ROADMAP ("ideas and votes are welcome").
   - Later, with S6: a thread on the Home Assistant Community forum (Dashboards / Share your projects) when the integration is in the default HACS list, pointing back to Discussions and issues.
-- **Files:** `ui/` menu and `ui/setup.js`, `i18n.js`, `custom_components/smarthomedash/diagnostics.py`, `.github/ISSUE_TEMPLATE/`, `README.md`, `ROADMAP.md`, `docs/setup.md`.
+- **Files:** `ui/` menu and `ui/setup.js`, `i18n.js`, `custom_components/planview_dash/diagnostics.py`, `.github/ISSUE_TEMPLATE/`, `README.md`, `ROADMAP.md`, `docs/setup.md`.
 - **Done when:** a tap on **Report a problem** opens a prefilled issue with no entity ids or names in it (browser test checks the URL); diagnostics download with tokens and entity ids redacted (backend test); Discussions is on and linked.
 
 ### S2: Editor comforts. Status: done (v0.8.15). Size: M
@@ -185,7 +185,7 @@ Setup effort is the main barrier for every floor plan project [R5][R6][R11]. Sma
 ### S4: A card for any dashboard. Status: done (v0.8.21). Size: L. Depends: Q2
 - **Why:** NeonPlan and the energy cards work inside existing dashboards [R9][R14]. HA 2026.6 lets custom cards suggest themselves in the card picker [R3].
 - **What:**
-  - `custom:smarthomedash-card` showing the overview, one floor plan or one room of a chosen dashboard, with a visual editor (dashboard, view, height).
+  - `custom:planview-dash-card` showing the overview, one floor plan or one room of a chosen dashboard, with a visual editor (dashboard, view, height).
   - Load it as a dashboard resource from the integration (registered automatically).
   - Opt in to `getEntitySuggestion` for lights in linked areas.
   - Shares the code with the panel; tapping opens the room panel inside the card.
@@ -203,7 +203,7 @@ Setup effort is the main barrier for every floor plan project [R5][R6][R11]. Sma
 - **Done when:** a key-coverage test runs in CI, and every language renders without missing keys on both examples.
 
 ### S6: A listing in the Home Assistant Marketplace. Status: done (v0.8.32). Size: S. Depends: M1, S5
-- **Why:** Since 2026.11 the default HACS list is what the built-in Marketplace shows [R27]. Being listed means people can find SmartHomeDash without a link.
+- **Why:** Since 2026.11 the default HACS list is what the built-in Marketplace shows [R27]. Being listed means people can find PlanView Dash without a link.
 - **What:**
   - Submit the icon to home-assistant/brands and remove `ignore: brands` from the HACS check.
   - Follow the current Marketplace inclusion process (formerly hacs/default; check the docs at the time). It needs the owner to open pull requests from their account, so prepare the files and the text.
@@ -246,7 +246,7 @@ Added 14 November 2026 at the owner's request. Small things a wall screen in the
 - **Why:** Going to bed means walking through the house with the lights still on, then everything off. One tap on the hall screen should do it.
 - **What:**
   - A **Godnatt** button (beside the L1 control and in the lights card). It starts a countdown, 5 minutes by default: lights stay as they are, a small banner on every open screen says "Släcker allt om 4:12" with **Avbryt**, and when it runs out every light from L1 (minus the exclusions) turns off.
-  - It runs in Home Assistant, not in the browser: the integration adds the action `smarthomedash.goodnight` (`entity_id`, `minutes`, `cancel`) that schedules the turn-off with `async_call_later`, and a state per site (`smarthomedash.goodnight_<site>`, `on` with `ends_at` while counting down), set like `sun.sun` so it works for dashboards from YAML too, which have no config entry. Every screen shows the countdown from that state. Closing or reloading the tablet does not stop it, and the action can also be used from automations, voice or an NFC tag.
+  - It runs in Home Assistant, not in the browser: the integration adds the action `planview_dash.goodnight` (`entity_id`, `minutes`, `cancel`) that schedules the turn-off with `async_call_later`, and a state per site (`planview_dash.goodnight_<site>`, `on` with `ends_at` while counting down), set like `sun.sun` so it works for dashboards from YAML too, which have no config entry. Every screen shows the countdown from that state. Closing or reloading the tablet does not stop it, and the action can also be used from automations, voice or an NFC tag.
   - Optional `"goodnight": { "minutes": 5, "then": "script.goodnight" }` in site.json: `then` runs a script of the user's own when the lights go off (lock up, TV off, heating down). The integration does not write scripts or automations into the user's configuration.
   - Turned on or off under **Buttons** in the setup guide, like L1 (`"goodnight": { "enabled": false }`).
   - A restart of Home Assistant during the countdown cancels it (said in the docs); a second tap on **Godnatt** restarts the countdown.
@@ -339,7 +339,7 @@ Competitors show people, openings, media, appliances, cameras and power where th
 - **Done when:** tests cover entering and leaving ambient mode, warnings shown in it, and light mode without animation.
 
 ### W2: Screen profiles and guest mode. Status: todo. Size: M
-- **Why:** Tablets that show only their own floor work well [R21]. Floor3DX limits locks, garage doors and alarms for guests [R7]. Guest access is missing in most dashboard apps [R30], so this sets SmartHomeDash apart.
+- **Why:** Tablets that show only their own floor work well [R21]. Floor3DX limits locks, garage doors and alarms for guests [R7]. Guest access is missing in most dashboard apps [R30], so this sets PlanView Dash apart.
 - **What:**
   - Named screen profiles in the guide (for example "Hall", "Kitchen", "Guest room"), chosen with `?screen=hall` or on the device.
   - Each profile sets the start view (overview, a floor or a room), idle behaviour and allowed actions.

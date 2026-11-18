@@ -65,7 +65,7 @@ describe('dashboard', () => {
     assert.equal(dusk, 1, 'the evening picture is shown in full');
     await page.locator('.top-actions .chip', { hasText: /^Night/ }).click(); // night → day
     await page.waitForFunction(() => !document.querySelector('.stage').classList.contains('is-night'));
-    assert.equal(await page.evaluate(() => localStorage.getItem('shd:example-house:night')), '"day"');
+    assert.equal(await page.evaluate(() => localStorage.getItem('pvd:example-house:night')), '"day"');
     check(page);
     await close(page);
   });

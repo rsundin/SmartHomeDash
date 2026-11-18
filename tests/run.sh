@@ -14,10 +14,10 @@ part="${1:-all}"
 
 if [[ "$part" == all || "$part" == backend ]]; then
   echo "== Syntax"
-  python3 -m py_compile custom_components/smarthomedash/*.py
+  python3 -m py_compile custom_components/planview_dash/*.py
   # The dashboard is ES modules. A plain `node --check` on a .js file can pass a module
   # with a syntax error, so read each one as a module.
-  for f in $(find custom_components/smarthomedash/frontend -name '*.js'); do
+  for f in $(find custom_components/planview_dash/frontend -name '*.js'); do
     node --input-type=module --check < "$f" || { echo "Syntax error in $f"; exit 1; }
   done
   for f in tests/browser/*.js tests/webkit/*.js tests/fixtures/*.js; do node --check "$f"; done

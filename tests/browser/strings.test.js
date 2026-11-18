@@ -9,7 +9,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { setup, open, close, check, SITES } = require('./lib');
 
-const I18N = path.join(__dirname, '..', '..', 'custom_components', 'smarthomedash', 'frontend', 'i18n');
+const I18N = path.join(__dirname, '..', '..', 'custom_components', 'planview_dash', 'frontend', 'i18n');
 const text = (code) => JSON.parse(fs.readFileSync(path.join(I18N, `${code}.json`), 'utf8'));
 // The languages beyond Swedish and English (roadmap S5), all machine-assisted.
 const ADDED = ['da', 'de', 'fi', 'nb', 'nl'];
@@ -46,7 +46,7 @@ describe('texts', () => {
     const raw = await page.evaluate(() => (document.body.innerText.match(/\b(app|setup|editor|cards|panel|status|flow|alerts)\.[a-z][\w.]+\b/gi) ?? []));
     assert.deepEqual(raw, [], 'no text is shown as its key');
 
-    const version = await page.evaluate(() => window.SHD_VERSION);
+    const version = await page.evaluate(() => window.PVD_VERSION);
     const names = seen.map((u) => u.slice(u.lastIndexOf('/') + 1)).sort();
     // index.html preloads English and the dashboard asks for the same address; Swedish is
     // not fetched for an English site.
@@ -141,7 +141,7 @@ describe('texts', () => {
     await picker.waitFor();
     await picker.selectOption('nb');
     const saved = await page.evaluate(async () => {
-      const mod = await import('../../custom_components/smarthomedash/frontend/js/i18n.js');
+      const mod = await import('../../custom_components/planview_dash/frontend/js/i18n.js');
       return [mod.localeFor('nb'), mod.matchLanguage('nn-NO'), mod.matchLanguage('de-AT'), mod.matchLanguage('fr'), mod.matchLanguage(undefined)];
     });
     assert.deepEqual(saved, ['nb-NO', 'nb', 'de', 'en', 'en']);

@@ -1,0 +1,92 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Dashboard hinzufügen",
+        "description": "Jedes Dashboard bekommt ein eigenes Panel in der Seitenleiste. Bilder, Grundrisse, Licht, Heizung und Energie werden danach im Panel eingerichtet.",
+        "data": {
+          "title": "Name",
+          "icon": "Symbol in der Seitenleiste",
+          "url_path": "Adresse",
+          "require_admin": "Nur für Administratoren",
+          "layout": "Art des Zuhauses"
+        },
+        "data_description": {
+          "title": "Wird in der Seitenleiste angezeigt, zum Beispiel Zuhause oder Ferienhaus.",
+          "url_path": "Das Dashboard öffnet sich unter deiner Home-Assistant-Adresse, gefolgt von /adresse. Leer lassen, um den Namen zu verwenden.",
+          "layout": "Ein Haus wird mit einem Bild von außen und Grundrissen gezeigt. Eine Wohnung wird nur mit ihrem Grundriss gezeigt. Das lässt sich später in der Einrichtung ändern."
+        }
+      },
+      "take_over": {
+        "title": "Dashboards übernehmen",
+        "description": "PlanView Dash hieß früher SmartHomeDash. Diese Dashboards sind unter dem alten Namen eingerichtet: {dashboards}. Sie werden mit Namen, Adressen, Einstellungen und Bildern übernommen, und die alten Einträge werden entfernt."
+      }
+    },
+    "error": {
+      "invalid_url_path": "Nur Kleinbuchstaben, Ziffern, - und _ verwenden.",
+      "url_path_taken": "Ein anderes Panel verwendet diese Adresse bereits.",
+      "site_in_yaml": "Ein Dashboard mit diesem Namen ist in configuration.yaml eingerichtet."
+    },
+    "abort": {
+      "already_configured": "Ein Dashboard mit diesem Namen existiert bereits."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Dashboard-Einstellungen",
+        "data": {
+          "title": "Name",
+          "icon": "Symbol in der Seitenleiste",
+          "require_admin": "Nur für Administratoren"
+        }
+      }
+    }
+  },
+  "services": {
+    "update": {
+      "name": "Aktualisieren",
+      "description": "Die neueste Version von PlanView Dash von GitHub installieren. Eine in Home Assistant gespeicherte site.json bleibt erhalten.",
+      "fields": {
+        "overwrite_site": {
+          "name": "site.json überschreiben",
+          "description": "Die gespeicherte site.json durch die aus dem Repository ersetzen (die alte bleibt als site.json.bak erhalten)."
+        }
+      }
+    },
+    "goodnight": {
+      "name": "Gute Nacht",
+      "description": "Das Licht nach einigen Minuten ausschalten. Jedes geöffnete Dashboard zeigt den Countdown und kann ihn abbrechen.",
+      "fields": {
+        "site": {
+          "name": "Dashboard",
+          "description": "Der Ordnername des Dashboards (wie in der Adresse seiner Dateien)."
+        },
+        "entity_id": {
+          "name": "Lichter",
+          "description": "Lichter und Schalter, die ausgeschaltet werden, wenn die Zeit um ist."
+        },
+        "minutes": {
+          "name": "Minuten",
+          "description": "Wie lange das Licht zunächst an bleibt."
+        },
+        "then": {
+          "name": "Danach ausführen",
+          "description": "Ein Skript, das läuft, wenn das Licht ausgeht, zum Beispiel zum Abschließen."
+        },
+        "cancel": {
+          "name": "Abbrechen",
+          "description": "Einen laufenden Countdown stoppen."
+        }
+      }
+    }
+  },
+  "selector": {
+    "layout": {
+      "options": {
+        "house": "Haus mit einem Bild von außen",
+        "apartment": "Wohnung, nur Grundriss"
+      }
+    }
+  }
+}

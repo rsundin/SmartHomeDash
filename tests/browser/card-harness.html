@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>SmartHomeDash card harness</title>
+<title>PlanView Dash card harness</title>
 <style>
   /* A light page, like a Home Assistant dashboard with the default theme. */
   body { margin: 0; padding: 12px; background: #fafafa; font: 14px sans-serif; }
@@ -17,7 +17,7 @@
 <div id="editors"></div>
 <!--
   A stand-in for a Home Assistant dashboard, to test frontend/card.js the way Home
-  Assistant uses it: it loads the card's module, creates <smarthomedash-card> elements,
+  Assistant uses it: it loads the card's module, creates <planview-dash-card> elements,
   calls setConfig() and sets a `hass` object on them. Served from the repository root.
 
   The `hass` object is built from the test data (adapters/mock.js): states, panels for
@@ -34,8 +34,8 @@
     window.harness.card                the card's module: suggest(), viewOptions(), dashboards()
 -->
 <script type="module">
-const FRONTEND = '../../custom_components/smarthomedash/frontend/';
-const API = '/api/smarthomedash/sites/';
+const FRONTEND = '../../custom_components/planview_dash/frontend/';
+const API = '/api/planview_dash/sites/';
 const harness = window.harness = { configs: [], calls: [], fetched: [], ready: null, hass: null };
 
 // Home Assistant's own elements, as far as the card uses them.
@@ -66,7 +66,7 @@ async function build() {
     for (const s of own.all()) store.update(s);
     mocks.push([mock, own]);
   }
-  const elements = () => document.querySelectorAll('smarthomedash-card, smarthomedash-card-editor');
+  const elements = () => document.querySelectorAll('planview-dash-card, planview-dash-card-editor');
   const publish = () => {
     harness.hass = { ...harness.hass, states: Object.fromEntries(store.all().map((s) => [s.entity_id, s])) };
     for (const n of elements()) n.hass = harness.hass;
@@ -82,8 +82,8 @@ async function build() {
     devices: {},
     floors: {},
     panels: {
-      'my-house': { url_path: 'my-house', title: 'Example house', component_name: 'custom', config: { site: 'example-house', _panel_custom: { name: 'smarthomedash-panel' } } },
-      flat: { url_path: 'flat', title: 'Apartment', component_name: 'custom', config: { site: 'example-apartment', _panel_custom: { name: 'smarthomedash-panel' } } },
+      'my-house': { url_path: 'my-house', title: 'Example house', component_name: 'custom', config: { site: 'example-house', _panel_custom: { name: 'planview-dash-panel' } } },
+      flat: { url_path: 'flat', title: 'Apartment', component_name: 'custom', config: { site: 'example-apartment', _panel_custom: { name: 'planview-dash-panel' } } },
       lovelace: { url_path: 'lovelace', title: 'Overview', component_name: 'lovelace', config: {} },
     },
     async fetchWithAuth(path) {
@@ -106,7 +106,7 @@ async function build() {
 
   harness.setState = (id, state) => { store.update({ ...store.get(id), state }); publish(); };
   harness.addCard = (config, { grid = false } = {}) => {
-    const n = document.createElement('smarthomedash-card');
+    const n = document.createElement('planview-dash-card');
     n.setConfig(config);
     n.hass = harness.hass;
     const slot = document.createElement('div');
@@ -116,7 +116,7 @@ async function build() {
     return n;
   };
   harness.addEditor = (config) => {
-    const n = customElements.get('smarthomedash-card').getConfigElement();
+    const n = customElements.get('planview-dash-card').getConfigElement();
     n.addEventListener('config-changed', (e) => harness.configs.push(e.detail.config));
     n.setConfig(config);
     n.hass = harness.hass;

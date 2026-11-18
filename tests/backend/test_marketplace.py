@@ -10,7 +10,7 @@ import unittest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
-BRAND = ROOT / "custom_components/smarthomedash/brand"
+BRAND = ROOT / "custom_components/planview_dash/brand"
 PNG_MAGIC = b"\x89PNG\r\n\x1a\n"
 
 
@@ -37,11 +37,11 @@ class MarketplaceTest(unittest.TestCase):
 
     def test_hacs_json(self):
         hacs = json.loads((ROOT / "hacs.json").read_text())
-        self.assertEqual(hacs.get("name"), "SmartHomeDash")
+        self.assertEqual(hacs.get("name"), "PlanView Dash")
         self.assertRegex(hacs.get("homeassistant", ""), r"^\d{4}\.\d+\.\d+$")
 
     def test_submission_entry_matches_repository(self):
-        manifest = json.loads((ROOT / "custom_components/smarthomedash/manifest.json").read_text())
+        manifest = json.loads((ROOT / "custom_components/planview_dash/manifest.json").read_text())
         repo = manifest["documentation"].removeprefix("https://github.com/")
         doc = (ROOT / "docs/marketplace-submission.md").read_text()
         self.assertIn(f'"{repo}",', doc)

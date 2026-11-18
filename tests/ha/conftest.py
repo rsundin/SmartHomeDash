@@ -23,7 +23,7 @@ from pytest_homeassistant_custom_component.common import MockConfigEntry
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 import custom_components  # noqa: E402, F401
 
-DOMAIN = "smarthomedash"
+DOMAIN = "planview_dash"
 
 
 @pytest.fixture(autouse=True)

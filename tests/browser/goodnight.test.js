@@ -10,12 +10,12 @@ const { ROOT, setup, harness, close, check, assertNoOverflow } = require('./lib'
 
 const houseSite = () => JSON.parse(fs.readFileSync(path.join(ROOT, 'sites', 'example-house', 'site.json'), 'utf8'));
 const serve = (site) => (page) => page.route('**/sites/example-house/site.json', (route) => route.fulfill({ contentType: 'application/json', body: JSON.stringify(site) }));
-const STATE = 'smarthomedash.goodnight_example_house';
+const STATE = 'planview_dash.goodnight_example_house';
 const setAll = (page, state) => page.evaluate((s) => {
-  for (const id of window.__shdRun.site.index.lights) { const x = window.store.get(id); if (x) window.store.update({ ...x, state: s }); }
+  for (const id of window.__pvdRun.site.index.lights) { const x = window.store.get(id); if (x) window.store.update({ ...x, state: s }); }
   window.store.flush();
 }, state);
-const lit = (page) => page.evaluate(() => window.__shdRun.site.index.lights.filter((id) => window.store.get(id)?.state === 'on'));
+const lit = (page) => page.evaluate(() => window.__pvdRun.site.index.lights.filter((id) => window.store.get(id)?.state === 'on'));
 
 describe('goodnight', () => {
   const env = setup();
@@ -36,7 +36,7 @@ describe('goodnight', () => {
     await assertNoOverflow(page, 'countdown');
 
     await page.waitForFunction((id) => window.store.get(id)?.state === 'off', STATE, { timeout: 8000 });
-    await page.waitForFunction(() => window.__shdRun.site.index.lights.filter((id) => window.store.get(id)?.state === 'on').length === 1);
+    await page.waitForFunction(() => window.__pvdRun.site.index.lights.filter((id) => window.store.get(id)?.state === 'on').length === 1);
     assert.deepEqual(await lit(page), ['light.facade']);
     await page.evaluate(() => window.store.flush());
     assert.ok(await bar.isHidden(), 'the countdown is gone');

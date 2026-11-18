@@ -31,8 +31,8 @@ describe('backup', () => {
       page.waitForEvent('download'),
       page.locator('.backup-export').click(),
     ]);
-    assert.equal(download.suggestedFilename(), 'smarthomedash-example-house-test.zip');
-    await page.locator('.setup-status', { hasText: 'Downloaded smarthomedash-example-house-test.zip' }).waitFor();
+    assert.equal(download.suggestedFilename(), 'planview-dash-example-house-test.zip');
+    await page.locator('.setup-status', { hasText: 'Downloaded planview-dash-example-house-test.zip' }).waitFor();
     assert.equal(await page.evaluate(() => window.harness.backup.exports), 1);
     check(page);
     await close(page);

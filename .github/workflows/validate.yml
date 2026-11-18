@@ -26,7 +26,7 @@ jobs:
         with:
           category: integration
           # No ignores: the Marketplace catalog (hacs/default) requires a clean run.
-          # The brands check finds custom_components/smarthomedash/brand/icon.png.
+          # The brands check finds custom_components/planview_dash/brand/icon.png.
 
   frontend:
     name: JavaScript syntax
@@ -37,7 +37,7 @@ jobs:
         with:
           node-version: 20
       # Read as ES modules: a plain `node --check` on a .js file lets some syntax errors through.
-      - run: for f in $(find custom_components/smarthomedash/frontend -name '*.js'); do node --input-type=module --check < "$f" || { echo "Syntax error in $f"; exit 1; }; done
+      - run: for f in $(find custom_components/planview_dash/frontend -name '*.js'); do node --input-type=module --check < "$f" || { echo "Syntax error in $f"; exit 1; }; done
 
   tests:
     name: Tests

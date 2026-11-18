@@ -1,4 +1,4 @@
-"""SmartHomeDash under a real Home Assistant: setup, panels, flows, views, diagnostics."""
+"""PlanView Dash under a real Home Assistant: setup, panels, flows, views, diagnostics."""
 
 from __future__ import annotations
 
@@ -13,9 +13,9 @@ from homeassistant.setup import async_setup_component
 
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
-DOMAIN = "smarthomedash"
-SITES = "/api/smarthomedash/sites"
-BACKUP = "/api/smarthomedash/backup"
+DOMAIN = "planview_dash"
+SITES = "/api/planview_dash/sites"
+BACKUP = "/api/planview_dash/backup"
 PNG = b"\x89PNG\r\n\x1a\n" + b"\x00" * 32
 
 
@@ -38,9 +38,9 @@ async def test_setup_from_yaml(hass: HomeAssistant, sites_in_tmp) -> None:
     home = panels(hass)["my-home"]
     assert home.sidebar_title == "Home"
     assert home.component_name == "custom"
-    assert home.config["_panel_custom"]["name"] == "smarthomedash-panel"
+    assert home.config["_panel_custom"]["name"] == "planview-dash-panel"
     assert home.config["_panel_custom"]["embed_iframe"] is True
-    assert home.config["_panel_custom"]["module_url"].startswith("/smarthomedash/frontend/panel.js?v=")
+    assert home.config["_panel_custom"]["module_url"].startswith("/planview_dash/frontend/panel.js?v=")
     assert home.config["site"] == "home"
     assert home.require_admin is False
 
@@ -53,7 +53,7 @@ async def test_setup_from_yaml(hass: HomeAssistant, sites_in_tmp) -> None:
 
 
 async def test_the_card_is_loaded_with_every_dashboard(hass: HomeAssistant, entry, hass_client_no_auth) -> None:
-    """`custom:smarthomedash-card` needs no resource added by hand: its module is among the
+    """`custom:planview-dash-card` needs no resource added by hand: its module is among the
     frontend's extra modules, once however many dashboards are set up, and is served."""
     second = MockConfigEntry(domain=DOMAIN, title="Second", unique_id="second", data={
         "site": "second", "title": "Second", "url_path": "second", "layout": "apartment"})
@@ -61,14 +61,14 @@ async def test_the_card_is_loaded_with_every_dashboard(hass: HomeAssistant, entr
     assert await hass.config_entries.async_setup(second.entry_id)
     await hass.async_block_till_done()
 
-    urls = [u for u in hass.data[frontend.DATA_EXTRA_MODULE_URL].urls if "smarthomedash" in u]
+    urls = [u for u in hass.data[frontend.DATA_EXTRA_MODULE_URL].urls if "planview_dash" in u]
     assert len(urls) == 1
-    assert urls[0].startswith("/smarthomedash/frontend/card.js?v=")
+    assert urls[0].startswith("/planview_dash/frontend/card.js?v=")
 
     client = await hass_client_no_auth()
     for name in ("card.js", "card.html", "card-frame.js"):
-        assert (await client.get(f"/smarthomedash/frontend/{name}")).status == HTTPStatus.OK
-    assert "text/html" in (await client.get("/smarthomedash/frontend/card.html")).headers["Content-Type"]
+        assert (await client.get(f"/planview_dash/frontend/{name}")).status == HTTPStatus.OK
+    assert "text/html" in (await client.get("/planview_dash/frontend/card.html")).headers["Content-Type"]
 
 
 async def test_update_action_only_with_a_repository_or_token(hass: HomeAssistant) -> None:
@@ -137,6 +137,47 @@ async def test_config_flow_creates_a_dashboard(hass: HomeAssistant, sites_in_tmp
 
     assert panels(hass)["summer-house"].sidebar_title == "Summer House"
     assert (sites_in_tmp / "summer_house" / "site.json").is_file()
+
+
+def old_entry(hass: HomeAssistant, site: str, name: str, options: dict | None = None) -> MockConfigEntry:
+    """A dashboard set up under the integration's earlier name (migrate.py)."""
+    entry = MockConfigEntry(domain="smarthomedash", title=name, unique_id=site, data={
+        "site": site, "title": name, "icon": "mdi:home", "url_path": site.replace("_", "-"),
+        "require_admin": False, "layout": "apartment"}, options=options or {})
+    entry.add_to_hass(hass)
+    return entry
+
+
+async def test_dashboards_under_the_earlier_name_move_over(hass: HomeAssistant, sites_in_tmp) -> None:
+    """Adding the integration offers to take over the old dashboards; all of them move,
+    options included, the old entries go and the old site folder is renamed."""
+    old_site = sites_in_tmp.parent.parent / "smarthomedash" / "sites" / "villa"
+    old_site.mkdir(parents=True)
+    (old_site / "site.json").write_text(json.dumps({"name": "Villa", "layout": "apartment"}))
+    old_entry(hass, "villa", "Villa")
+    old_entry(hass, "cabin", "Cabin", {"title": "Our cabin", "require_admin": True})
+    assert await async_setup_component(hass, "http", {})
+
+    result = await hass.config_entries.flow.async_init(DOMAIN, context={"source": SOURCE_USER})
+    assert result["type"] is FlowResultType.FORM and result["step_id"] == "take_over"
+    assert result["description_placeholders"] == {"dashboards": "Villa, Cabin"}
+    result = await hass.config_entries.flow.async_configure(result["flow_id"], {})
+    assert result["type"] is FlowResultType.CREATE_ENTRY and result["data"]["site"] == "villa"
+    await hass.async_block_till_done()
+
+    assert hass.config_entries.async_entries("smarthomedash") == []
+    new = {e.data["site"]: e for e in hass.config_entries.async_entries(DOMAIN)}
+    assert set(new) == {"villa", "cabin"}
+    assert new["cabin"].title == "Our cabin" and new["cabin"].data["require_admin"] is True
+    assert all(e.state is ConfigEntryState.LOADED for e in new.values())
+    assert panels(hass)["villa"].sidebar_title == "Villa"
+    assert panels(hass)["cabin"].require_admin is True
+    assert json.loads((sites_in_tmp / "villa" / "site.json").read_text())["name"] == "Villa"
+    assert not old_site.exists()
+
+    # Afterwards the flow is the usual one again.
+    result = await hass.config_entries.flow.async_init(DOMAIN, context={"source": SOURCE_USER})
+    assert result["step_id"] == "user"
 
 
 async def test_config_flow_refuses_bad_and_taken_addresses(hass: HomeAssistant, entry) -> None:
@@ -226,15 +267,15 @@ async def test_site_files_need_a_login(hass: HomeAssistant, entry, hass_client_n
     assert (await client.put(f"{SITES}/test_home/site.json", data=b"{}")).status == HTTPStatus.UNAUTHORIZED
     assert (await client.get(f"{BACKUP}/test_home/export")).status == HTTPStatus.UNAUTHORIZED
     # The dashboard code is public, like the rest of Home Assistant's frontend.
-    resp = await client.get("/smarthomedash/frontend/panel.js")
+    resp = await client.get("/planview_dash/frontend/panel.js")
     assert resp.status == HTTPStatus.OK
     assert "no-cache" in resp.headers.get("Cache-Control", "")
     # The texts are fetched as JSON, one file per language (frontend/i18n/).
     for code in ("en", "sv"):
-        resp = await client.get(f"/smarthomedash/frontend/i18n/{code}.json")
+        resp = await client.get(f"/planview_dash/frontend/i18n/{code}.json")
         assert resp.status == HTTPStatus.OK
         assert "app.startFailed" in json.loads(await resp.text())
-    assert (await client.get("/smarthomedash/frontend/../manifest.json")).status in (HTTPStatus.NOT_FOUND, HTTPStatus.FORBIDDEN)
+    assert (await client.get("/planview_dash/frontend/../manifest.json")).status in (HTTPStatus.NOT_FOUND, HTTPStatus.FORBIDDEN)
 
 
 async def test_admin_reads_and_writes(hass: HomeAssistant, entry, hass_client, sites_in_tmp) -> None:
@@ -304,7 +345,7 @@ async def test_saving_a_new_name_renames_the_sidebar_entry(hass: HomeAssistant, 
 # --- Diagnostics and unloading ---------------------------------------------------------
 
 async def test_diagnostics_are_redacted(hass: HomeAssistant, entry) -> None:
-    from custom_components.smarthomedash.diagnostics import async_get_config_entry_diagnostics
+    from custom_components.planview_dash.diagnostics import async_get_config_entry_diagnostics
 
     assert await async_setup_component(hass, "diagnostics", {})
     diag = await async_get_config_entry_diagnostics(hass, entry)
@@ -347,7 +388,7 @@ async def test_goodnight_turns_the_lights_off_after_the_countdown(hass: HomeAssi
     await hass.services.async_call(DOMAIN, "goodnight", {
         "site": "test_home", "entity_id": ["light.kitchen", "switch.lamp", "light.kitchen"], "minutes": 5, "then": "script.lock_up",
     }, blocking=True)
-    state = hass.states.get("smarthomedash.goodnight_test_home")
+    state = hass.states.get("planview_dash.goodnight_test_home")
     assert state.state == "on"
     ends = dt_util.parse_datetime(state.attributes["ends_at"])
     assert timedelta(minutes=4, seconds=50) < ends - dt_util.utcnow() <= timedelta(minutes=5)
@@ -361,7 +402,7 @@ async def test_goodnight_turns_the_lights_off_after_the_countdown(hass: HomeAssi
     await hass.async_block_till_done()
     assert [c.data["entity_id"] for c in off] == [["light.kitchen", "switch.lamp"]]
     assert [c.data["entity_id"] for c in script] == ["script.lock_up"]
-    assert hass.states.get("smarthomedash.goodnight_test_home").state == "off"
+    assert hass.states.get("planview_dash.goodnight_test_home").state == "off"
 
 
 async def test_goodnight_can_be_cancelled_and_restarted(hass: HomeAssistant, entry) -> None:
@@ -376,7 +417,7 @@ async def test_goodnight_can_be_cancelled_and_restarted(hass: HomeAssistant, ent
 
     await call(minutes=5)
     await call(cancel=True)
-    assert hass.states.get("smarthomedash.goodnight_test_home").state == "off"
+    assert hass.states.get("planview_dash.goodnight_test_home").state == "off"
     async_fire_time_changed(hass, dt_util.utcnow() + timedelta(minutes=6))
     await hass.async_block_till_done()
     assert not off, "a cancelled countdown turns nothing off"
@@ -404,12 +445,12 @@ async def test_goodnight_refuses_other_entities_and_runs_for_any_user(hass: Home
     from homeassistant.exceptions import ServiceValidationError
     with pytest.raises(ServiceValidationError):
         await hass.services.async_call(DOMAIN, "goodnight", {"site": "no_such_site", "minutes": 5}, blocking=True)
-    assert hass.states.get("smarthomedash.goodnight_no_such_site") is None
+    assert hass.states.get("planview_dash.goodnight_no_such_site") is None
     # Not an admin action: like switching a lamp, any logged-in user may start it.
     await hass.services.async_call(DOMAIN, "goodnight", {"site": "test_home", "minutes": 5}, blocking=True,
                                    context=Context(user_id=hass_read_only_user.id))
-    assert hass.states.get("smarthomedash.goodnight_test_home").state == "on"
+    assert hass.states.get("planview_dash.goodnight_test_home").state == "on"
     # Unloading the dashboard stops its countdown.
     assert await hass.config_entries.async_unload(entry.entry_id)
     await hass.async_block_till_done()
-    assert hass.states.get("smarthomedash.goodnight_test_home") is None
+    assert hass.states.get("planview_dash.goodnight_test_home") is None

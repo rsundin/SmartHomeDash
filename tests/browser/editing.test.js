@@ -50,7 +50,7 @@ describe('editing', () => {
     await page.waitForFunction(() => document.querySelector('.stage').dataset.view === 'plan:house');
     const to = await lampAt(page, id);
     assert.ok(to[0] > from[0] && to[1] > from[1], `moved from ${from} to ${to}`);
-    const draft = await page.evaluate(() => JSON.parse(localStorage.getItem('shd:example-house:draft')));
+    const draft = await page.evaluate(() => JSON.parse(localStorage.getItem('pvd:example-house:draft')));
     const room = draft.floorplans.find((p) => p.id === 'house').rooms.find((r) => r.lights.some((l) => l.entity === id));
     assert.deepEqual(room.lights.find((l) => l.entity === id).at, to);
     await page.locator('.lamp-tag:not([hidden])', { hasText: id }).waitFor();
@@ -109,7 +109,7 @@ describe('editing', () => {
     await page.locator('.top-actions .chip', { hasText: 'Setup' }).click();
     await page.locator('.setup-head .chip', { hasText: 'Close' }).click();
     assert.equal(await page.locator('.setup').count(), 0);
-    assert.equal(await page.evaluate(() => localStorage.getItem('shd:example-house:setupLater')), 'true');
+    assert.equal(await page.evaluate(() => localStorage.getItem('pvd:example-house:setupLater')), 'true');
     assert.equal(await page.evaluate(() => window.harness.saved.length), 0);
     check(page);
     await close(page);
@@ -180,7 +180,7 @@ describe('editing', () => {
     assert.equal(await list.locator('.editor-ent').count(), 1, 'removed from the list');
     await officeBack();
     await page.locator('aside.editor .editor-list', { hasText: 'Every device in site.json exists in Home Assistant.' }).waitFor();
-    const draft = await page.evaluate(() => JSON.parse(localStorage.getItem('shd:example-house:draft')));
+    const draft = await page.evaluate(() => JSON.parse(localStorage.getItem('pvd:example-house:draft')));
     const kitchen = draft.floorplans.flatMap((p) => p.rooms).find((r) => r.name === 'Kitchen');
     assert.ok(!kitchen.sensors.includes('binary_sensor.old_kitchen_motion'));
     assert.ok(draft.floorplans.flatMap((p) => p.rooms).find((r) => r.name === 'Office').sensors.includes('binary_sensor.renamed_office_door'));

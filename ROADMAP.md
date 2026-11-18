@@ -1,6 +1,6 @@
 # Roadmap
 
-What is planned next, roughly in order. Plans change; ideas and votes are welcome in [Discussions](https://github.com/rsundin/SmartHomeDash/discussions), and problems in [issues](https://github.com/rsundin/SmartHomeDash/issues) (the dashboard's **?** button fills one in).
+What is planned next, roughly in order. Plans change; ideas and votes are welcome in [Discussions](https://github.com/rsundin/planview-dash/discussions), and problems in [issues](https://github.com/rsundin/planview-dash/issues) (the dashboard's **?** button fills one in).
 
 ## 0.9: Foundation
 
@@ -19,9 +19,9 @@ What is planned next, roughly in order. Plans change; ideas and votes are welcom
 - **Report a problem and get help**: a *Report a problem* button that fills in a GitHub issue without details about your home, Home Assistant diagnostics, and GitHub Discussions for questions and ideas. Done in 0.8.14.
 - **Editor comforts**: undo and redo, move and add corners, snap to other rooms, move a whole room, nudge with the arrow keys. Done in 0.8.15.
 - **Export, import and restore points** for a whole dashboard. Done in 0.8.16.
-- **A card for any dashboard** (`custom:smarthomedash-card`): the overview, a floor plan or a room in any Home Assistant dashboard. Done in 0.8.21.
+- **A card for any dashboard** (`custom:planview-dash-card`): the overview, a floor plan or a room in any Home Assistant dashboard. Done in 0.8.21.
 - **More languages**: German, Norwegian, Danish, Finnish and Dutch, machine-assisted with corrections welcome, and a guide for translators. Done in 0.8.28.
-- **A listing in Home Assistant's Marketplace**, so SmartHomeDash can be found without a link. Ready in 0.8.32; the request to the catalog follows the release.
+- **A listing in Home Assistant's Marketplace**, so PlanView Dash can be found without a link. Ready in 0.8.32, under the new name PlanView Dash in 0.8.33; the request to the catalog follows the release.
 - **Accessibility and large text**: text size per device, keyboard use, screen reader names. Done in 0.8.26.
 - **Launch**: a short recording in the README and a post on the Home Assistant forum.
 

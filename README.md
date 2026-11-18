@@ -1,8 +1,8 @@
-# SmartHomeDash
+# PlanView Dash
 
 A Home Assistant dashboard that shows your home as a picture. Lights glow where they are, in their own colour, wall lamps wash the facade, windows light up when a room's lamps are on, and solar panels glow green while they produce. Tap a building and the roof lifts to reveal its floor plan, with every lamp and thermostat controllable in place.
 
-**[Try the live demo](https://rsundin.github.io/SmartHomeDash/)**: the example house and apartment on test data, right in your browser.
+**[Try the live demo](https://rsundin.github.io/planview-dash/)**: the example house and apartment on test data, right in your browser.
 
 - Runs as a panel in the Home Assistant sidebar, behind Home Assistant's own login. No access tokens.
 - Set up entirely in the UI: upload a picture of your home and your floor plans, draw rooms, tap where each light and thermostat is.
@@ -21,13 +21,13 @@ A Home Assistant dashboard that shows your home as a picture. Lights glow where 
 
 ## Install
 
-**Marketplace (Home Assistant 2026.11 and newer):** **Settings → Marketplace → Add from link**, paste `https://github.com/rsundin/SmartHomeDash` and install **SmartHomeDash**. Setup starts right away. *Add from link* asks you to sign in with GitHub once, and the first visit shows a notice that community code is not reviewed by Home Assistant; what SmartHomeDash can reach is described in [SECURITY.md](SECURITY.md).
+**Marketplace (Home Assistant 2026.11 and newer):** **Settings → Marketplace → Add from link**, paste `https://github.com/rsundin/planview-dash` and install **PlanView Dash**. Setup starts right away. *Add from link* asks you to sign in with GitHub once, and the first visit shows a notice that community code is not reviewed by Home Assistant; what PlanView Dash can reach is described in [SECURITY.md](SECURITY.md).
 
-*Before Home Assistant 2026.11:* HACS → *Custom repositories* → add this repository as an **Integration** → download **SmartHomeDash** → restart Home Assistant.
+*Before Home Assistant 2026.11:* HACS → *Custom repositories* → add this repository as an **Integration** → download **PlanView Dash** → restart Home Assistant.
 
-**Manually:** copy `custom_components/smarthomedash` to `<config>/custom_components/`, then restart. With SSH: `scripts/deploy.sh user@host`.
+**Manually:** copy `custom_components/planview_dash` to `<config>/custom_components/`, then restart. With SSH: `scripts/deploy.sh user@host`.
 
-Then **Settings → Devices & services → Add integration → SmartHomeDash**, give the dashboard a name, and open it from the sidebar. It starts from an example house or apartment you can keep, fill with your own lights, or replace with pictures of your home; a setup guide walks through it.
+Then **Settings → Devices & services → Add integration → PlanView Dash**, give the dashboard a name, and open it from the sidebar. It starts from an example house or apartment you can keep, fill with your own lights, or replace with pictures of your home; a setup guide walks through it.
 
 **→ [Setting up a new dashboard](docs/setup.md)**: the full walkthrough, with tips for the pictures.
 
@@ -46,7 +46,7 @@ Then **Settings → Devices & services → Add integration → SmartHomeDash**, 
 | Energy flow | One line per flow, from the sun, battery or grid to the house, car, battery or grid, in the colour of the source, with the kilowatts on it, plus a plain sentence in the energy card |
 | Dusk and weather | The day picture fades into the evening one as the sun sets; cloud, fog, rain and snow on the picture |
 | Cards | Weather, power now, energy today, hourly electricity price with the cheapest hours ahead, outdoor and indoor lights, scenes and scripts, heating per room |
-| Card for other dashboards | `custom:smarthomedash-card` shows the overview, a floor plan or a room inside any Home Assistant dashboard, with the room panel, lamps and heating working in the card. See [the card](docs/setup.md#the-card) |
+| Card for other dashboards | `custom:planview-dash-card` shows the overview, a floor plan or a room inside any Home Assistant dashboard, with the room panel, lamps and heating working in the card. See [the card](docs/setup.md#the-card) |
 
 ## Wall screens and tablets
 
@@ -63,16 +63,16 @@ Administrators get two tools in the dashboard header:
 - **Setup** (*Inställningar*): pictures, buildings, solar panels, windows, floor plans and rooms, energy and weather sensors, buttons.
 - **Place** (*Placera*): pick a light, switch, thermostat or temperature sensor and tap where it is. The room is found from the tap.
 
-Both save straight to Home Assistant. The config is a readable `site.json` in `<config>/smarthomedash/sites/<name>/`; the format is described in [docs/configuration.md](docs/configuration.md).
+Both save straight to Home Assistant. The config is a readable `site.json` in `<config>/planview_dash/sites/<name>/`; the format is described in [docs/configuration.md](docs/configuration.md).
 
 ## YAML
 
 Dashboards can also be defined in `configuration.yaml`, for example to keep a site in version control:
 
 ```yaml
-smarthomedash:
+planview_dash:
   dashboards:
-    - site: home               # folder under <config>/smarthomedash/sites/
+    - site: home               # folder under <config>/planview_dash/sites/
       title: Home
       icon: mdi:home-lightbulb
       url_path: my-home
@@ -80,7 +80,7 @@ smarthomedash:
 
 ## Updating
 
-The Marketplace offers new versions like for any other integration (HACS before Home Assistant 2026.11); restart Home Assistant after updating. Without the Marketplace, `smarthomedash.update` installs the latest version from GitHub; set `github_token` (a read-only token for a private fork) and optionally `repository` and `branch` under `smarthomedash:` in `configuration.yaml`. It keeps your `site.json`, adds new site files, and says whether Home Assistant needs a restart. The same action is available as **Uppdatera dashboarden** in placement mode.
+The Marketplace offers new versions like for any other integration (HACS before Home Assistant 2026.11); restart Home Assistant after updating. Without the Marketplace, `planview_dash.update` installs the latest version from GitHub; set `github_token` (a read-only token for a private fork) and optionally `repository` and `branch` under `planview_dash:` in `configuration.yaml`. It keeps your `site.json`, adds new site files, and says whether Home Assistant needs a restart. The same action is available as **Uppdatera dashboarden** in placement mode.
 
 ## Development
 
@@ -90,10 +90,10 @@ No build step: plain HTML, CSS and JavaScript modules.
 python3 -m http.server 8000
 ```
 
-`http://localhost:8000/` runs the example house standalone on **test data**, the same page as the [online demo](https://rsundin.github.io/SmartHomeDash/), which `.github/workflows/pages.yml` publishes from `main`: lights switch, thermostats respond and temperatures drift. `?site=example-apartment` shows the example apartment: a floor plan only. Add `#edit` for placement mode.
+`http://localhost:8000/` runs the example house standalone on **test data**, the same page as the [online demo](https://rsundin.github.io/planview-dash/), which `.github/workflows/pages.yml` publishes from `main`: lights switch, thermostats respond and temperatures drift. `?site=example-apartment` shows the example apartment: a floor plan only. Add `#edit` for placement mode.
 
 ```
-custom_components/smarthomedash/
+custom_components/planview_dash/
   __init__.py              setup, panels, the update action
   config_flow.py           adding a dashboard from the UI
   views.py                 dashboard code (public) and site files (logged-in users)
@@ -126,12 +126,12 @@ Next up: a listing in Home Assistant's Marketplace catalog, people and appliance
 
 ## Help, questions and ideas
 
-- **Something wrong?** Tap **?** in the dashboard (or **Report a problem** in the setup guide). It shows the text first, then opens a GitHub issue filled in with versions, browser, screen and counts, never the names of your rooms or devices. Administrators can attach Home Assistant's *Download diagnostics* for SmartHomeDash too (Settings → Devices & services → SmartHomeDash → ⋮), which holds counts and sizes only.
-- **Questions, ideas and pictures of your dashboard** are welcome in [Discussions](https://github.com/rsundin/SmartHomeDash/discussions): Q&A, Ideas (with votes) and Show and tell.
+- **Something wrong?** Tap **?** in the dashboard (or **Report a problem** in the setup guide). It shows the text first, then opens a GitHub issue filled in with versions, browser, screen and counts, never the names of your rooms or devices. Administrators can attach Home Assistant's *Download diagnostics* for PlanView Dash too (Settings → Devices & services → PlanView Dash → ⋮), which holds counts and sizes only.
+- **Questions, ideas and pictures of your dashboard** are welcome in [Discussions](https://github.com/rsundin/planview-dash/discussions): Q&A, Ideas (with votes) and Show and tell.
 
 ## Support
 
-SmartHomeDash is free and open source. If it brightens your wall, you can support its development through [GitHub Sponsors](https://github.com/sponsors/rsundin) or [Buy Me a Coffee](https://buymeacoffee.com/rsundin).
+PlanView Dash is free and open source. If it brightens your wall, you can support its development through [GitHub Sponsors](https://github.com/sponsors/rsundin) or [Buy Me a Coffee](https://buymeacoffee.com/rsundin).
 
 ## License
 

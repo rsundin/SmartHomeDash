@@ -15,7 +15,7 @@ async function cardPage(env, opts = {}, query = '') {
 
 // The dashboard inside the n:th card's frame, once it has drawn.
 async function frameOf(page, n = 0) {
-  const frame = page.frameLocator('smarthomedash-card iframe').nth(n);
+  const frame = page.frameLocator('planview-dash-card iframe').nth(n);
   await frame.locator('.stage[data-view]').waitFor();
   return frame;
 }
@@ -36,7 +36,7 @@ describe('card', () => {
       for (const hidden of ['.top', '.side', '.alerts']) {
         assert.equal(await frame.locator(hidden).first().isVisible(), false, `${hidden} is not shown in a card`);
       }
-      const card = await page.locator('smarthomedash-card').boundingBox();
+      const card = await page.locator('planview-dash-card').boundingBox();
       const slot = await page.locator('.fit-rows').boundingBox();
       assert.equal(Math.round(card.height), Math.round(slot.height), 'the card fills the height of its grid slot');
       const stage = await frame.locator('.stage').boundingBox();
@@ -53,7 +53,7 @@ describe('card', () => {
     const page = await cardPage(env);
     await page.evaluate(() => { window.harness.addCard({ site: 'example-house' }); });
     const frame = await frameOf(page);
-    assert.equal(Math.round((await page.locator('smarthomedash-card').boundingBox()).height), 400, '400 px when nothing else is said');
+    assert.equal(Math.round((await page.locator('planview-dash-card').boundingBox()).height), 400, '400 px when nothing else is said');
 
     await frame.locator('.ov-bld[aria-label*="House"]').click();
     await frame.locator('.stage[data-view="plan:house"]').waitFor();
@@ -99,7 +99,7 @@ describe('card', () => {
     assert.equal(await view(room), 'plan:house');
     await room.locator('aside.panel .panel-title', { hasText: 'Bedroom' }).waitFor();
     assert.equal(await room.locator('.back').isVisible(), false);
-    assert.equal(Math.round((await page.locator('smarthomedash-card').nth(1).boundingBox()).height), 520, 'height from the config');
+    assert.equal(Math.round((await page.locator('planview-dash-card').nth(1).boundingBox()).height), 520, 'height from the config');
     check(page);
     await close(page);
   });
@@ -111,20 +111,20 @@ describe('card', () => {
     assert.equal(await view(frame), 'plan:apartment');
 
     await page.evaluate(() => {
-      const card = document.querySelector('smarthomedash-card');
+      const card = document.querySelector('planview-dash-card');
       window.firstFrame = card.shadowRoot.querySelector('iframe');
       window.firstFrame.contentWindow.marker = true;
       card.setConfig({ site: 'example-house', view: 'plan:house' });
     });
     await frame.locator('.stage[data-view="plan:house"]').waitFor();
     assert.ok(await page.evaluate(() => {
-      const now = document.querySelector('smarthomedash-card').shadowRoot.querySelector('iframe');
+      const now = document.querySelector('planview-dash-card').shadowRoot.querySelector('iframe');
       return now === window.firstFrame && now.contentWindow.marker === true;
     }), 'the frame was not loaded again');
     // Site files come through Home Assistant's login.
     const fetched = await page.evaluate(() => window.harness.fetched);
-    assert.ok(fetched.includes('/api/smarthomedash/sites/example-apartment/site.json'));
-    assert.ok(fetched.includes('/api/smarthomedash/sites/example-house/site.json'));
+    assert.ok(fetched.includes('/api/planview_dash/sites/example-apartment/site.json'));
+    assert.ok(fetched.includes('/api/planview_dash/sites/example-house/site.json'));
     check(page);
     await close(page);
   });
@@ -135,17 +135,17 @@ describe('card', () => {
       window.harness.addCard({});
       window.harness.addCard({ site: 'not-here' });
     });
-    const note = page.locator('smarthomedash-card').first().locator('.note');
+    const note = page.locator('planview-dash-card').first().locator('.note');
     await note.filter({ hasText: 'Choose a dashboard' }).waitFor();
-    assert.equal(await page.locator('smarthomedash-card').first().locator('iframe').count(), 0);
-    const frame = page.frameLocator('smarthomedash-card iframe');
+    assert.equal(await page.locator('planview-dash-card').first().locator('iframe').count(), 0);
+    const frame = page.frameLocator('planview-dash-card iframe');
     await frame.locator('.fatal', { hasText: 'sites/not-here/site.json' }).waitFor();
     assert.match(await frame.locator('.fatal').textContent(), /Could not start/);
     // The 404 and the logged error are the point of this test.
     assert.ok(page.errors.length > 0 && page.errors.every((e) => /404|site\.json/.test(e)), page.errors.join('\n'));
 
     for (const bad of [{ site: '../x' }, { site: 'a', view: 'kitchen' }]) {
-      const message = await page.evaluate((c) => { try { document.createElement('smarthomedash-card').setConfig(c); return ''; } catch (e) { return e.message; } }, bad);
+      const message = await page.evaluate((c) => { try { document.createElement('planview-dash-card').setConfig(c); return ''; } catch (e) { return e.message; } }, bad);
       assert.ok(message, `${JSON.stringify(bad)} is refused`);
     }
     await close(page);
@@ -153,7 +153,7 @@ describe('card', () => {
 
   test('the visual editor lists the dashboards and their views', async () => {
     const page = await cardPage(env);
-    await page.evaluate(() => { window.harness.addEditor({ type: 'custom:smarthomedash-card', site: 'example-house' }); });
+    await page.evaluate(() => { window.harness.addEditor({ type: 'custom:planview-dash-card', site: 'example-house' }); });
     await page.waitForFunction(() => document.querySelector('ha-form')?.schema?.[1].selector.select.options.length > 2);
     const form = await page.evaluate(() => {
       const f = document.querySelector('ha-form');
@@ -180,9 +180,9 @@ describe('card', () => {
     await page.evaluate(() => document.querySelector('ha-form').change({ height: undefined }));
     const configs = await page.evaluate(() => window.harness.configs);
     assert.deepEqual(configs, [
-      { type: 'custom:smarthomedash-card', site: 'example-house', view: 'room:bedroom', height: 300 },
-      { type: 'custom:smarthomedash-card', site: 'example-apartment', height: 300 },
-      { type: 'custom:smarthomedash-card', site: 'example-apartment' },
+      { type: 'custom:planview-dash-card', site: 'example-house', view: 'room:bedroom', height: 300 },
+      { type: 'custom:planview-dash-card', site: 'example-apartment', height: 300 },
+      { type: 'custom:planview-dash-card', site: 'example-apartment' },
     ]);
     await page.waitForFunction(() => document.querySelector('ha-form').schema[1].selector.select.options.some((o) => o.value === 'plan:apartment'));
     check(page);
@@ -193,10 +193,10 @@ describe('card', () => {
     const page = await cardPage(env, {}, '?lang=sv');
     const entry = await page.evaluate(async () => {
       window.harness.addCard({ site: 'example-house' }); // a card on the page: the Swedish texts are loaded
-      const e = window.customCards.find((c) => c.type === 'smarthomedash-card');
-      return { name: e.name, fn: typeof e.getEntitySuggestion, stub: customElements.get('smarthomedash-card').getStubConfig(window.harness.hass) };
+      const e = window.customCards.find((c) => c.type === 'planview-dash-card');
+      return { name: e.name, fn: typeof e.getEntitySuggestion, stub: customElements.get('planview-dash-card').getStubConfig(window.harness.hass) };
     });
-    assert.deepEqual(entry, { name: 'SmartHomeDash', fn: 'function', stub: { site: 'example-apartment' } });
+    assert.deepEqual(entry, { name: 'PlanView Dash', fn: 'function', stub: { site: 'example-apartment' } });
     await page.waitForFunction(() => window.customCards[0].description.length > 10);
 
     // The first question starts reading the dashboards; the answer grows as each one arrives.
@@ -210,7 +210,7 @@ describe('card', () => {
     // Both example dashboards have this lamp in a bedroom: one suggestion for each.
     assert.deepEqual(r.lamp.map((s) => s.config.site), ['example-apartment', 'example-house']);
     const house = r.lamp[1];
-    assert.deepEqual(house.config, { type: 'custom:smarthomedash-card', site: 'example-house', view: 'room:bedroom' });
+    assert.deepEqual(house.config, { type: 'custom:planview-dash-card', site: 'example-house', view: 'room:bedroom' });
     assert.match(house.label, /Bedroom/);
     assert.match(house.label, /Example house/);
     assert.ok(r.climate.some((s) => s.config.site === 'example-house' && s.config.view === 'room:bedroom'));
@@ -241,7 +241,7 @@ describe('card', () => {
       for (let i = 0; i < 100 && !card.suggest(linked, 'light.reading'); i++) await new Promise((done) => setTimeout(done, 50));
       return card.suggest(linked, 'light.reading');
     });
-    assert.deepEqual(r?.map((s) => s.config), [{ type: 'custom:smarthomedash-card', site: 'example-house', view: 'room:bedroom' }]);
+    assert.deepEqual(r?.map((s) => s.config), [{ type: 'custom:planview-dash-card', site: 'example-house', view: 'room:bedroom' }]);
     check(page);
     await close(page);
   });

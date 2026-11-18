@@ -1,11 +1,27 @@
 # Changelog
 
+## 0.8.33
+
+**SmartHomeDash is now PlanView Dash.** The new name says what sets it apart: your home on its own floor plan. Everything is renamed: the integration (domain `planview_dash`), the card, the actions, the folder for sites and the repository (`rsundin/planview-dash`; GitHub forwards the old address). Nothing in how the dashboard works changed. A new icon goes with it: a floor plan with one room lit (source in `docs/images/icon.svg`).
+
+Upgrading from 0.8.32 or earlier, once:
+
+1. In the Marketplace (HACS), remove the old entry and add the repository again from its new address, `https://github.com/rsundin/planview-dash`, then download PlanView Dash. Delete the folder `custom_components/smarthomedash` if it is still there.
+2. Restart Home Assistant, then **Settings → Devices & services → Add integration → PlanView Dash**. It finds the dashboards set up under the old name and offers to move them over: name, address, icon, settings and pictures stay, and the old entries are removed. The folder `<config>/smarthomedash/` becomes `<config>/planview_dash/`.
+3. By hand, where you use them:
+   - `smarthomedash:` in `configuration.yaml` becomes `planview_dash:`
+   - `type: custom:smarthomedash-card` on other dashboards becomes `type: custom:planview-dash-card`
+   - the actions `smarthomedash.goodnight` and `smarthomedash.update` in automations and scripts become `planview_dash.goodnight` and `planview_dash.update`, and the state `smarthomedash.goodnight_<site>` becomes `planview_dash.goodnight_<site>`
+4. Settings on each screen (text size, kiosk, night mode, unsaved drafts) move over by themselves the first time the dashboard opens.
+
+The earlier entries below use the new name throughout.
+
 ## 0.8.32
 
 Ready for the Marketplace catalog.
 
-- **The HACS check now runs without exceptions.** It skipped the brands check until now; the check finds the icon in `custom_components/smarthomedash/brand/`, which Home Assistant shows from 2026.3 on, so no entry in home-assistant/brands is needed. A clean run is what the catalog asks for
-- **`docs/marketplace-submission.md`**: the steps and the ready-made pull request text for adding SmartHomeDash to the catalog the Marketplace searches (hacs/default). Only the owner can open it, after this release is published
+- **The HACS check now runs without exceptions.** It skipped the brands check until now; the check finds the icon in `custom_components/planview_dash/brand/`, which Home Assistant shows from 2026.3 on, so no entry in home-assistant/brands is needed. A clean run is what the catalog asks for
+- **`docs/marketplace-submission.md`**: the steps and the ready-made pull request text for adding PlanView Dash to the catalog the Marketplace searches (hacs/default). Only the owner can open it, after this release is published
 - A test keeps the icon sizes, `hacs.json` and the no-exceptions rule in place
 - Nothing in the dashboard changed; no restart or reload needed
 
@@ -88,8 +104,8 @@ Goodnight: one tap, and the lights stay on while you go to bed.
 
 - **A Goodnight button** behind the lamp in the header and in the lights card. The lights stay as they are for five minutes, then the same lights as **All off** turn off
 - **The countdown on every screen.** "Goodnight: everything off in 4:12" with **Cancel**, on every open screen of the dashboard, also in kiosk mode
-- **It runs in Home Assistant**, not in the browser: a tablet that sleeps or reloads does not stop it. It is the new action `smarthomedash.goodnight`, so automations, voice and NFC tags can start it too. Restart Home Assistant once after updating
-- **Set under Buttons** in the setup guide: show it or not, the minutes, and a script of your own to run when the lights go off (to lock up, turn the TV off, lower the heating). SmartHomeDash does not write any scripts or automations into your configuration
+- **It runs in Home Assistant**, not in the browser: a tablet that sleeps or reloads does not stop it. It is the new action `planview_dash.goodnight`, so automations, voice and NFC tags can start it too. Restart Home Assistant once after updating
+- **Set under Buttons** in the setup guide: show it or not, the minutes, and a script of your own to run when the lights go off (to lock up, turn the TV off, lower the heating). PlanView Dash does not write any scripts or automations into your configuration
 - The action is open to every logged-in user, like switching a lamp, and only turns off lights and switches and runs a script (SECURITY.md)
 - New tests: under Home Assistant, the countdown turning the lights off and running the script on time, cancelling, starting over, refusing other entities and stopping on unload; in the browser, the countdown, Cancel, a countdown started elsewhere, and the setup guide's settings
 
@@ -106,7 +122,7 @@ All lights on and off with one button.
 
 The picture as a card in any Home Assistant dashboard.
 
-- **New card: `custom:smarthomedash-card`.** Shows the overview, one floor plan or one room of a SmartHomeDash dashboard inside any other dashboard. It comes with the integration and is added to every dashboard by itself: find it under **Add card**, pick the dashboard and what to show. Reload the browser page once after updating
+- **New card: `custom:planview-dash-card`.** Shows the overview, one floor plan or one room of a PlanView Dash dashboard inside any other dashboard. It comes with the integration and is added to every dashboard by itself: find it under **Add card**, pick the dashboard and what to show. Reload the browser page once after updating
 - **Only the picture.** No header, energy cards or warnings. Tapping a building opens its floor plan, tapping a room opens the room panel inside the card, and lamps and heating work as in the dashboard. A card for a floor plan or a room stays there
 - **Sized by the dashboard.** In a sections view the card takes the size you drag it to (full width and six rows to start with). In other views it is 400 px high, or the **Height** you set
 - **Suggested in the card picker** (Home Assistant 2026.6 and newer): picking a lamp or a thermostat that is in a room of a dashboard suggests a card for that room
@@ -140,9 +156,9 @@ A tap right after flicking the zoomed picture is no longer lost.
 
 Install docs for the Marketplace, which replaced HACS in Home Assistant 2026.11.
 
-- README and the setup guide (`docs/setup.md`) install through **Settings → Marketplace → Add from link** with the repository's address. Setup starts right away; a restart is still needed after updates. Both mention the community-code notice and the GitHub sign-in that *Add from link* asks for, and point to SECURITY.md for what SmartHomeDash can reach
+- README and the setup guide (`docs/setup.md`) install through **Settings → Marketplace → Add from link** with the repository's address. Setup starts right away; a restart is still needed after updates. Both mention the community-code notice and the GitHub sign-in that *Add from link* asks for, and point to SECURITY.md for what PlanView Dash can reach
 - The HACS steps stay as a one-line note for Home Assistant before 2026.11
-- Updating refers to the Marketplace; `smarthomedash.update` is for setups without it
+- Updating refers to the Marketplace; `planview_dash.update` is for setups without it
 - A test fails if README or the setup guide describe the old HACS menus outside that note
 ## 0.8.16
 
@@ -170,8 +186,8 @@ Editing rooms and lamps without starting over.
 
 Report a problem from the dashboard, without giving away anything about your home.
 
-- **?** in the top bar, and **Report a problem** below the setup guide's steps, show the text that would go into a GitHub issue: SmartHomeDash and Home Assistant versions, how the dashboard is opened, browser, screen size, kiosk and light mode, language, counts of floor plans, rooms and devices by kind, the warnings by kind and count, and the last save Home Assistant refused. Never entity ids, room or area names, addresses or pictures. The text can be changed before **Open the issue on GitHub** opens the bug report form with it filled in. Hidden in kiosk mode
-- Home Assistant **Download diagnostics** for SmartHomeDash (Settings → Devices & services → SmartHomeDash → ⋮): versions, the dashboard's options with its name, folder and address redacted, whether an update token is set (not the token), and for its site folder the number and size of pictures, whether site.json is valid, and counts of plans, rooms, lamps, thermostats, sensors, scenes and devices that Home Assistant does not know
+- **?** in the top bar, and **Report a problem** below the setup guide's steps, show the text that would go into a GitHub issue: PlanView Dash and Home Assistant versions, how the dashboard is opened, browser, screen size, kiosk and light mode, language, counts of floor plans, rooms and devices by kind, the warnings by kind and count, and the last save Home Assistant refused. Never entity ids, room or area names, addresses or pictures. The text can be changed before **Open the issue on GitHub** opens the bug report form with it filled in. Hidden in kiosk mode
+- Home Assistant **Download diagnostics** for PlanView Dash (Settings → Devices & services → PlanView Dash → ⋮): versions, the dashboard's options with its name, folder and address redacted, whether an update token is set (not the token), and for its site folder the number and size of pictures, whether site.json is valid, and counts of plans, rooms, lamps, thermostats, sensors, scenes and devices that Home Assistant does not know
 - Issue templates: the bug report has fields for what the dashboard fills in, for the device (wall tablet, phone, computer) and for the diagnostics file; a new feature request template; questions and ideas are pointed to GitHub Discussions
 - README has a *Help, questions and ideas* section, and ROADMAP points ideas and votes to Discussions
 
@@ -249,7 +265,7 @@ Nothing changes in the dashboard itself; this release adds the safety net for th
 
 ## 0.8.5
 
-- Renaming a dashboard in the setup guide renames its entry in Home Assistant's sidebar too, at once and without a restart. Renaming it under *Settings → Devices & services → SmartHomeDash → Configure* also changes the name in the dashboard's heading. Dashboards set up in YAML keep the sidebar title written there
+- Renaming a dashboard in the setup guide renames its entry in Home Assistant's sidebar too, at once and without a restart. Renaming it under *Settings → Devices & services → PlanView Dash → Configure* also changes the name in the dashboard's heading. Dashboards set up in YAML keep the sidebar title written there
 
 ## 0.8.4
 
@@ -318,7 +334,7 @@ Wall screens.
 ## 0.5.1
 
 - Pinch with two fingers to zoom the overview picture and floor plans on phones and tablets, drag to move around, **Reset zoom** to go back; a trackpad pinch works on computers. Taps on lamps, rooms and buildings still work while zoomed, and a pinch or drag never switches a lamp
-- Fixed: pictures larger than about 64 kB were saved cut off when uploaded in the setup guide, and a large `site.json` could not be saved; `smarthomedash.update` downloads were affected the same way
+- Fixed: pictures larger than about 64 kB were saved cut off when uploaded in the setup guide, and a large `site.json` could not be saved; `planview_dash.update` downloads were affected the same way
 - Placement mode on phones: the list is a sheet at the bottom instead of covering the picture
 - Setup guide on phones: the steps are one row that scrolls sideways, so each step's content starts at the top
 
