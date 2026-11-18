@@ -51,9 +51,9 @@ module.exports = [
     languageOptions: { ecmaVersion: 'latest', sourceType: 'module', globals: { ...globals.browser } },
     rules: mistakes,
   },
-  // The browser tests and their fixtures: CommonJS under Node, with code handed to the page.
+  // The browser tests, their fixtures and the scripts: CommonJS under Node, with code handed to the page.
   {
-    files: ['tests/**/*.js', 'eslint.config.js'],
+    files: ['tests/**/*.js', 'scripts/**/*.js', 'eslint.config.js'],
     languageOptions: { ecmaVersion: 'latest', sourceType: 'commonjs', globals: { ...globals.node, ...globals.browser } },
     rules: mistakes,
   },

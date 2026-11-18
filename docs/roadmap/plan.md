@@ -219,7 +219,7 @@ Setup effort is the main barrier for every floor plan project [R5][R6][R11]. Pla
   - Contrast checked for text on the picture (labels, flow tags, badges) in day and evening.
 - **Done when:** an automated accessibility check (axe-core in the browser tests) passes on both examples, a keyboard-only test opens a room and switches a lamp, and large text has no overflow at 390 px wide.
 
-### G1: Launch: show the project to the community. Status: todo. Size: S. Depends: S6
+### G1: Launch: show the project to the community. Status: done (v0.8.34). Size: S. Depends: S6
 - **Why:** At 0.8.16 the repository has no stars and one issue. Ready-made dashboards with a clear look are what people look for now [R30].
 - **What:**
   - A short screen recording (GIF or WebP) for the README: lights switching on the picture at dusk, the roof lifting, a room panel. Recorded from the demo with test data.

@@ -4,6 +4,10 @@ A Home Assistant dashboard that shows your home as a picture. Lights glow where 
 
 **[Try the live demo](https://rsundin.github.io/planview-dash/)**: the example house and apartment on test data, right in your browser.
 
+<p align="center">
+  <img src="docs/images/demo.webp" alt="Recording of the example house: dusk falls and the lights come on one by one on the picture, the roof lifts to the floor plan, and the living room panel opens with heating and dimmers" width="840">
+</p>
+
 - Runs as a panel in the Home Assistant sidebar, behind Home Assistant's own login. No access tokens.
 - Set up entirely in the UI: upload a picture of your home and your floor plans, draw rooms, tap where each light and thermostat is.
 - Built for wall screens and tablets, with a kiosk mode that shows only the dashboard; on phones, pinch to zoom into the picture. Works in the companion app.
@@ -128,6 +132,7 @@ Next up: a listing in Home Assistant's Marketplace catalog, people and appliance
 
 - **Something wrong?** Tap **?** in the dashboard (or **Report a problem** in the setup guide). It shows the text first, then opens a GitHub issue filled in with versions, browser, screen and counts, never the names of your rooms or devices. Administrators can attach Home Assistant's *Download diagnostics* for PlanView Dash too (Settings → Devices & services → PlanView Dash → ⋮), which holds counts and sizes only.
 - **Questions, ideas and pictures of your dashboard** are welcome in [Discussions](https://github.com/rsundin/planview-dash/discussions): Q&A, Ideas (with votes) and Show and tell.
+- **Sharing your dashboard?** A picture of a home says a lot about it. Before posting, see [Sharing your dashboard safely](docs/sharing.md).
 
 ## Support
 

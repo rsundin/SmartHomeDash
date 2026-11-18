@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.8.34
+
+Showing PlanView Dash to the community (roadmap G1). Nothing in the dashboard changed.
+
+- **A short recording at the top of the README**: dusk falls on the example house, the lights come on one by one, the roof lifts to the floor plan and the living room panel opens. `scripts/record-demo.js` records it again from the test data (Playwright, ffmpeg and Pillow), as animated WebP and optionally as a video
+- **[Sharing your dashboard safely](docs/sharing.md)**: what to crop or blur before posting a screenshot of your home, and which files never to share (an export or `site.json`) and which are safe (problem reports and diagnostics). Linked from the README
+- **`docs/launch-posts.md`**: ready-made texts for a pinned Show and tell discussion, a Home Assistant Community thread and an r/homeassistant post, for the owner to publish
+
 ## 0.8.33
 
 **SmartHomeDash is now PlanView Dash.** The new name says what sets it apart: your home on its own floor plan. Everything is renamed: the integration (domain `planview_dash`), the card, the actions, the folder for sites and the repository (`rsundin/planview-dash`; GitHub forwards the old address). Nothing in how the dashboard works changed. A new icon goes with it: a floor plan with one room lit (source in `docs/images/icon.svg`).
