@@ -25,8 +25,8 @@ jobs:
       - uses: hacs/action@main
         with:
           category: integration
-          # The icon ships in custom_components/smarthomedash/brand/.
-          ignore: brands
+          # No ignores: the Marketplace catalog (hacs/default) requires a clean run.
+          # The brands check finds custom_components/smarthomedash/brand/icon.png.
 
   frontend:
     name: JavaScript syntax
