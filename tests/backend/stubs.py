@@ -137,7 +137,7 @@ def async_redact_data(data, to_redact):
 
 
 _module("homeassistant.components.diagnostics", async_redact_data=async_redact_data)
-_module("homeassistant.config_entries", ConfigEntry=object, ConfigFlow=object, OptionsFlow=object)
+_module("homeassistant.config_entries", ConfigEntry=object, SOURCE_IMPORT="import", ConfigFlow=object, OptionsFlow=object)
 _module("homeassistant.const", EVENT_PANELS_UPDATED="panels_updated", __version__="2026.11.0")
 _module("homeassistant.helpers")
 _anything("homeassistant.helpers.config_validation")

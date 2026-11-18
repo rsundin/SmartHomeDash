@@ -10,7 +10,7 @@ import unittest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
-FRONTEND = ROOT / "custom_components" / "smarthomedash" / "frontend"
+FRONTEND = ROOT / "custom_components" / "planview_dash" / "frontend"
 I18N = FRONTEND / "i18n"
 # t('key'), t("key") and has('key'); and the fixed start of t(`prefix.${…}`).
 LITERAL = re.compile(r"""(?<![\w.$])(?:t|has)\(\s*(['"])([\w.-]+)\1""")
@@ -113,14 +113,14 @@ class StringsTest(unittest.TestCase):
         listed = re.search(r"const LANGUAGES = \[([^\]]*)\]", card)
         self.assertIsNotNone(listed)
         self.assertEqual(sorted(re.findall(r"'(\w+)'", listed.group(1))), sorted(languages()))
-        const = (ROOT / "custom_components" / "smarthomedash" / "const.py").read_text(encoding="utf-8")
+        const = (ROOT / "custom_components" / "planview_dash" / "const.py").read_text(encoding="utf-8")
         locales = dict(re.findall(r'"(\w+)": "([\w-]+)"', re.search(r"LOCALES = \{(.*?)\}", const, re.S).group(1)))
         self.assertEqual(locales, {code: entry["locale"] for code, entry in language_info().items()})
 
     def test_home_assistant_has_its_own_texts_in_every_language(self):
         # The texts Home Assistant shows itself (adding a dashboard, its settings, the
         # actions): translations/<code>.json, with strings.json as the reference.
-        integration = ROOT / "custom_components" / "smarthomedash"
+        integration = ROOT / "custom_components" / "planview_dash"
 
         def flat(node, prefix=""):
             for key, value in node.items():
@@ -148,9 +148,9 @@ class StandalonePageTest(unittest.TestCase):
         self.html = (ROOT / "index.html").read_text(encoding="utf-8")
 
     def test_every_module_is_listed(self):
-        listed = set(re.findall(r"'(custom_components/smarthomedash/frontend/js/[\w/.-]+\.js)'", self.html))
+        listed = set(re.findall(r"'(custom_components/planview_dash/frontend/js/[\w/.-]+\.js)'", self.html))
         have = {str(p.relative_to(ROOT)) for p in (FRONTEND / "js").rglob("*.js")}
-        have.discard("custom_components/smarthomedash/frontend/js/adapters/hass.js")  # the panel's own
+        have.discard("custom_components/planview_dash/frontend/js/adapters/hass.js")  # the panel's own
         self.assertEqual(sorted(have - listed), [], "JavaScript files missing from MODULES in index.html")
         self.assertEqual(sorted(listed - have), [], "MODULES in index.html lists files that do not exist")
 

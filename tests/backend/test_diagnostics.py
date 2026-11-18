@@ -14,7 +14,7 @@ from types import SimpleNamespace
 import stubs  # noqa: F401  (installs the stand-ins first)
 from stubs import ROOT
 
-from custom_components.smarthomedash import diagnostics
+from custom_components.planview_dash import diagnostics
 
 SITE = ROOT / "sites" / "example-house"
 ENTITY = re.compile(r"^[a-z_]+\.[a-z0-9_]+$")
@@ -51,9 +51,9 @@ class DiagnosticsTest(unittest.TestCase):
 
     def run_diag(self, known, data=None, options=None):
         hass = stubs.Hass()
-        hass.data = {"smarthomedash": {
+        hass.data = {"planview_dash": {
             "sites_dir": self.sites, "version": "0.8.14", "entries": {"a": {}}, "yaml_sites": set(),
-            "update": {"repository": "rsundin/SmartHomeDash", "branch": "main", "token": "ghp_secret_token"},
+            "update": {"repository": "rsundin/planview-dash", "branch": "main", "token": "ghp_secret_token"},
         }}
         hass.states = States(known)
         hass.config = SimpleNamespace(language="sv")
@@ -67,7 +67,7 @@ class DiagnosticsTest(unittest.TestCase):
         known = self.ids[2:]  # two devices are gone from Home Assistant
         out = self.run_diag(known)
         text = json.dumps(out, ensure_ascii=False)
-        self.assertEqual(out["smarthomedash"], "0.8.14")
+        self.assertEqual(out["planview_dash"], "0.8.14")
         self.assertEqual(out["home_assistant"], "2026.11.0")
         site = out["site"]
         self.assertEqual(site["site_json"], "ok")

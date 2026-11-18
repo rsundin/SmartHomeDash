@@ -6,7 +6,7 @@ const { describe, test } = require('node:test');
 const assert = require('node:assert/strict');
 const { setup, open, harness, close, check } = require('./lib');
 
-const JS = '../../custom_components/smarthomedash/frontend/js';
+const JS = '../../custom_components/planview_dash/frontend/js';
 
 describe('restarts and removals', () => {
   const env = setup();
@@ -85,7 +85,7 @@ describe('restarts and removals', () => {
       URL.revokeObjectURL = (u) => { released.add(u); revoke.call(URL, u); };
       const count = () => ({ made: made.size, held: [...made].filter((u) => !released.has(u)).length });
       // A start is over when the pictures that follow in the background are in too.
-      const restart = async () => { window.harness.navigateEdit(false); await window.harness.ready; await window.__shdRun.site.pictures(); };
+      const restart = async () => { window.harness.navigateEdit(false); await window.harness.ready; await window.__pvdRun.site.pictures(); };
       await restart();
       const first = count();
       await restart();
@@ -160,7 +160,7 @@ describe('restarts and removals', () => {
     assert.equal(await page.locator('.stage').getAttribute('data-view'), 'plan:garage');
     await page.locator('.tab[data-view="overview"]').click();
     release();
-    await page.evaluate(() => window.__shdRun.site.pictures());
+    await page.evaluate(() => window.__pvdRun.site.pictures());
     await page.waitForTimeout(100);
     assert.equal(await page.locator('.stage').getAttribute('data-view'), 'overview');
     await page.locator('.tab[data-view="plan:house"]').click();

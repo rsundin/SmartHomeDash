@@ -8,7 +8,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { ROOT, setup, harness, close, check } = require('./lib');
 
-const ENTITIES = '../../custom_components/smarthomedash/frontend/js/entities.js';
+const ENTITIES = '../../custom_components/planview_dash/frontend/js/entities.js';
 const TZ = 'Europe/Stockholm';
 
 // The house example with its price entity set to another test format.

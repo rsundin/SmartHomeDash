@@ -13,8 +13,8 @@ from unittest.mock import MagicMock
 import stubs  # noqa: F401  (installs the stand-ins first)
 from stubs import Hass, Request, Stream
 
-from custom_components.smarthomedash import views
-from custom_components.smarthomedash.const import MAX_SITE_JSON, MAX_UPLOAD
+from custom_components.planview_dash import views
+from custom_components.planview_dash.const import MAX_SITE_JSON, MAX_UPLOAD
 
 JPEG = b"\xff\xd8\xff\xe0" + b"\0" * 16
 PNG = b"\x89PNG\r\n\x1a\n" + b"\0" * 16
@@ -251,7 +251,7 @@ class SitesViewTest(unittest.TestCase):
 
     def test_examples_pass_validation(self):
         base = Path(__file__).resolve().parents[2]
-        files = [*base.glob("sites/*/site.json"), *base.glob("custom_components/smarthomedash/example/*.json")]
+        files = [*base.glob("sites/*/site.json"), *base.glob("custom_components/planview_dash/example/*.json")]
         self.assertTrue(files)
         for path in files:
             with self.subTest(path=path.name):

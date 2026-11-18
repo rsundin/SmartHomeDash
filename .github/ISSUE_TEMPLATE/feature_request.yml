@@ -5,7 +5,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        Still an idea, or want to see what others think first? Start in [Discussions → Ideas](https://github.com/rsundin/SmartHomeDash/discussions/categories/ideas), where others can vote. Planned work is in [ROADMAP.md](https://github.com/rsundin/SmartHomeDash/blob/main/ROADMAP.md).
+        Still an idea, or want to see what others think first? Start in [Discussions → Ideas](https://github.com/rsundin/planview-dash/discussions/categories/ideas), where others can vote. Planned work is in [ROADMAP.md](https://github.com/rsundin/planview-dash/blob/main/ROADMAP.md).
         Issues are public: leave out names, addresses and pictures of your home you would not want public.
   - type: textarea
     id: problem

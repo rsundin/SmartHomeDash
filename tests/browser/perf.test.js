@@ -53,7 +53,7 @@ describe('performance', () => {
     const page = await harness(env, '?site=perf-site', { width: 1280, height: 800, prepare: throttled(serveSite()) });
     // First render: the first frame after the dashboard was built, from the start of navigation.
     const firstRender = await page.evaluate(() => new Promise((resolve) => {
-      const mark = performance.getEntriesByName('shd:rendered')[0];
+      const mark = performance.getEntriesByName('pvd:rendered')[0];
       if (mark) resolve(mark.startTime);
       else requestAnimationFrame(() => requestAnimationFrame(() => resolve(performance.now())));
     }));

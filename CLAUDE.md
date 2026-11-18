@@ -1,4 +1,4 @@
-# Working on SmartHomeDash
+# Working on PlanView Dash
 
 A picture-based Home Assistant dashboard, shipped as a custom integration (Home Assistant Marketplace, added from a link; HACS custom repository before Home Assistant 2026.11).
 
@@ -6,15 +6,15 @@ New to the project, or a new model picking it up? Read `docs/roadmap/kickoff.md`
 
 ## Rules
 - Repo text, code, comments and docs in English. Dashboard UI strings live in `frontend/i18n/<language>.json`, one file per language with the same keys (Swedish default, English, and machine-assisted Danish, German, Finnish, Norwegian bokmål and Dutch); `frontend/js/i18n.js` fetches them and has `t(key, vars)`. A new UI string goes into every language file (English text is acceptable as a stopgap in the machine-assisted ones; better a translation). Home Assistant's own texts (config flow, actions) are `strings.json` and `translations/<language>.json`, in the same languages. Adding a language: `docs/translating.md`.
-- Never commit data about a real home: photos, entity ids, room names, IPs, tokens. Real sites live in `<config>/smarthomedash/sites/` on the user's Home Assistant, not here. Examples in `custom_components/smarthomedash/example/` are fictional.
+- Never commit data about a real home: photos, entity ids, room names, IPs, tokens. Real sites live in `<config>/planview_dash/sites/` on the user's Home Assistant, not here. Examples in `custom_components/planview_dash/example/` are fictional.
 - Commit as `rsundin <37210129+rsundin@users.noreply.github.com>`.
 - No build step and no runtime calls to outside services (fonts are bundled in `frontend/fonts/`).
 - Security: site files only for logged-in users, writes admin-only, `safe_path` for every path, bounded body reads, picture magic-byte check, no `innerHTML` with data.
 
 ## Layout
-- `custom_components/smarthomedash/`: `__init__.py` (setup, panels, starter site, optional `smarthomedash.update`), `goodnight.py` (`smarthomedash.goodnight` countdown), `config_flow.py`, `views.py` (FrontendView public/no-cache, SitesView auth), `updater.py`, `const.py`.
+- `custom_components/planview_dash/`: `__init__.py` (setup, panels, starter site, optional `planview_dash.update`), `goodnight.py` (`planview_dash.goodnight` countdown), `config_flow.py`, `views.py` (FrontendView public/no-cache, SitesView auth), `updater.py`, `const.py`.
 - `frontend/panel.js`: panel element in HA's iframe; gets `hass`, kiosk via `hass-dock-sidebar`.
-- `frontend/card.js`: `custom:smarthomedash-card` for other dashboards (element, visual editor, card picker entry), added to every dashboard with `add_extra_js_url`. The picture runs in a frame, `card.html` + `card-frame.js`, which calls `main.start({ embed: { view } })`; `body.is-embed` in `style.css` hides all but the picture.
+- `frontend/card.js`: `custom:planview-dash-card` for other dashboards (element, visual editor, card picker entry), added to every dashboard with `add_extra_js_url`. The picture runs in a frame, `card.html` + `card-frame.js`, which calls `main.start({ embed: { view } })`; `body.is-embed` in `style.css` hides all but the picture.
 - `frontend/js/`: `main.js` startup, `site.js` config loading, `areas.js` Home Assistant areas, `glow.js` lamp colours, `status.js` sensors and warnings, `views/flow.js` energy flow, `views/` overview + floor plan, `ui/setup/` setup guide (`index.js` frame, undo and save; one module per step sharing a context object; `helpers.js`, `draw.js`, `quick.js`; `ui/setup.js` re-exports it), `ui/editor.js` placement, `ui/shape.js` shape editing (corners, snap, undo; rooms and LED strips), `ui/zoom.js` pinch zoom, `ui/wall.js` doorbell camera, idle mode and light mode, `ui/lights.js` all on / all off and goodnight (header and lights card), `ui/conflict.js` the question when a save would replace someone else's, `ui/camera.js` camera window and camera markers, `adapters/` (hass, ha token, mock test data).
 - `tests/`: `run.sh`, `backend/` (unittest), `browser/` (node:test + Playwright, `harness.html`), `fixtures/` (generated test sites), `webkit/` (a short run in WebKit; `tests/run.sh webkit`), `ha/` (pytest under a real Home Assistant; not part of `run.sh`). Lint config: `ruff.toml`, `eslint.config.js`.
 - `index.html` + `sites/`: standalone dev page on test data (`python3 -m http.server`, `?site=example-apartment`, `#edit`, `?kiosk`). New JS files must be added to MODULES in `index.html` (a backend test checks it).
@@ -31,6 +31,6 @@ New to the project, or a new model picking it up? Read `docs/roadmap/kickoff.md`
 - The research behind it, with sources, is `docs/roadmap/research-2026-11.md`; the latest status report is `docs/roadmap/status-2026-11.md`. The plan's **Next up** list sets the order until the owner changes it.
 
 ## Releasing
-1. Bump `version` in `custom_components/smarthomedash/manifest.json` and add a section to `CHANGELOG.md`.
+1. Bump `version` in `custom_components/planview_dash/manifest.json` and add a section to `CHANGELOG.md`.
 2. Merge to main, then publish a GitHub release tagged `vX.Y.Z` with the changelog section. The Marketplace offers the update from the release.
 3. Python/manifest changes need a Home Assistant restart; frontend-only changes need a dashboard reload.

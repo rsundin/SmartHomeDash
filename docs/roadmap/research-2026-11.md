@@ -1,12 +1,12 @@
 # Dashboard research, November 2026
 
-Background for [plan.md](plan.md): what popular smart home dashboards do, what stands out and what people complain about, compared with SmartHomeDash 0.8.5. Sources are listed at the end, numbered like [1].
+Background for [plan.md](plan.md): what popular smart home dashboards do, what stands out and what people complain about, compared with PlanView Dash 0.8.5. Sources are listed at the end, numbered like [1].
 
 ## The landscape
 
 **Home Assistant's own direction.** Home Assistant has moved toward automatic, area-driven dashboards. Since 2026.1 the Home dashboard shows summaries for lights, climate, security, media, weather and energy, then favourites and areas [1]. Since 2026.2 it is the default for new installations, together with a power distribution card [2]. 2026.6 added a card picker by entity, with an opt-in for custom cards (`getEntitySuggestion`) [3]. 2026.11 added automatic sections and scoping by area or floor. It also changed entity naming: cards without a name now show "device name + entity name", and `friendly_name` in templates is headed for deprecation [4]. The core is getting good at lists of controls. It has no picture of the home.
 
-**Floor plans in 2D and 3D.** This is the closest group to SmartHomeDash:
+**Floor plans in 2D and 3D.** This is the closest group to PlanView Dash:
 - **ha-floorplan (SVG):** the long-standing 2D option. Its own docs warn that it "will require a good amount of your time": draw in another tool, trace in Inkscape, give every element an id, then write config per room [5].
 - **3D cards (Floorplan 3D, Floor3DX, the "ready-made 3D floorplan"):** look impressive but need a model from Sweet Home 3D or similar. Users report slow loading of large models, phones that crash or lag, and around 30 lights being enough to bog down a laptop [6]. Floor3DX answers this with compressed models and a separate 2D "snapshot" card for tablets and guests, with a guest mode that limits locks, garage doors and alarms [7]. The ready-made card is praised for being smooth on an old tablet, but its layout was saved only in the editing browser [8].
 - **NeonPlan 3D:** the most complete competitor. It has an in-HA editor (rooms, walls, doors, roofs, furniture) and links each room to an HA area so devices drop in with one tap. Lights show true colour, and there are covers, open windows, cameras with field of view, media that glows, appliances, people per room, a temperature and humidity heatmap, sun and shadow, and weather. It works as both card and panel, with kiosk idle, night dimming, a voice button, quality settings for weak tablets, floors from HA, several homes, restore points and 19 languages [9][10].
@@ -27,9 +27,9 @@ Projects in this space include WallMode, SeHomeWall, WallPanel, Fully Kiosk setu
 - **Setup effort and YAML** come next ("WTH do I still need to be a rocket scientist") [24].
 - **Fragile per-device setups** where something saved in one browser is missing in another [8].
 
-## What stands out, and where SmartHomeDash is
+## What stands out, and where PlanView Dash is
 
-| Theme | Best in class | SmartHomeDash 0.8.5 | Gap |
+| Theme | Best in class | PlanView Dash 0.8.5 | Gap |
 | --- | --- | --- | --- |
 | Picture of the home | 3D cards, NeonPlan | Real photo/render, lamps glow in true colour and temperature, dusk, weather | Ahead on realism with no modelling; keep it |
 | Setup effort | NeonPlan editor, HA auto-dashboards | UI guide, draw rooms, areas link, auto-placement | No undo, no vertex editing or snapping, no quick start without pictures |
@@ -82,7 +82,7 @@ Projects in this space include WallMode, SeHomeWall, WallPanel, Fully Kiosk setu
 
 ## Second pass, 13 November 2026
 
-New since the first pass, with SmartHomeDash at 0.8.16 (see [status-2026-11.md](status-2026-11.md)):
+New since the first pass, with PlanView Dash at 0.8.16 (see [status-2026-11.md](status-2026-11.md)):
 
 - **HACS became the Home Assistant Marketplace in 2026.11.** It sits under Settings → Marketplace and lists integrations, cards, themes and templates. A separate HACS install is blocked. A custom repository is added with "Add from link" after a GitHub device sign-in. Project pages show installs, stars, the minimum Home Assistant version and brand images, and installing goes straight into the integration's setup [R27][R4].
 - **Home Assistant's dashboards aim at the whole family:** a calmer default Overview, areas driving climate and energy, personal themes per user profile [R28][R29]. 2026.11 added community sections, an alert badge with a pulse and copy-paste of sections [R4].

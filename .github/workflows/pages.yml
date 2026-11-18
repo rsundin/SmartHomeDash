@@ -11,8 +11,8 @@ on:
       - version.json
       - "*.png"
       - sites/**
-      - custom_components/smarthomedash/frontend/**
-      - custom_components/smarthomedash/example/**
+      - custom_components/planview_dash/frontend/**
+      - custom_components/planview_dash/example/**
       - .github/workflows/pages.yml
   workflow_dispatch:
 
@@ -31,10 +31,10 @@ jobs:
       - name: Assemble the site
         # cp -L copies the files the example symlinks point to; Pages does not follow links.
         run: |
-          mkdir -p _site/custom_components/smarthomedash
+          mkdir -p _site/custom_components/planview_dash
           cp index.html manifest.webmanifest version.json icon-192.png icon-512.png _site/
           cp -rL sites _site/sites
-          cp -r custom_components/smarthomedash/frontend _site/custom_components/smarthomedash/frontend
+          cp -r custom_components/planview_dash/frontend _site/custom_components/planview_dash/frontend
           sed -i 's/<body data-default-site=/<body data-demo="true" data-default-site=/' _site/index.html
           grep -q 'data-demo="true"' _site/index.html
           touch _site/.nojekyll

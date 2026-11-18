@@ -10,7 +10,7 @@ const { ROOT, setup, harness, close, check, centre } = require('./lib');
 
 const houseSite = () => JSON.parse(fs.readFileSync(path.join(ROOT, 'sites', 'example-house', 'site.json'), 'utf8'));
 const serve = (site) => (page) => page.route('**/sites/example-house/site.json', (route) => route.fulfill({ contentType: 'application/json', body: JSON.stringify(site) }));
-const draft = (page) => page.evaluate(() => JSON.parse(localStorage.getItem('shd:example-house:draft')));
+const draft = (page) => page.evaluate(() => JSON.parse(localStorage.getItem('pvd:example-house:draft')));
 const toPlan = async (page) => {
   await page.locator('.views .tab[data-view="plan:house"]').click();
   await page.waitForFunction(() => document.querySelector('.stage').dataset.view === 'plan:house');

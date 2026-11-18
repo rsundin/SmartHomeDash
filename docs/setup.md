@@ -17,24 +17,24 @@ Plan for about an hour, most of it spent on the pictures.
 **From the Marketplace** (Home Assistant 2026.11 and newer)
 
 1. **Settings → Marketplace → Add from link.** The first time, the Marketplace shows a notice that community code is not reviewed by Home Assistant, and asks you to sign in with GitHub.
-2. Paste `https://github.com/rsundin/SmartHomeDash` and install **SmartHomeDash**.
+2. Paste `https://github.com/rsundin/planview-dash` and install **PlanView Dash**.
 3. Setup starts right away: continue with step 2 below.
 
 New versions show up in the Marketplace like for any other integration. Restart Home Assistant after an update.
 
-*Before Home Assistant 2026.11:* HACS → three-dot menu → *Custom repositories* → add the repository URL with category **Integration** → download **SmartHomeDash** → restart Home Assistant.
+*Before Home Assistant 2026.11:* HACS → three-dot menu → *Custom repositories* → add the repository URL with category **Integration** → download **PlanView Dash** → restart Home Assistant.
 
 **Manually**
 
-Copy `custom_components/smarthomedash` from this repository to `<config>/custom_components/smarthomedash`, then restart Home Assistant. From a computer with SSH access you can use `scripts/deploy.sh user@host`.
+Copy `custom_components/planview_dash` from this repository to `<config>/custom_components/planview_dash`, then restart Home Assistant. From a computer with SSH access you can use `scripts/deploy.sh user@host`.
 
 ## 2. Add a dashboard
 
-1. **Settings → Devices & services → Add integration → SmartHomeDash.**
+1. **Settings → Devices & services → Add integration → PlanView Dash.**
 2. Give it a name (shown in the sidebar; renaming it later in the setup guide or under the integration's **Configure** renames the sidebar entry too), choose **House** or **Apartment**, an icon and optionally an address. Without one, the address is made from the name; if Home Assistant already uses it for a page of its own (as with *Home*), `-dash` is added.
 3. The dashboard appears in the sidebar. Add the integration again for another home.
 
-Each dashboard has its own folder, `<config>/smarthomedash/sites/<name>/`, holding its config and pictures. These files are only served to logged-in users. Removing the integration entry removes the panel but keeps the folder.
+Each dashboard has its own folder, `<config>/planview_dash/sites/<name>/`, holding its config and pictures. These files are only served to logged-in users. Removing the integration entry removes the panel but keeps the folder.
 
 A new dashboard starts from an example, with no lights or sensors linked since those are your own:
 
@@ -134,7 +134,7 @@ New outdoor lamps are drawn as wall lamps. To make one a flood or deck light, ch
 The last step, for administrators in the Home Assistant panel:
 
 - **Export**: **Download .zip** saves the dashboard as one file: `site.json` and every picture in its folder. Entity ids are in it, so keep it to yourself.
-- **Import**: **Choose .zip …** reads a file exported from SmartHomeDash into this dashboard, after you confirm. It replaces the settings and adds the pictures; pictures already there with other names stay. To move a dashboard to another Home Assistant, or copy it, add a new dashboard there (step 2) and import into it. Home Assistant checks the whole file first and imports nothing if any part fails: only `site.json` and jpg, png or webp pictures (checked by content), at most 100 MB unpacked, 25 MB per picture and 200 files, and no names that lead out of the dashboard's folder.
+- **Import**: **Choose .zip …** reads a file exported from PlanView Dash into this dashboard, after you confirm. It replaces the settings and adds the pictures; pictures already there with other names stay. To move a dashboard to another Home Assistant, or copy it, add a new dashboard there (step 2) and import into it. Home Assistant checks the whole file first and imports nothing if any part fails: only `site.json` and jpg, png or webp pictures (checked by content), at most 100 MB unpacked, 25 MB per picture and 200 files, and no names that lead out of the dashboard's folder.
 - **Restore points**: every save keeps the version it replaced, up to the last 10 (`site.json.1` is the newest, up to `site.json.10`). Each is listed with when it was saved and how many floor plans and rooms it has; **Restore** makes it the current one, after you confirm. An import or a restore keeps the settings it replaced as a restore point too, so it can be undone the same way. Pictures are not part of a restore point.
 - **Two people editing**: if someone else, or another tab, has saved the dashboard since you opened the setup guide or placement mode, saving asks first. **Save anyway** replaces their version, which stays as a restore point; **Cancel** saves nothing and keeps your changes on screen.
 
@@ -142,14 +142,14 @@ The last step, for administrators in the Home Assistant panel:
 
 The picture also works as a card in any other Home Assistant dashboard: the overview, one floor plan or one room. The card comes with the integration, so there is nothing more to install. After an update that adds or changes it, reload the browser page once.
 
-1. Open a dashboard, choose **Edit dashboard**, then **Add card**, and search for **SmartHomeDash**.
-2. Pick the **Dashboard** (every SmartHomeDash dashboard you have added is listed) and what to **Show**: the overview, a floor plan or a room.
+1. Open a dashboard, choose **Edit dashboard**, then **Add card**, and search for **PlanView Dash**.
+2. Pick the **Dashboard** (every PlanView Dash dashboard you have added is listed) and what to **Show**: the overview, a floor plan or a room.
 3. In a sections view, drag the card's corner to size it. In other views, set **Height** in pixels (400 if left empty).
 
 The same in YAML:
 
 ```yaml
-type: custom:smarthomedash-card
+type: custom:planview-dash-card
 site: my-home          # the dashboard's folder name, as in step 2
 view: room:kitchen     # overview (default), plan:<floor plan id> or room:<room id>
 height: 400            # optional; not needed in a sections view
@@ -161,7 +161,7 @@ Good to know:
 - A card for a floor plan or a room stays on that floor plan. A card for the overview of a dashboard without an overview picture starts on its first floor plan.
 - From Home Assistant 2026.6, picking a lamp or a thermostat in **Add card** suggests the room it is in, if the lamp is placed in a room or the room is linked to the lamp's area.
 - Night mode, pinch zoom and light mode for older tablets work as in the dashboard. Kiosk mode, idle mode and the doorbell camera belong to the dashboard itself and are not part of the card.
-- Everyone who can see the dashboard you put the card in sees the picture, also when the SmartHomeDash dashboard itself is set to administrators only: that setting hides it from the sidebar, and the card is your choice to show it. Changing the setup stays with administrators, in the dashboard.
+- Everyone who can see the dashboard you put the card in sees the picture, also when the PlanView Dash dashboard itself is set to administrators only: that setting hides it from the sidebar, and the card is your choice to show it. Changing the setup stays with administrators, in the dashboard.
 
 ## Tips for the pictures
 
@@ -255,8 +255,8 @@ In landscape at 1024 pixels or wider the dashboard fills the screen without scro
 
 **Saving says "site.json was not saved".** The file failed Home Assistant's check, and the message says which part, such as a room outline that is not a list of number pairs. The file on disk is unchanged. Fix that part in placement mode or in the file.
 
-**An import says "Nothing was imported".** The message names the file in the .zip that failed, for example a file that is not a picture, or a `site.json` that fails the check above. Nothing in the dashboard changed. Export from SmartHomeDash again, or remove that file from the .zip.
+**An import says "Nothing was imported".** The message names the file in the .zip that failed, for example a file that is not a picture, or a `site.json` that fails the check above. Nothing in the dashboard changed. Export from PlanView Dash again, or remove that file from the .zip.
 
-**The sidebar entry is missing after a restart.** Check *Settings → System → Logs* for messages from `smarthomedash`.
+**The sidebar entry is missing after a restart.** Check *Settings → System → Logs* for messages from `planview_dash`.
 
-**Still stuck, or something looks like a bug.** Tap **?** in the dashboard's top bar, or **Report a problem** at the bottom of the setup guide's steps. It shows what will be sent: SmartHomeDash and Home Assistant versions, browser, screen size, kiosk and light mode, counts of plans, rooms and devices, and the config check messages, never entity ids, names or pictures. You can change the text, then **Open the issue on GitHub** fills in the bug report form with it. Administrators can add *Download diagnostics* from *Settings → Devices & services → SmartHomeDash → ⋮*: versions, the dashboard's options with its name and address redacted, and counts and sizes for its site folder, including how many devices site.json names that Home Assistant does not know. Questions that are not bugs go to [Discussions](https://github.com/rsundin/SmartHomeDash/discussions).
+**Still stuck, or something looks like a bug.** Tap **?** in the dashboard's top bar, or **Report a problem** at the bottom of the setup guide's steps. It shows what will be sent: PlanView Dash and Home Assistant versions, browser, screen size, kiosk and light mode, counts of plans, rooms and devices, and the config check messages, never entity ids, names or pictures. You can change the text, then **Open the issue on GitHub** fills in the bug report form with it. Administrators can add *Download diagnostics* from *Settings → Devices & services → PlanView Dash → ⋮*: versions, the dashboard's options with its name and address redacted, and counts and sizes for its site folder, including how many devices site.json names that Home Assistant does not know. Questions that are not bugs go to [Discussions](https://github.com/rsundin/planview-dash/discussions).

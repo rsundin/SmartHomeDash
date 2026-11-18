@@ -7,7 +7,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { ROOT, setup, harness, close, check } = require('./lib');
 
-const JS = '../../custom_components/smarthomedash/frontend/js';
+const JS = '../../custom_components/planview_dash/frontend/js';
 
 // The example house with the guide opening by itself, in English.
 function site() {
@@ -23,7 +23,7 @@ describe('save conflicts', () => {
     const page = await harness(env, '?site=example-house', { prepare: serve });
     await page.locator('.setup').waitFor();
     // Someone else saves while the guide is open here.
-    await page.evaluate(() => window.harness.saved.push({ ...window.__shdRun.site.raw, name: 'Theirs' }));
+    await page.evaluate(() => window.harness.saved.push({ ...window.__pvdRun.site.raw, name: 'Theirs' }));
     const save = page.locator('.setup .chip-primary', { hasText: 'Save' }).first();
     await save.click();
     const dialog = page.locator('.save-conflict [role="alertdialog"]');
@@ -51,7 +51,7 @@ describe('save conflicts', () => {
     await page.locator('.setup .chip-primary', { hasText: 'Save' }).first().click();
     await page.waitForFunction(() => window.harness.saved.length === 1 && window.harness.starts === 2);
     // The restarted dashboard read the new version.
-    await page.waitForFunction(() => window.__shdRun.site?.version === '"v1"');
+    await page.waitForFunction(() => window.__pvdRun.site?.version === '"v1"');
     assert.equal(await page.locator('.save-conflict').count(), 0);
     check(page);
     await close(page);

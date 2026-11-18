@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
-# Copy SmartHomeDash to a Home Assistant host over SSH.
+# Copy PlanView Dash to a Home Assistant host over SSH.
 #
 #   scripts/deploy.sh user@homeassistant.local               the integration only
 #   scripts/deploy.sh user@homeassistant.local home          plus any new files of a site
 #   scripts/deploy.sh user@homeassistant.local home --site   and overwrite its site.json
 #
-# - The integration goes to <config>/custom_components/smarthomedash (replaced).
-# - The site goes to <config>/smarthomedash/sites/<site>. Existing files are kept,
+# - The integration goes to <config>/custom_components/planview_dash (replaced).
+# - The site goes to <config>/planview_dash/sites/<site>. Existing files are kept,
 #   so a site.json saved from the dashboard's placement mode is not overwritten,
 #   unless --site is given (the old one is kept as site.json.bak).
 # - Works with SSH add-ons that lack SFTP; uses sudo when the SSH user is not root.
@@ -19,7 +19,7 @@ FORCE_SITE=${3:-}
 CONFIG=${CONFIG_DIR:-/config}
 cd "$(dirname "$0")/.."
 
-PARTS=(custom_components/smarthomedash)
+PARTS=(custom_components/planview_dash)
 if [ -n "$SITE" ]; then
   [ -f "sites/$SITE/site.json" ] || { echo "sites/$SITE/site.json not found" >&2; exit 1; }
   PARTS+=("sites/$SITE")
@@ -31,18 +31,18 @@ tar --exclude '__pycache__' -czf - "${PARTS[@]}" | ssh "$HOST" "
   TMP=\$(mktemp -d)
   tar -C \"\$TMP\" -xzf -
   \$SUDO mkdir -p '$CONFIG/custom_components'
-  \$SUDO rm -rf '$CONFIG/custom_components/smarthomedash'
-  \$SUDO cp -r \"\$TMP/custom_components/smarthomedash\" '$CONFIG/custom_components/'
+  \$SUDO rm -rf '$CONFIG/custom_components/planview_dash'
+  \$SUDO cp -r \"\$TMP/custom_components/planview_dash\" '$CONFIG/custom_components/'
   if [ -z '$SITE' ]; then
     :
-  elif [ '$FORCE_SITE' = '--site' ] && [ -f '$CONFIG/smarthomedash/sites/$SITE/site.json' ]; then
-    \$SUDO cp '$CONFIG/smarthomedash/sites/$SITE/site.json' '$CONFIG/smarthomedash/sites/$SITE/site.json.bak'
-    \$SUDO cp -r \"\$TMP/sites/$SITE/.\" '$CONFIG/smarthomedash/sites/$SITE/'
+  elif [ '$FORCE_SITE' = '--site' ] && [ -f '$CONFIG/planview_dash/sites/$SITE/site.json' ]; then
+    \$SUDO cp '$CONFIG/planview_dash/sites/$SITE/site.json' '$CONFIG/planview_dash/sites/$SITE/site.json.bak'
+    \$SUDO cp -r \"\$TMP/sites/$SITE/.\" '$CONFIG/planview_dash/sites/$SITE/'
   else
-    \$SUDO mkdir -p '$CONFIG/smarthomedash/sites/$SITE'
+    \$SUDO mkdir -p '$CONFIG/planview_dash/sites/$SITE'
     # add files that are missing, keep everything already there
     (cd \"\$TMP/sites/$SITE\" && find . -type f) | while read -r f; do
-      [ -e '$CONFIG/smarthomedash/sites/$SITE/'\"\$f\" ] || \$SUDO cp \"\$TMP/sites/$SITE/\$f\" '$CONFIG/smarthomedash/sites/$SITE/'\"\$f\"
+      [ -e '$CONFIG/planview_dash/sites/$SITE/'\"\$f\" ] || \$SUDO cp \"\$TMP/sites/$SITE/\$f\" '$CONFIG/planview_dash/sites/$SITE/'\"\$f\"
     done
   fi
   rm -rf \"\$TMP\"

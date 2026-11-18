@@ -10,10 +10,10 @@ const { ROOT, setup, harness, close, check, assertNoOverflow } = require('./lib'
 const houseSite = () => JSON.parse(fs.readFileSync(path.join(ROOT, 'sites', 'example-house', 'site.json'), 'utf8'));
 const serve = (site) => (page) => page.route('**/sites/example-house/site.json', (route) => route.fulfill({ contentType: 'application/json', body: JSON.stringify(site) }));
 // Every light on the dashboard, including the ones picked up from areas, and how many are on.
-const lights = (page) => page.evaluate(() => window.__shdRun.site.index.lights.map((id) => [id, window.store.get(id)?.state]));
+const lights = (page) => page.evaluate(() => window.__pvdRun.site.index.lights.map((id) => [id, window.store.get(id)?.state]));
 const states = async (page) => Object.fromEntries(await lights(page));
 const setAll = (page, state) => page.evaluate((s) => {
-  for (const id of window.__shdRun.site.index.lights) { const x = window.store.get(id); if (x) window.store.update({ ...x, state: s }); }
+  for (const id of window.__pvdRun.site.index.lights) { const x = window.store.get(id); if (x) window.store.update({ ...x, state: s }); }
   window.store.flush();
 }, state);
 
@@ -29,7 +29,7 @@ describe('all lights on and off', () => {
     const menu = page.locator('.lights-menu');
     assert.ok(await menu.isVisible());
     await menu.locator('[data-action="all-on"]').click();
-    await page.waitForFunction(() => window.__shdRun.site.index.lights.every((id) => window.store.get(id)?.state !== 'off'));
+    await page.waitForFunction(() => window.__pvdRun.site.index.lights.every((id) => window.store.get(id)?.state !== 'off'));
     assert.ok(await menu.isHidden(), 'the menu closes after a choice');
     await page.evaluate(() => window.store.flush());
     assert.ok(await btn.evaluate((n) => n.classList.contains('is-on')), 'the lamp shows that lights are on');
@@ -43,7 +43,7 @@ describe('all lights on and off', () => {
     await page.waitForTimeout(300);
     assert.ok(Object.values(await states(page)).every((s) => s === 'on'), 'nothing turned off after one tap');
     await off.click();
-    await page.waitForFunction(() => window.__shdRun.site.index.lights.every((id) => window.store.get(id)?.state === 'off'));
+    await page.waitForFunction(() => window.__pvdRun.site.index.lights.every((id) => window.store.get(id)?.state === 'off'));
     check(page);
     await close(page);
   });

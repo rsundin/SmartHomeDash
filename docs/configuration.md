@@ -2,7 +2,7 @@
 
 Most of this is written by the setup guide and placement mode; see [setup.md](setup.md). This page is for checking or fine-tuning the result by hand.
 
-Each site has a folder with a `site.json` and any images: `<config>/smarthomedash/sites/<id>/` in Home Assistant, `sites/<id>/` in this repository. The id is what `configuration.yaml` (or `?site=<id>` on the standalone page) refers to. Entity ids and coordinates live only here, never in the code.
+Each site has a folder with a `site.json` and any images: `<config>/planview_dash/sites/<id>/` in Home Assistant, `sites/<id>/` in this repository. The id is what `configuration.yaml` (or `?site=<id>` on the standalone page) refers to. Entity ids and coordinates live only here, never in the code.
 
 Everything except `name` and at least one floor plan is optional. A card whose entity is missing is not shown.
 
@@ -206,10 +206,10 @@ A row above the picture shows, most serious first: alarms (smoke, gas, carbon mo
 
 - A tap on **Goodnight** (behind the lamp in the header, or in the lights card) starts a countdown. Every open screen of the dashboard shows "Goodnight: everything off in 4:12" with **Cancel**. Tapping Goodnight again starts the countdown over.
 - The countdown runs in Home Assistant, so a tablet that sleeps or reloads does not stop it. A restart of Home Assistant does stop it.
-- It is the action `smarthomedash.goodnight`, so it can also be started from an automation, a voice command or an NFC tag:
+- It is the action `planview_dash.goodnight`, so it can also be started from an automation, a voice command or an NFC tag:
 
 ```yaml
-action: smarthomedash.goodnight
+action: planview_dash.goodnight
 data:
   site: home                 # the dashboard's folder name
   entity_id: [light.hall, light.kitchen]
@@ -217,7 +217,7 @@ data:
   then: script.lock_up       # optional
 ```
 
-  `cancel: true` stops a countdown. While one runs, the state `smarthomedash.goodnight_<site>` is `on` with the time in `ends_at`; it is what the screens show.
+  `cancel: true` stops a countdown. While one runs, the state `planview_dash.goodnight_<site>` is `on` with the time in `ends_at`; it is what the screens show.
 
 ## Wall screens
 

@@ -13,10 +13,10 @@ from pathlib import Path
 import stubs  # noqa: F401  (installs the stand-ins first)
 from stubs import ROOT, HomeAssistantError
 
-import custom_components.smarthomedash as integration
-from custom_components.smarthomedash import updater
+import custom_components.planview_dash as integration
+from custom_components.planview_dash import updater
 
-EXAMPLE = ROOT / "custom_components" / "smarthomedash" / "example"
+EXAMPLE = ROOT / "custom_components" / "planview_dash" / "example"
 ENTITY = re.compile(r"^[a-z_]+\.[a-z0-9_]+$")
 PICTURE = re.compile(r"\.(jpg|jpeg|png|webp)$")
 
@@ -102,7 +102,7 @@ class StarterSiteTest(unittest.TestCase):
             self.assertEqual((folder / "site.json").read_text(), '{"mine": true}')
 
 
-def tarball(files: dict[str, bytes], top: str = "rsundin-SmartHomeDash-abc1234def") -> bytes:
+def tarball(files: dict[str, bytes], top: str = "rsundin-planview-dash-abc1234def") -> bytes:
     buf = io.BytesIO()
     with tarfile.open(fileobj=buf, mode="w:gz") as tar:
         for name, data in files.items():
@@ -117,7 +117,7 @@ class UpdaterTest(unittest.TestCase):
         tmp = tempfile.TemporaryDirectory()
         self.addCleanup(tmp.cleanup)
         self.tmp = Path(tmp.name)
-        self.integration = self.tmp / "custom_components" / "smarthomedash"
+        self.integration = self.tmp / "custom_components" / "planview_dash"
         self.integration.mkdir(parents=True)
         (self.integration / "manifest.json").write_text('{"version": "1"}')
         (self.integration / "views.py").write_text("old")
@@ -131,9 +131,9 @@ class UpdaterTest(unittest.TestCase):
 
     def test_installs_github_tarball(self):
         result = self.install({
-            "custom_components/smarthomedash/manifest.json": b'{"version": "2"}',
-            "custom_components/smarthomedash/views.py": b"old",
-            "custom_components/smarthomedash/frontend/panel.js": b"//",
+            "custom_components/planview_dash/manifest.json": b'{"version": "2"}',
+            "custom_components/planview_dash/views.py": b"old",
+            "custom_components/planview_dash/frontend/panel.js": b"//",
             "sites/home/site.json": b'{"theirs": true}',
             "sites/home/roof.jpg": b"\xff\xd8\xff",
             "sites/other/site.json": b"{}",
@@ -147,21 +147,21 @@ class UpdaterTest(unittest.TestCase):
         self.assertEqual((self.sites / "home" / "site.json").read_text(), '{"mine": true}')
         self.assertEqual(result.added_site_files, ["home/roof.jpg"])
         self.assertFalse((self.sites / "other").exists())
-        self.assertEqual([p.name for p in self.tmp.joinpath("custom_components").iterdir()], ["smarthomedash"])
+        self.assertEqual([p.name for p in self.tmp.joinpath("custom_components").iterdir()], ["planview_dash"])
 
     def test_frontend_only_needs_no_restart(self):
         result = self.install({
-            "custom_components/smarthomedash/manifest.json": b'{"version": "1"}',
-            "custom_components/smarthomedash/views.py": b"old",
-            "custom_components/smarthomedash/frontend/panel.js": b"// new",
+            "custom_components/planview_dash/manifest.json": b'{"version": "1"}',
+            "custom_components/planview_dash/views.py": b"old",
+            "custom_components/planview_dash/frontend/panel.js": b"// new",
         })
         self.assertFalse(result.restart_required)
 
     def test_any_python_file_or_translation_needs_a_restart(self):
         # Not a fixed list of names: goodnight.py and diagnostics.py were once left out of it.
         same = {
-            "custom_components/smarthomedash/manifest.json": b'{"version": "1"}',
-            "custom_components/smarthomedash/views.py": b"old",
+            "custom_components/planview_dash/manifest.json": b'{"version": "1"}',
+            "custom_components/planview_dash/views.py": b"old",
         }
         for name, old in [("goodnight.py", "old"), ("diagnostics.py", "old"), ("brand_new.py", None),
                           ("translations/de.json", "{}"), ("services.yaml", "old")]:
@@ -172,16 +172,16 @@ class UpdaterTest(unittest.TestCase):
                 if old is not None:
                     path.write_text(old)
                     # Still there, unchanged: no restart.
-                    unchanged = self.install({**files, f"custom_components/smarthomedash/{name}": old.encode()})
+                    unchanged = self.install({**files, f"custom_components/planview_dash/{name}": old.encode()})
                     self.assertFalse(unchanged.restart_required)
-                changed = self.install({**files, f"custom_components/smarthomedash/{name}": b"new"})
+                changed = self.install({**files, f"custom_components/planview_dash/{name}": b"new"})
                 self.assertTrue(changed.restart_required)
                 # And once more when the file is gone from the new version.
                 self.assertTrue(self.install(files).restart_required)
 
     def test_overwrite_site_keeps_backup(self):
         self.install({
-            "custom_components/smarthomedash/manifest.json": b"{}",
+            "custom_components/planview_dash/manifest.json": b"{}",
             "sites/home/site.json": b'{"theirs": true}',
         }, overwrite=True)
         self.assertEqual((self.sites / "home" / "site.json").read_text(), '{"theirs": true}')
@@ -189,7 +189,7 @@ class UpdaterTest(unittest.TestCase):
 
     def test_refuses_parent_paths(self):
         archive = {
-            "custom_components/smarthomedash/manifest.json": b"{}",
+            "custom_components/planview_dash/manifest.json": b"{}",
             "../../escaped.txt": b"x",
         }
         with self.assertRaises(tarfile.FilterError):
@@ -201,7 +201,7 @@ class UpdaterTest(unittest.TestCase):
         """The data filter strips the leading slash; the extra top folder is refused."""
         target = self.tmp / "absolute.txt"
         with self.assertRaises((tarfile.FilterError, HomeAssistantError)):
-            self.install({"custom_components/smarthomedash/manifest.json": b"{}", str(target): b"x"})
+            self.install({"custom_components/planview_dash/manifest.json": b"{}", str(target): b"x"})
         self.assertFalse(target.exists())
         self.assertEqual((self.integration / "views.py").read_text(), "old")
 
@@ -213,3 +213,26 @@ class UpdaterTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class OldFolderTest(unittest.TestCase):
+    """Sites from before the rename to PlanView Dash move to the new folder (migrate.py)."""
+
+    def test_moves_the_old_folder(self):
+        from custom_components.planview_dash import migrate
+        with tempfile.TemporaryDirectory() as tmp:
+            old = Path(tmp, migrate.OLD_DOMAIN, "sites", "home")
+            old.mkdir(parents=True)
+            (old / "site.json").write_text("{}")
+            self.assertTrue(migrate.move_old_folder(tmp))
+            self.assertEqual(Path(tmp, "planview_dash", "sites", "home", "site.json").read_text(), "{}")
+            self.assertFalse(Path(tmp, migrate.OLD_DOMAIN).exists())
+            self.assertFalse(migrate.move_old_folder(tmp))
+
+    def test_never_overwrites_a_new_folder(self):
+        from custom_components.planview_dash import migrate
+        with tempfile.TemporaryDirectory() as tmp:
+            Path(tmp, migrate.OLD_DOMAIN, "sites").mkdir(parents=True)
+            Path(tmp, "planview_dash").mkdir()
+            self.assertFalse(migrate.move_old_folder(tmp))
+            self.assertTrue(Path(tmp, migrate.OLD_DOMAIN, "sites").is_dir())

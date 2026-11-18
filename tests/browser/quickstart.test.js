@@ -10,7 +10,7 @@ const { ROOT, setup, harness, close, check } = require('./lib');
 // A new dashboard as the integration creates it (the example house without entities),
 // on a Home Assistant with two floors and nine areas, one of them on no floor.
 function freshSite() {
-  const site = JSON.parse(fs.readFileSync(path.join(ROOT, 'custom_components', 'smarthomedash', 'example', 'site.json'), 'utf8'));
+  const site = JSON.parse(fs.readFileSync(path.join(ROOT, 'custom_components', 'planview_dash', 'example', 'site.json'), 'utf8'));
   site.overview.zones = [];
   for (const plan of site.floorplans) for (const room of plan.rooms) { room.lights = []; delete room.climate; delete room.temperature; delete room.sensors; }
   for (const key of ['climates', 'weather', 'wall_screen']) delete site[key];
@@ -100,7 +100,7 @@ describe('quick start', () => {
         { id: 'hall', name: 'Hall', ha_area: 'hall', area: [[600, 0], [1200, 0], [1200, 300], [600, 300]], lights: [] },
       ],
     }];
-    const picture = path.join(ROOT, 'custom_components', 'smarthomedash', 'example', 'example_plan_house.webp');
+    const picture = path.join(ROOT, 'custom_components', 'planview_dash', 'example', 'example_plan_house.webp');
     // The harness only pretends to upload: the restarted dashboard finds the picture here.
     const prepare = async (page) => {
       await serve(site)(page);

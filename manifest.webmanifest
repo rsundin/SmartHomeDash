@@ -1,6 +1,6 @@
 {
-  "name": "SmartHomeDash",
-  "short_name": "SmartHomeDash",
+  "name": "PlanView Dash",
+  "short_name": "PlanView Dash",
   "start_url": "./index.html",
   "scope": "./",
   "display": "fullscreen",

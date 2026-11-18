@@ -29,7 +29,7 @@ class InstallDocsTest(unittest.TestCase):
         for name in DOCS:
             text = (ROOT / name).read_text()
             self.assertIn("Marketplace → Add from link", text, name)
-            self.assertIn("https://github.com/rsundin/SmartHomeDash", text, name)
+            self.assertIn("https://github.com/rsundin/planview-dash", text, name)
 
 
 if __name__ == "__main__":

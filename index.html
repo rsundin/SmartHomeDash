@@ -3,14 +3,14 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>SmartHomeDash</title>
+<title>PlanView Dash</title>
 <!-- Add to home screen on iPad/Android: opens full screen like an app -->
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="theme-color" content="#0b1512">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="SmartHomeDash">
+<meta name="apple-mobile-web-app-title" content="PlanView Dash">
 <link rel="apple-touch-icon" href="icon-192.png">
 <link rel="icon" type="image/png" href="icon-192.png">
 </head>
@@ -23,23 +23,23 @@
 // without the cache, then load every file with ?v=<version> so updates show at once.
 // When adding a JavaScript file, add it to MODULES.
 (function () {
-  var MODULES = ['custom_components/smarthomedash/frontend/js/main.js', 'custom_components/smarthomedash/frontend/js/util.js', 'custom_components/smarthomedash/frontend/js/store.js', 'custom_components/smarthomedash/frontend/js/site.js', 'custom_components/smarthomedash/frontend/js/entities.js', 'custom_components/smarthomedash/frontend/js/i18n.js', 'custom_components/smarthomedash/frontend/js/adapters/ha.js', 'custom_components/smarthomedash/frontend/js/adapters/mock.js', 'custom_components/smarthomedash/frontend/js/views/overview.js', 'custom_components/smarthomedash/frontend/js/views/floorplan.js', 'custom_components/smarthomedash/frontend/js/ui/panel.js', 'custom_components/smarthomedash/frontend/js/ui/cards.js', 'custom_components/smarthomedash/frontend/js/ui/settings.js', 'custom_components/smarthomedash/frontend/js/ui/editor.js', 'custom_components/smarthomedash/frontend/js/ui/setup.js', 'custom_components/smarthomedash/frontend/js/areas.js', 'custom_components/smarthomedash/frontend/js/ui/zoom.js', 'custom_components/smarthomedash/frontend/js/glow.js', 'custom_components/smarthomedash/frontend/js/status.js', 'custom_components/smarthomedash/frontend/js/views/flow.js', 'custom_components/smarthomedash/frontend/js/power.js', 'custom_components/smarthomedash/frontend/js/ui/wall.js', 'custom_components/smarthomedash/frontend/js/ui/report.js', 'custom_components/smarthomedash/frontend/js/ui/shape.js', 'custom_components/smarthomedash/frontend/js/ui/backup.js', 'custom_components/smarthomedash/frontend/js/ui/conflict.js', 'custom_components/smarthomedash/frontend/js/ui/setup/index.js', 'custom_components/smarthomedash/frontend/js/ui/setup/helpers.js', 'custom_components/smarthomedash/frontend/js/ui/setup/draw.js', 'custom_components/smarthomedash/frontend/js/ui/setup/quick.js', 'custom_components/smarthomedash/frontend/js/ui/setup/basics.js', 'custom_components/smarthomedash/frontend/js/ui/setup/overview.js', 'custom_components/smarthomedash/frontend/js/ui/setup/plans.js', 'custom_components/smarthomedash/frontend/js/ui/setup/energy.js', 'custom_components/smarthomedash/frontend/js/ui/setup/buttons.js', 'custom_components/smarthomedash/frontend/js/ui/setup/wall.js', 'custom_components/smarthomedash/frontend/js/ui/setup/lights.js', 'custom_components/smarthomedash/frontend/js/ui/lights.js', 'custom_components/smarthomedash/frontend/js/ui/camera.js'];
+  var MODULES = ['custom_components/planview_dash/frontend/js/main.js', 'custom_components/planview_dash/frontend/js/util.js', 'custom_components/planview_dash/frontend/js/store.js', 'custom_components/planview_dash/frontend/js/site.js', 'custom_components/planview_dash/frontend/js/entities.js', 'custom_components/planview_dash/frontend/js/i18n.js', 'custom_components/planview_dash/frontend/js/adapters/ha.js', 'custom_components/planview_dash/frontend/js/adapters/mock.js', 'custom_components/planview_dash/frontend/js/views/overview.js', 'custom_components/planview_dash/frontend/js/views/floorplan.js', 'custom_components/planview_dash/frontend/js/ui/panel.js', 'custom_components/planview_dash/frontend/js/ui/cards.js', 'custom_components/planview_dash/frontend/js/ui/settings.js', 'custom_components/planview_dash/frontend/js/ui/editor.js', 'custom_components/planview_dash/frontend/js/ui/setup.js', 'custom_components/planview_dash/frontend/js/areas.js', 'custom_components/planview_dash/frontend/js/ui/zoom.js', 'custom_components/planview_dash/frontend/js/glow.js', 'custom_components/planview_dash/frontend/js/status.js', 'custom_components/planview_dash/frontend/js/views/flow.js', 'custom_components/planview_dash/frontend/js/power.js', 'custom_components/planview_dash/frontend/js/ui/wall.js', 'custom_components/planview_dash/frontend/js/ui/report.js', 'custom_components/planview_dash/frontend/js/ui/shape.js', 'custom_components/planview_dash/frontend/js/ui/backup.js', 'custom_components/planview_dash/frontend/js/ui/conflict.js', 'custom_components/planview_dash/frontend/js/ui/setup/index.js', 'custom_components/planview_dash/frontend/js/ui/setup/helpers.js', 'custom_components/planview_dash/frontend/js/ui/setup/draw.js', 'custom_components/planview_dash/frontend/js/ui/setup/quick.js', 'custom_components/planview_dash/frontend/js/ui/setup/basics.js', 'custom_components/planview_dash/frontend/js/ui/setup/overview.js', 'custom_components/planview_dash/frontend/js/ui/setup/plans.js', 'custom_components/planview_dash/frontend/js/ui/setup/energy.js', 'custom_components/planview_dash/frontend/js/ui/setup/buttons.js', 'custom_components/planview_dash/frontend/js/ui/setup/wall.js', 'custom_components/planview_dash/frontend/js/ui/setup/lights.js', 'custom_components/planview_dash/frontend/js/ui/lights.js', 'custom_components/planview_dash/frontend/js/ui/camera.js'];
   // The texts (js/i18n.js fetches them). English is always needed, so it is preloaded to
   // arrive with the code; the site's own language is fetched once site.json has named it.
   var PRELOAD = ['en'];
   function boot(version) {
     var q = '?v=' + encodeURIComponent(version);
-    window.SHD_VERSION = version;
+    window.PVD_VERSION = version;
     var css = document.createElement('link');
     css.rel = 'stylesheet';
-    css.href = 'custom_components/smarthomedash/frontend/css/style.css' + q;
+    css.href = 'custom_components/planview_dash/frontend/css/style.css' + q;
     document.head.appendChild(css);
     PRELOAD.forEach(function (code) {
       var pre = document.createElement('link');
       pre.rel = 'preload';
       pre.as = 'fetch';
       pre.crossOrigin = 'anonymous';
-      pre.href = 'custom_components/smarthomedash/frontend/i18n/' + code + '.json' + q;
+      pre.href = 'custom_components/planview_dash/frontend/i18n/' + code + '.json' + q;
       document.head.appendChild(pre);
     });
     var imports = {};
@@ -50,7 +50,7 @@
     document.head.appendChild(map);
     var main = document.createElement('script');
     main.type = 'module';
-    main.src = 'custom_components/smarthomedash/frontend/js/main.js' + q;
+    main.src = 'custom_components/planview_dash/frontend/js/main.js' + q;
     document.body.appendChild(main);
   }
   fetch('version.json', { cache: 'no-store' })

@@ -16,8 +16,8 @@ from unittest.mock import patch
 import stubs  # noqa: F401  (installs the stand-ins first)
 from stubs import Hass, Request
 
-from custom_components.smarthomedash import views
-from custom_components.smarthomedash.const import KEEP_VERSIONS, MAX_IMPORT, MAX_UPLOAD
+from custom_components.planview_dash import views
+from custom_components.planview_dash.const import KEEP_VERSIONS, MAX_IMPORT, MAX_UPLOAD
 
 JPEG = b"\xff\xd8\xff\xe0" + b"\0" * 16
 PNG = b"\x89PNG\r\n\x1a\n" + b"\1" * 16
@@ -51,7 +51,7 @@ class BackupViewTest(unittest.TestCase):
         (Path(self.tmp.name) / "secret.jpg").write_bytes(JPEG)
         self.hass = Hass()
         self.view = views.BackupView(self.hass, self.root)
-        self.renamed = patch("custom_components.smarthomedash.async_site_renamed").start()
+        self.renamed = patch("custom_components.planview_dash.async_site_renamed").start()
         self.addCleanup(patch.stopall)
 
     def tearDown(self):
@@ -93,7 +93,7 @@ class BackupViewTest(unittest.TestCase):
         res = self.get("export")
         self.assertEqual(res.status, 200)
         self.assertEqual(res.headers["Content-Type"], "application/zip")
-        self.assertIn('attachment; filename="smarthomedash-home-', res.headers["Content-Disposition"])
+        self.assertIn('attachment; filename="planview-dash-home-', res.headers["Content-Disposition"])
         with zipfile.ZipFile(io.BytesIO(res.body)) as zf:
             self.assertEqual(sorted(zf.namelist()), ["ground.png", "pics/overview.jpg", "site.json"])
             self.assertEqual(json.loads(zf.read("site.json")), SITE)
