@@ -202,12 +202,13 @@ Setup effort is the main barrier for every floor plan project [R5][R6][R11]. Sma
   - `docs/translating.md` for contributors.
 - **Done when:** a key-coverage test runs in CI, and every language renders without missing keys on both examples.
 
-### S6: A listing in the Home Assistant Marketplace. Status: todo. Size: S. Depends: M1, S5
+### S6: A listing in the Home Assistant Marketplace. Status: done (v0.8.32). Size: S. Depends: M1, S5
 - **Why:** Since 2026.11 the default HACS list is what the built-in Marketplace shows [R27]. Being listed means people can find SmartHomeDash without a link.
 - **What:**
   - Submit the icon to home-assistant/brands and remove `ignore: brands` from the HACS check.
   - Follow the current Marketplace inclusion process (formerly hacs/default; check the docs at the time). It needs the owner to open pull requests from their account, so prepare the files and the text.
 - **Done when:** the HACS check passes without ignores, and the owner has the submission text and steps.
+- **Result (0.8.32):** Since Home Assistant 2026.3 a custom integration ships its own `brand/` images, home-assistant/brands calls its custom-integrations folder legacy, and the HACS brands check looks for `brand/icon.png` first. So nothing goes to home-assistant/brands; `ignore: brands` is gone and the icon passes. The catalog is still hacs/default ("submitting works as before"). Steps and pull request text: `docs/marketplace-submission.md`. Open for the owner: publish v0.8.32 after a green run on main, then open the hacs/default pull request. Versions 2025.6 to 2026.2 show no icon.
 
 ### A1: Accessibility and large text. Status: done (v0.8.26). Size: M
 - **Why:** Users ask for bigger text, keyboard navigation and graphs a screen reader can read [R39][R40]. A wall screen for the whole family includes older parents and guests.

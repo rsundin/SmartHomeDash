@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.8.32
+
+Ready for the Marketplace catalog.
+
+- **The HACS check now runs without exceptions.** It skipped the brands check until now; the check finds the icon in `custom_components/smarthomedash/brand/`, which Home Assistant shows from 2026.3 on, so no entry in home-assistant/brands is needed. A clean run is what the catalog asks for
+- **`docs/marketplace-submission.md`**: the steps and the ready-made pull request text for adding SmartHomeDash to the catalog the Marketplace searches (hacs/default). Only the owner can open it, after this release is published
+- A test keeps the icon sizes, `hacs.json` and the no-exceptions rule in place
+- Nothing in the dashboard changed; no restart or reload needed
+
 ## 0.8.31
 
 The last three points from the code review.

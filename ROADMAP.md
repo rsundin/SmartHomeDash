@@ -21,7 +21,7 @@ What is planned next, roughly in order. Plans change; ideas and votes are welcom
 - **Export, import and restore points** for a whole dashboard. Done in 0.8.16.
 - **A card for any dashboard** (`custom:smarthomedash-card`): the overview, a floor plan or a room in any Home Assistant dashboard. Done in 0.8.21.
 - **More languages**: German, Norwegian, Danish, Finnish and Dutch, machine-assisted with corrections welcome, and a guide for translators. Done in 0.8.28.
-- **A listing in Home Assistant's Marketplace**, so SmartHomeDash can be found without a link.
+- **A listing in Home Assistant's Marketplace**, so SmartHomeDash can be found without a link. Ready in 0.8.32; the request to the catalog follows the release.
 - **Accessibility and large text**: text size per device, keyboard use, screen reader names. Done in 0.8.26.
 - **Launch**: a short recording in the README and a post on the Home Assistant forum.
 
