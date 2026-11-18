@@ -2,7 +2,7 @@
 
 ## 0.8.33
 
-**SmartHomeDash is now PlanView Dash.** The new name says what sets it apart: your home on its own floor plan. Everything is renamed: the integration (domain `planview_dash`), the card, the actions, the folder for sites and the repository (`rsundin/planview-dash`; GitHub forwards the old address). Nothing in how the dashboard works changed.
+**SmartHomeDash is now PlanView Dash.** The new name says what sets it apart: your home on its own floor plan. Everything is renamed: the integration (domain `planview_dash`), the card, the actions, the folder for sites and the repository (`rsundin/planview-dash`; GitHub forwards the old address). Nothing in how the dashboard works changed. A new icon goes with it: a floor plan with one room lit (source in `docs/images/icon.svg`).
 
 Upgrading from 0.8.32 or earlier, once:
 

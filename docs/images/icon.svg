@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <radialGradient id="g" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#f7c66b" stop-opacity="0.9"/>
+      <stop offset="0.45" stop-color="#e09a3a" stop-opacity="0.35"/>
+      <stop offset="1" stop-color="#e09a3a" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="512" height="512" rx="112" fill="#0b1512"/>
+  <!-- the lit room -->
+  <rect x="112" y="112" width="152" height="148" fill="#1a1f17"/>
+  <circle cx="188" cy="186" r="120" fill="url(#g)"/>
+  <!-- outer walls with a door gap at the bottom -->
+  <g fill="none" stroke="#e8efe6" stroke-width="20" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M300 400 H400 V112 H112 V400 H220"/>
+    <!-- inner walls -->
+    <path d="M264 112 V190 M264 238 V260 H112"/>
+    <path d="M264 300 V400"/>
+    <path d="M330 260 H400"/>
+  </g>
+  <!-- lamp in the lit room -->
+  <circle cx="188" cy="186" r="22" fill="#fff1cf"/>
+  <!-- green status dot like the old icon -->
+  <circle cx="352" cy="340" r="16" fill="#3ddc84"/>
+</svg>
