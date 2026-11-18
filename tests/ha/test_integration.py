@@ -151,28 +151,28 @@ def old_entry(hass: HomeAssistant, site: str, name: str, options: dict | None = 
 async def test_dashboards_under_the_earlier_name_move_over(hass: HomeAssistant, sites_in_tmp) -> None:
     """Adding the integration offers to take over the old dashboards; all of them move,
     options included, the old entries go and the old site folder is renamed."""
-    old_site = sites_in_tmp.parent.parent / "smarthomedash" / "sites" / "home"
+    old_site = sites_in_tmp.parent.parent / "smarthomedash" / "sites" / "villa"
     old_site.mkdir(parents=True)
-    (old_site / "site.json").write_text(json.dumps({"name": "Home", "layout": "apartment"}))
-    old_entry(hass, "home", "Home")
+    (old_site / "site.json").write_text(json.dumps({"name": "Villa", "layout": "apartment"}))
+    old_entry(hass, "villa", "Villa")
     old_entry(hass, "cabin", "Cabin", {"title": "Our cabin", "require_admin": True})
     assert await async_setup_component(hass, "http", {})
 
     result = await hass.config_entries.flow.async_init(DOMAIN, context={"source": SOURCE_USER})
     assert result["type"] is FlowResultType.FORM and result["step_id"] == "take_over"
-    assert result["description_placeholders"] == {"dashboards": "Home, Cabin"}
+    assert result["description_placeholders"] == {"dashboards": "Villa, Cabin"}
     result = await hass.config_entries.flow.async_configure(result["flow_id"], {})
-    assert result["type"] is FlowResultType.CREATE_ENTRY and result["data"]["site"] == "home"
+    assert result["type"] is FlowResultType.CREATE_ENTRY and result["data"]["site"] == "villa"
     await hass.async_block_till_done()
 
     assert hass.config_entries.async_entries("smarthomedash") == []
     new = {e.data["site"]: e for e in hass.config_entries.async_entries(DOMAIN)}
-    assert set(new) == {"home", "cabin"}
+    assert set(new) == {"villa", "cabin"}
     assert new["cabin"].title == "Our cabin" and new["cabin"].data["require_admin"] is True
     assert all(e.state is ConfigEntryState.LOADED for e in new.values())
-    assert panels(hass)["home"].sidebar_title == "Home"
+    assert panels(hass)["villa"].sidebar_title == "Villa"
     assert panels(hass)["cabin"].require_admin is True
-    assert json.loads((sites_in_tmp / "home" / "site.json").read_text())["name"] == "Home"
+    assert json.loads((sites_in_tmp / "villa" / "site.json").read_text())["name"] == "Villa"
     assert not old_site.exists()
 
     # Afterwards the flow is the usual one again.
