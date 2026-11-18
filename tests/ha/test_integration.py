@@ -139,11 +139,11 @@ async def test_config_flow_creates_a_dashboard(hass: HomeAssistant, sites_in_tmp
     assert (sites_in_tmp / "summer_house" / "site.json").is_file()
 
 
-def old_entry(hass: HomeAssistant, site: str, title: str, **options) -> MockConfigEntry:
+def old_entry(hass: HomeAssistant, site: str, name: str, options: dict | None = None) -> MockConfigEntry:
     """A dashboard set up under the integration's earlier name (migrate.py)."""
-    entry = MockConfigEntry(domain="smarthomedash", title=title, unique_id=site, data={
-        "site": site, "title": title, "icon": "mdi:home", "url_path": site.replace("_", "-"),
-        "require_admin": False, "layout": "apartment"}, options=options)
+    entry = MockConfigEntry(domain="smarthomedash", title=name, unique_id=site, data={
+        "site": site, "title": name, "icon": "mdi:home", "url_path": site.replace("_", "-"),
+        "require_admin": False, "layout": "apartment"}, options=options or {})
     entry.add_to_hass(hass)
     return entry
 
@@ -155,7 +155,7 @@ async def test_dashboards_under_the_earlier_name_move_over(hass: HomeAssistant, 
     old_site.mkdir(parents=True)
     (old_site / "site.json").write_text(json.dumps({"name": "Home", "layout": "apartment"}))
     old_entry(hass, "home", "Home")
-    old_entry(hass, "cabin", "Cabin", title="Our cabin", require_admin=True)
+    old_entry(hass, "cabin", "Cabin", {"title": "Our cabin", "require_admin": True})
     assert await async_setup_component(hass, "http", {})
 
     result = await hass.config_entries.flow.async_init(DOMAIN, context={"source": SOURCE_USER})
