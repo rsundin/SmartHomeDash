@@ -25,6 +25,10 @@ What is planned next, roughly in order. Plans change; ideas and votes are welcom
 - **Accessibility and large text**: text size per device, keyboard use, screen reader names. Done in 0.8.26.
 - **Launch**: a short recording in the README and a post on the Home Assistant forum.
 
+## 1.0 release: stable
+
+Every feature planned for 1.0 is in. Before 1.0.0, the work is making it last: a versioned `site.json` that every later 1.x opens unchanged, final names for actions and the card, lights, temperature and energy flow that cope with devices dropping out and different inverters, clear messages when Home Assistant refuses a command, and troubleshooting docs. That ships as **0.9.0, a beta**; 0.9.x then takes fixes only, and 1.0.0 follows once a release has run two weeks without one. New features wait until after 1.0. Details: [docs/roadmap/v1.md](docs/roadmap/v1.md).
+
 ## Whole-house control
 
 - **All lights on and all off** from the lights card and the header, with lights you can leave out. Done in 0.8.22.
