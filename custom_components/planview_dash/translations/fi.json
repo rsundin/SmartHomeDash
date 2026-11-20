@@ -44,16 +44,6 @@
     }
   },
   "services": {
-    "update": {
-      "name": "Päivitä",
-      "description": "Asenna uusin PlanView Dash GitHubista. Home Assistantiin tallennettu site.json säilytetään.",
-      "fields": {
-        "overwrite_site": {
-          "name": "Korvaa site.json",
-          "description": "Korvaa tallennettu site.json repositorion versiolla (vanha säilytetään nimellä site.json.bak)."
-        }
-      }
-    },
     "goodnight": {
       "name": "Hyvää yötä",
       "description": "Sammuta valot muutaman minuutin kuluttua. Jokainen avoin kojelauta näyttää lähtölaskennan ja voi perua sen.",
@@ -86,6 +76,13 @@
       "options": {
         "house": "Talo ja kuva ulkoa",
         "apartment": "Asunto, vain pohjapiirros"
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "goodnight": {
+        "name": "Hyvää yötä"
       }
     }
   }

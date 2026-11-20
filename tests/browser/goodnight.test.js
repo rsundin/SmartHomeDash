@@ -10,7 +10,7 @@ const { ROOT, setup, harness, close, check, assertNoOverflow } = require('./lib'
 
 const houseSite = () => JSON.parse(fs.readFileSync(path.join(ROOT, 'sites', 'example-house', 'site.json'), 'utf8'));
 const serve = (site) => (page) => page.route('**/sites/example-house/site.json', (route) => route.fulfill({ contentType: 'application/json', body: JSON.stringify(site) }));
-const STATE = 'planview_dash.goodnight_example_house';
+const SENSOR = 'sensor.example_house_goodnight'; // sensor.py: a timestamp while it counts down
 const setAll = (page, state) => page.evaluate((s) => {
   for (const id of window.__pvdRun.site.index.lights) { const x = window.store.get(id); if (x) window.store.update({ ...x, state: s }); }
   window.store.flush();
@@ -35,7 +35,7 @@ describe('goodnight', () => {
     assert.ok((await lit(page)).length > 5, 'the lights stay on during the countdown');
     await assertNoOverflow(page, 'countdown');
 
-    await page.waitForFunction((id) => window.store.get(id)?.state === 'off', STATE, { timeout: 8000 });
+    await page.waitForFunction((id) => window.store.get(id)?.state === 'unknown', SENSOR, { timeout: 8000 });
     await page.waitForFunction(() => window.__pvdRun.site.index.lights.filter((id) => window.store.get(id)?.state === 'on').length === 1);
     assert.deepEqual(await lit(page), ['light.facade']);
     await page.evaluate(() => window.store.flush());
@@ -44,14 +44,15 @@ describe('goodnight', () => {
     await close(page);
   });
 
-  test('Cancel stops it, and the countdown follows the state from Home Assistant', async () => {
+  test('Cancel stops it, and the countdown follows the sensor from Home Assistant', async () => {
     const page = await harness(env, '?site=example-house');
     await setAll(page, 'on');
     // Started somewhere else (another screen, an automation): this screen shows it too.
     await page.evaluate((id) => {
-      window.store.update({ entity_id: id, state: 'on', attributes: { ends_at: new Date(Date.now() + 272000).toISOString() } });
+      const s = window.store.get(id);
+      window.store.update({ ...s, state: new Date(Date.now() + 272000).toISOString() });
       window.store.flush();
-    }, STATE);
+    }, SENSOR);
     const bar = page.locator('.goodnight');
     await bar.waitFor();
     assert.match(await bar.textContent(), /in 4:3[12]/);
@@ -61,10 +62,29 @@ describe('goodnight', () => {
     await card.locator('[data-action="goodnight"]').click();
     await page.waitForFunction(() => /in 4:5\d|in 5:00/.test(document.querySelector('.goodnight').textContent), null, { timeout: 3000 });
     await bar.locator('[data-action="goodnight-cancel"]').click();
-    await page.waitForFunction((id) => window.store.get(id)?.state === 'off', STATE);
+    await page.waitForFunction((id) => window.store.get(id)?.state === 'unknown', SENSOR);
     await page.evaluate(() => window.store.flush());
     assert.ok(await bar.isHidden());
     assert.ok((await lit(page)).length > 5, 'nothing turned off');
+    check(page);
+    await close(page);
+  });
+
+  test('a sensor the user renamed is still followed', async () => {
+    const site = houseSite();
+    site.mock = { ...site.mock, entities: [...(site.mock?.entities ?? []),
+      { entity: 'sensor.bedtime', attributes: { device_class: 'timestamp', planview_dash_site: 'example-house' } }] };
+    const page = await harness(env, '?site=example-house', { prepare: serve(site) });
+    assert.equal(await page.evaluate((id) => window.store.get(id), SENSOR), undefined);
+    const card = page.locator('.side .card', { has: page.locator('h2', { hasText: 'Lights' }) });
+    await card.locator('[data-action="goodnight"]').click();
+    const bar = page.locator('.goodnight');
+    await bar.waitFor();
+    assert.ok(Date.parse(await page.evaluate(() => window.store.get('sensor.bedtime').state)) > Date.now());
+    await bar.locator('[data-action="goodnight-cancel"]').click();
+    await page.waitForFunction(() => window.store.get('sensor.bedtime')?.state === 'unknown');
+    await page.evaluate(() => window.store.flush());
+    assert.ok(await bar.isHidden());
     check(page);
     await close(page);
   });

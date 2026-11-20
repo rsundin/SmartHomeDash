@@ -34,7 +34,7 @@ const KINDS = [
 // Switches are placed as lamps.
 const placeKind = (kind) => (kind === 'switches' ? 'lights' : kind);
 
-export function createEditor({ site, store, saveSite = null, reload = () => location.reload(), exit = null, update = null, reloadPage = () => location.reload() }) {
+export function createEditor({ site, store, saveSite = null, reload = () => location.reload(), exit = null }) {
   const raw = site.raw;
   const viewKey = `pvd:${site.id}:editview`;
   const selKey = `pvd:${site.id}:editsel`;
@@ -343,28 +343,7 @@ export function createEditor({ site, store, saveSite = null, reload = () => loca
         ? el('button', { class: 'chip editor-exit', type: 'button', onclick: () => { storage.set(viewKey, null); exit(); } }, t('editor.exit'))
         : el('a', { class: 'small editor-exit', href: location.pathname + location.search, onclick: () => storage.set(viewKey, null) }, t('editor.exit'))),
     site.fromDraft ? el('p', { class: 'small editor-draft' }, t('editor.draftNotice')) : null,
-    tabs, placePane, drawPane, status, draftRow, tag,
-    update ? el('div', { class: 'row editor-update' },
-      el('button', { class: 'chip', type: 'button', onclick: (e) => runUpdate(e.currentTarget) }, t('editor.update'))) : null);
-
-  // Install the latest version from GitHub, then reload so the new code runs.
-  async function runUpdate(btn) {
-    btn.disabled = true;
-    status.textContent = t('editor.updating');
-    try {
-      const r = await update();
-      if (r.restart_required) {
-        status.textContent = t('editor.updatedRestart', { commit: r.commit ?? '' });
-        btn.disabled = false;
-      } else {
-        status.textContent = t('editor.updatedReload', { commit: r.commit ?? '' });
-        setTimeout(reloadPage, 1200);
-      }
-    } catch (e) {
-      status.textContent = t('editor.updateFailed', { msg: e?.message ?? String(e) });
-      btn.disabled = false;
-    }
-  }
+    tabs, placePane, drawPane, status, draftRow, tag);
 
   for (const [m, label] of [['place', t('editor.tabPlace')], ['draw', t('editor.tabDraw')]]) {
     tabs.append(el('button', { type: 'button', 'data-mode': m, class: m === mode ? 'is-active' : '', onclick: () => setMode(m) }, label));

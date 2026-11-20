@@ -15,7 +15,7 @@ Include what you found, how to reproduce it, and the version (`custom_components
 - **Any logged-in user** who can open the panel can switch the lights and thermostats shown on it, just as in the rest of Home Assistant. Use the *Only for administrators* option to hide a dashboard from other users.
 - **The dashboard code** under `/planview_dash/frontend/` is public, like all of Home Assistant's frontend code. It holds no data about any home.
 - **The goodnight action** (`planview_dash.goodnight`) can be called by any logged-in user, as switching a lamp in the dashboard can. It only turns off `light.*` and `switch.*` entities and only runs a `script.*` afterwards, at most 120 minutes later; anything else is refused.
-- **The update action** (`planview_dash.update`) exists only when a repository or token is configured in YAML, and only administrators can run it. It installs code from that repository, so only point it at a repository you trust.
+- **No self-updating.** PlanView Dash never downloads code or replaces its own files; new versions come only through the Marketplace (HACS before Home Assistant 2026.11) or by copying the folder by hand.
 
 ## The standalone page
 

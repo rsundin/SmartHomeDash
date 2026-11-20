@@ -217,7 +217,7 @@ data:
   then: script.lock_up       # optional
 ```
 
-  `cancel: true` stops a countdown. While one runs, the state `planview_dash.goodnight_<site>` is `on` with the time in `ends_at`; it is what the screens show.
+  `cancel: true` stops a countdown. Each dashboard has a timestamp sensor, `sensor.<site>_goodnight` (under the dashboard's device in **Settings → Devices & services**): while a countdown runs it holds the time the lights turn off, otherwise it is *unknown*. It is what the screens show, and automations can use it too. You can rename or hide it like any entity; the screens still find it.
 
 ## Wall screens
 

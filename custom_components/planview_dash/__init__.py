@@ -8,7 +8,6 @@ setup guide.
 YAML is still supported, for example to keep a site in version control:
 
     planview_dash:
-      github_token: !secret planview_dash_github_token   # optional: update from a private fork
       dashboards:
         - site: home             # folder under <config>/planview_dash/sites/
           title: Home            # sidebar title
@@ -27,9 +26,11 @@ What it registers:
   logged-in `hass` object, so no access token is needed.
 - A card for other dashboards (`custom:planview-dash-card`), added as a frontend module.
 - The `planview_dash.goodnight` action (any logged-in user): turns the dashboard's
-  lights off after a few minutes; see goodnight.py.
-- The `planview_dash.update` action (admins), installing the latest version from
-  GitHub; see updater.py. Installations through the Marketplace (HACS) update through it instead.
+  lights off after a few minutes, and a timestamp sensor per dashboard that the
+  screens follow; see goodnight.py and sensor.py.
+
+Updates come from the Marketplace (HACS before Home Assistant 2026.11), like any
+other integration: the integration never replaces its own files.
 """
 
 from __future__ import annotations
@@ -40,15 +41,15 @@ from pathlib import Path
 
 import voluptuous as vol
 
-from homeassistant.components import frontend, panel_custom, persistent_notification
+from homeassistant.components import frontend, panel_custom
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import EVENT_PANELS_UPDATED
-from homeassistant.core import HomeAssistant, ServiceCall, callback, ServiceResponse, SupportsResponse
+from homeassistant.core import HomeAssistant, callback
 import homeassistant.helpers.config_validation as cv
-from homeassistant.helpers.service import async_register_admin_service
+from homeassistant.helpers.discovery import async_load_platform
 from homeassistant.helpers.typing import ConfigType
 
-from . import goodnight, migrate, updater
+from . import goodnight, migrate
 from .const import (
     CONF_ICON,
     CONF_LAYOUT,
@@ -57,7 +58,6 @@ from .const import (
     CONF_TITLE,
     CONF_URL_PATH,
     DEFAULT_ICON,
-    DEFAULT_REPOSITORY,
     DOMAIN,
     FRONTEND_URL,
     LAYOUT_APARTMENT,
@@ -69,6 +69,9 @@ from .const import (
 from .views import BackupView, FrontendView, SitesView, write_atomic
 
 _LOGGER = logging.getLogger(__name__)
+
+# The goodnight sensor (sensor.py), one per dashboard.
+PLATFORMS = ["sensor"]
 
 DASHBOARD_SCHEMA = vol.Schema(
     {
@@ -82,14 +85,17 @@ DASHBOARD_SCHEMA = vol.Schema(
 
 CONFIG_SCHEMA = vol.Schema(
     {
-        DOMAIN: vol.Schema(
-            {
-                vol.Optional("dashboards", default=[]): vol.All(cv.ensure_list, [DASHBOARD_SCHEMA]),
-                vol.Optional("sites_dir"): cv.string,
-                vol.Optional("github_token"): cv.string,
-                vol.Optional("repository"): vol.Match(r"^[\w.-]+/[\w.-]+$"),
-                vol.Optional("branch", default="main"): cv.string,
-            }
+        DOMAIN: vol.All(
+            # The options of the self-updater, removed in 0.8.35: a warning, not a failed setup.
+            cv.removed("github_token", raise_if_present=False),
+            cv.removed("repository", raise_if_present=False),
+            cv.removed("branch", raise_if_present=False),
+            vol.Schema(
+                {
+                    vol.Optional("dashboards", default=[]): vol.All(cv.ensure_list, [DASHBOARD_SCHEMA]),
+                    vol.Optional("sites_dir"): cv.string,
+                }
+            ),
         )
     },
     extra=vol.ALLOW_EXTRA,
@@ -103,6 +109,8 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     for dash in conf.get("dashboards", []):
         data["yaml_sites"].add(dash[CONF_SITE])
         await _async_add_dashboard(hass, dash)
+        hass.async_create_task(async_load_platform(
+            hass, "sensor", DOMAIN, {CONF_SITE: dash[CONF_SITE], CONF_TITLE: dash.get(CONF_TITLE)}, config))
     return True
 
 
@@ -113,6 +121,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     await hass.async_add_executor_job(_create_starter_site, data["sites_dir"], dash, hass.config.language, hass.config.currency)
     await _async_add_dashboard(hass, dash)
     data["entries"][entry.entry_id] = dash
+    await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     entry.async_on_unload(entry.add_update_listener(_async_entry_updated))
     migrate.schedule_take_over(hass)
     return True
@@ -120,6 +129,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Remove the panel. The site folder is kept, so nothing set up is lost."""
+    if not await hass.config_entries.async_unload_platforms(entry, PLATFORMS):
+        return False
     dash = {**entry.data, **entry.options}
     url_path = dash.get(CONF_URL_PATH) or dash[CONF_SITE]
     frontend.async_remove_panel(hass, url_path)
@@ -192,12 +203,8 @@ def async_site_renamed(hass: HomeAssistant, site: str, name: str) -> None:
 
 
 async def _async_setup_shared(hass: HomeAssistant, conf: dict) -> dict:
-    """Views and the update action, registered once whatever the setup path."""
+    """Views and the goodnight action, registered once whatever the setup path."""
     if DOMAIN in hass.data:
-        if conf:
-            hass.data[DOMAIN]["update"].update(_update_conf(conf))
-            if (conf.get("github_token") or conf.get("repository")) and not hass.services.has_service(DOMAIN, "update"):
-                _register_update_action(hass)
         return hass.data[DOMAIN]
 
     root = Path(__file__).parent
@@ -212,7 +219,6 @@ async def _async_setup_shared(hass: HomeAssistant, conf: dict) -> dict:
         "sites": set(),
         "yaml_sites": set(),
         "entries": {},
-        "update": _update_conf(conf),
     }
     hass.http.register_view(FrontendView(hass, root / "frontend"))
     hass.http.register_view(SitesView(hass, sites_dir))
@@ -222,21 +228,9 @@ async def _async_setup_shared(hass: HomeAssistant, conf: dict) -> dict:
     frontend.add_extra_js_url(hass, f"{FRONTEND_URL}/card.js?v={data['version']}")
     # Goodnight (goodnight.py): the dashboard's countdown before everything turns off.
     goodnight.async_register(hass)
-    # Installations through the Marketplace (HACS) update through it. The update action is only for
-    # setups that point at a repository themselves (a private fork, a token).
-    if conf.get("github_token") or conf.get("repository"):
-        _register_update_action(hass)
     # Dashboards still set up under the earlier name become dashboards of this one.
     migrate.schedule_take_over(hass)
     return data
-
-
-def _update_conf(conf: dict) -> dict:
-    return {
-        "repository": conf.get("repository", DEFAULT_REPOSITORY),
-        "branch": conf.get("branch", "main"),
-        "token": conf.get("github_token"),
-    }
 
 
 async def _async_add_dashboard(hass: HomeAssistant, dash: dict) -> None:
@@ -329,44 +323,3 @@ def _strip_entities(site: dict) -> None:
     site["energy"] = {}
     site["scenes"] = []
 
-
-def _register_update_action(hass: HomeAssistant) -> None:
-    async def handle_update(call: ServiceCall) -> ServiceResponse:
-        data = hass.data[DOMAIN]
-        upd = data["update"]
-        archive = await updater.async_download(hass, upd["repository"], upd["branch"], upd["token"])
-        result = await hass.async_add_executor_job(
-            updater.install,
-            archive,
-            Path(__file__).parent,
-            data["sites_dir"],
-            sorted(data["sites"]),
-            call.data.get("overwrite_site", False),
-        )
-        _LOGGER.info("Updated to %s (restart required: %s)", result.commit, result.restart_required)
-        swedish = (hass.config.language or "").lower().startswith("sv")
-        if swedish:
-            message = f"Installerade version {result.commit}. " + (
-                "Starta om Home Assistant för att slutföra uppdateringen." if result.restart_required
-                else "Ladda om dashboarden för att se den.")
-            title = "PlanView Dash uppdaterad"
-        else:
-            message = f"Installed version {result.commit}. " + (
-                "Restart Home Assistant to finish the update." if result.restart_required
-                else "Reload the dashboard to see it.")
-            title = "PlanView Dash updated"
-        persistent_notification.async_create(hass, message, title=title, notification_id="planview_dash_update")
-        return {
-            "commit": result.commit,
-            "restart_required": result.restart_required,
-            "added_site_files": result.added_site_files,
-        }
-
-    async_register_admin_service(
-        hass,
-        DOMAIN,
-        "update",
-        handle_update,
-        schema=vol.Schema({vol.Optional("overwrite_site", default=False): cv.boolean}),
-        supports_response=SupportsResponse.OPTIONAL,
-    )

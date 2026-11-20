@@ -7,6 +7,7 @@ from http import HTTPStatus
 
 from homeassistant.components import frontend
 from homeassistant.config_entries import SOURCE_USER, ConfigEntryState
+from homeassistant.const import STATE_UNAVAILABLE, STATE_UNKNOWN
 from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResultType
 from homeassistant.setup import async_setup_component
@@ -26,8 +27,8 @@ def panels(hass: HomeAssistant) -> dict:
 # --- Setup -----------------------------------------------------------------------------
 
 async def test_setup_from_yaml(hass: HomeAssistant, sites_in_tmp) -> None:
-    """Dashboards listed in configuration.yaml get a panel each; no starter site is
-    written for them and the update action is absent without a repository or token."""
+    """Dashboards listed in configuration.yaml get a panel each and a goodnight sensor;
+    no starter site is written for them, and there is no update action."""
     config = {DOMAIN: {"dashboards": [
         {"site": "home", "title": "Home", "url_path": "my-home"},
         {"site": "cabin", "title": "Cabin", "icon": "mdi:pine-tree", "require_admin": True},
@@ -50,6 +51,8 @@ async def test_setup_from_yaml(hass: HomeAssistant, sites_in_tmp) -> None:
 
     assert not sites_in_tmp.exists()
     assert not hass.services.has_service(DOMAIN, "update")
+    assert hass.states.get("sensor.home_goodnight").state == STATE_UNKNOWN
+    assert hass.states.get("sensor.cabin_goodnight").state == STATE_UNKNOWN
 
 
 async def test_the_card_is_loaded_with_every_dashboard(hass: HomeAssistant, entry, hass_client_no_auth) -> None:
@@ -71,10 +74,16 @@ async def test_the_card_is_loaded_with_every_dashboard(hass: HomeAssistant, entr
     assert "text/html" in (await client.get("/planview_dash/frontend/card.html")).headers["Content-Type"]
 
 
-async def test_update_action_only_with_a_repository_or_token(hass: HomeAssistant) -> None:
-    assert await async_setup_component(hass, DOMAIN, {DOMAIN: {"repository": "someone/fork"}})
+async def test_the_old_update_options_are_ignored(hass: HomeAssistant, caplog) -> None:
+    """The self-updater is gone (installs are managed by the Marketplace or HACS); its
+    options in configuration.yaml still set up, with a warning."""
+    config = {DOMAIN: {"github_token": "x", "repository": "someone/fork", "branch": "dev",
+                       "dashboards": [{"site": "attic"}]}}
+    assert await async_setup_component(hass, DOMAIN, config)
     await hass.async_block_till_done()
-    assert hass.services.has_service(DOMAIN, "update")
+    assert "attic" in panels(hass)
+    assert not hass.services.has_service(DOMAIN, "update")
+    assert "github_token" in caplog.text
 
 
 async def test_setup_from_config_entry_creates_the_starter_site(hass: HomeAssistant, entry, sites_in_tmp) -> None:
@@ -356,7 +365,7 @@ async def test_diagnostics_are_redacted(hass: HomeAssistant, entry) -> None:
     assert diag["site"]["folder_exists"] is True and diag["site"]["site_json"] == "ok"
     assert diag["site"]["floorplans"] > 0
     assert diag["dashboards"] == {"from_ui": 1, "from_yaml": 0}
-    assert diag["update_action"] == {"custom_repository": False, "token_set": False}
+    assert "update_action" not in diag
 
 
 async def test_unload_removes_the_panel_and_keeps_the_site(hass: HomeAssistant, entry, sites_in_tmp) -> None:
@@ -378,6 +387,8 @@ async def test_unload_removes_the_panel_and_keeps_the_site(hass: HomeAssistant, 
 
 # --- Goodnight -------------------------------------------------------------------------
 
+SENSOR = "sensor.test_home_goodnight"
+
 async def test_goodnight_turns_the_lights_off_after_the_countdown(hass: HomeAssistant, entry) -> None:
     from datetime import timedelta
     import homeassistant.util.dt as dt_util
@@ -388,9 +399,9 @@ async def test_goodnight_turns_the_lights_off_after_the_countdown(hass: HomeAssi
     await hass.services.async_call(DOMAIN, "goodnight", {
         "site": "test_home", "entity_id": ["light.kitchen", "switch.lamp", "light.kitchen"], "minutes": 5, "then": "script.lock_up",
     }, blocking=True)
-    state = hass.states.get("planview_dash.goodnight_test_home")
-    assert state.state == "on"
-    ends = dt_util.parse_datetime(state.attributes["ends_at"])
+    state = hass.states.get(SENSOR)
+    assert state.attributes["minutes"] == 5
+    ends = dt_util.parse_datetime(state.state)
     assert timedelta(minutes=4, seconds=50) < ends - dt_util.utcnow() <= timedelta(minutes=5)
 
     # Nothing happens before the time is up.
@@ -402,7 +413,7 @@ async def test_goodnight_turns_the_lights_off_after_the_countdown(hass: HomeAssi
     await hass.async_block_till_done()
     assert [c.data["entity_id"] for c in off] == [["light.kitchen", "switch.lamp"]]
     assert [c.data["entity_id"] for c in script] == ["script.lock_up"]
-    assert hass.states.get("planview_dash.goodnight_test_home").state == "off"
+    assert hass.states.get(SENSOR).state == STATE_UNKNOWN
 
 
 async def test_goodnight_can_be_cancelled_and_restarted(hass: HomeAssistant, entry) -> None:
@@ -417,7 +428,7 @@ async def test_goodnight_can_be_cancelled_and_restarted(hass: HomeAssistant, ent
 
     await call(minutes=5)
     await call(cancel=True)
-    assert hass.states.get("planview_dash.goodnight_test_home").state == "off"
+    assert hass.states.get(SENSOR).state == STATE_UNKNOWN
     async_fire_time_changed(hass, dt_util.utcnow() + timedelta(minutes=6))
     await hass.async_block_till_done()
     assert not off, "a cancelled countdown turns nothing off"
@@ -445,12 +456,51 @@ async def test_goodnight_refuses_other_entities_and_runs_for_any_user(hass: Home
     from homeassistant.exceptions import ServiceValidationError
     with pytest.raises(ServiceValidationError):
         await hass.services.async_call(DOMAIN, "goodnight", {"site": "no_such_site", "minutes": 5}, blocking=True)
-    assert hass.states.get("planview_dash.goodnight_no_such_site") is None
+    assert not [s for s in hass.states.async_all() if s.attributes.get("planview_dash_site") == "no_such_site"]
     # Not an admin action: like switching a lamp, any logged-in user may start it.
     await hass.services.async_call(DOMAIN, "goodnight", {"site": "test_home", "minutes": 5}, blocking=True,
                                    context=Context(user_id=hass_read_only_user.id))
-    assert hass.states.get("planview_dash.goodnight_test_home").state == "on"
-    # Unloading the dashboard stops its countdown.
+    assert hass.states.get(SENSOR).state != STATE_UNKNOWN
+    # Unloading the dashboard stops its countdown, and its sensor is unavailable.
     assert await hass.config_entries.async_unload(entry.entry_id)
     await hass.async_block_till_done()
-    assert hass.states.get("planview_dash.goodnight_test_home") is None
+    assert hass.states.get(SENSOR).state == STATE_UNAVAILABLE
+    assert await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+    assert hass.states.get(SENSOR).state == STATE_UNKNOWN, "the countdown did not come back"
+
+
+async def test_goodnight_sensor_is_a_real_entity_of_the_dashboard(hass: HomeAssistant, entry) -> None:
+    """The countdown is a timestamp sensor in the entity registry, owned by the
+    dashboard's config entry and removed with it, not a state written by hand."""
+    from homeassistant.helpers import device_registry as dr, entity_registry as er
+
+    state = hass.states.get(SENSOR)
+    assert state.state == STATE_UNKNOWN
+    assert state.attributes["device_class"] == "timestamp"
+    assert state.attributes["planview_dash_site"] == "test_home"
+    reg = er.async_get(hass).async_get(SENSOR)
+    assert reg.config_entry_id == entry.entry_id
+    assert reg.unique_id == "test_home_goodnight"
+    device = dr.async_get(hass).async_get(reg.device_id)
+    assert device.name == "Test Home"
+    assert not [s for s in hass.states.async_all() if s.domain == DOMAIN], "no states outside an entity"
+
+    assert await hass.config_entries.async_remove(entry.entry_id)
+    await hass.async_block_till_done()
+    assert er.async_get(hass).async_get(SENSOR) is None
+    assert hass.states.get(SENSOR) is None
+
+
+async def test_goodnight_sensor_for_a_yaml_dashboard(hass: HomeAssistant) -> None:
+    from homeassistant.helpers import entity_registry as er
+    from pytest_homeassistant_custom_component.common import async_mock_service
+
+    async_mock_service(hass, "homeassistant", "turn_off")
+    assert await async_setup_component(hass, DOMAIN, {DOMAIN: {"dashboards": [{"site": "my-cabin", "title": "Cabin"}]}})
+    await hass.async_block_till_done()
+    assert er.async_get(hass).async_get("sensor.my_cabin_goodnight").unique_id == "my-cabin_goodnight"
+    await hass.services.async_call(DOMAIN, "goodnight", {"site": "my-cabin", "minutes": 5}, blocking=True)
+    assert hass.states.get("sensor.my_cabin_goodnight").state != STATE_UNKNOWN
+    await hass.services.async_call(DOMAIN, "goodnight", {"site": "my-cabin", "cancel": True}, blocking=True)
+    assert hass.states.get("sensor.my_cabin_goodnight").state == STATE_UNKNOWN

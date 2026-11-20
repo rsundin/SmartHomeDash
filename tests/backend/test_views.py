@@ -8,6 +8,7 @@ import os
 import tempfile
 import unittest
 from pathlib import Path
+import unittest.mock
 from unittest.mock import MagicMock
 
 import stubs  # noqa: F401  (installs the stand-ins first)
@@ -308,6 +309,50 @@ class FrontendViewTest(unittest.TestCase):
             self.assertEqual(ok.status, 200)
             self.assertEqual(ok.headers["Cache-Control"], "no-cache")
             self.assertEqual(run(view.get(Request(), "../secret.txt")).status, 404)
+
+
+class EventLoopTest(unittest.TestCase):
+    """Path lookups (resolve() reads every link on the way, is_file() a stat) run in the
+    executor, never on the event loop: on an SD card or a network share they would hold
+    up every other integration."""
+
+    def setUp(self):
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        self.tmp = Path(tmp.name)
+        (self.tmp / "frontend").mkdir()
+        (self.tmp / "frontend" / "panel.js").write_text("//")
+        (self.tmp / "sites" / "home").mkdir(parents=True)
+        (self.tmp / "sites" / "home" / "site.json").write_text('{"floorplans": []}')
+        self.hass = Hass()
+        self.on_loop = []
+        real = {name: getattr(Path, name) for name in ("resolve", "is_file")}
+        hass, on_loop = self.hass, self.on_loop
+
+        def watched(name):
+            def call(path, *args, **kw):
+                if not hass.in_executor:
+                    on_loop.append(f"{name}({path.name})")
+                return real[name](path, *args, **kw)
+            return call
+
+        for name in real:
+            patcher = unittest.mock.patch.object(Path, name, watched(name))
+            patcher.start()
+            self.addCleanup(patcher.stop)
+
+    def test_every_view(self):
+        frontend = views.FrontendView(self.hass, self.tmp / "frontend")
+        sites = views.SitesView(self.hass, self.tmp / "sites")
+        backup = views.BackupView(self.hass, self.tmp / "sites")
+        self.assertEqual(run(frontend.get(Request(), "panel.js")).status, 200)
+        self.assertEqual(run(frontend.get(Request(), "missing.js")).status, 404)
+        self.assertEqual(run(sites.get(Request(), "home", "site.json")).status, 200)
+        self.assertEqual(run(sites.get(Request(), "home", "../../frontend/panel.js")).status, 404)
+        self.assertEqual(run(sites.put(Request(b'{"floorplans": []}'), "home", "site.json")).status, 200)
+        self.assertEqual(run(backup.get(Request(), "home", "versions")).status, 200)
+        self.assertEqual(run(backup.get(Request(), "..", "versions")).status, 404)
+        self.assertEqual(self.on_loop, [])
 
 
 class WriteAtomicTest(unittest.TestCase):

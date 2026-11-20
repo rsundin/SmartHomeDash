@@ -13,7 +13,8 @@
 // Goodnight leaves the lights as they are for a few minutes, then turns the same lights
 // off and runs `then`. The countdown runs in Home Assistant (goodnight.py, the
 // planview_dash.goodnight action), so a tablet that sleeps or reloads does not stop it;
-// every screen shows it from the state planview_dash.goodnight_<site>, with Cancel.
+// every screen shows it from the dashboard's goodnight sensor (sensor.py: a timestamp,
+// the time the lights turn off, while it counts down), with Cancel.
 
 import { el, sv, paused } from '../util.js';
 import { isOn } from '../entities.js';
@@ -57,7 +58,12 @@ export function allOffButton({ site, adapter, onDone }) {
 }
 
 export const goodnightOn = (site) => site.goodnight?.enabled !== false;
-export const goodnightState = (site) => `planview_dash.goodnight_${site.id.toLowerCase().replace(/-/g, '_')}`;
+// The dashboard's goodnight sensor: found by its planview_dash_site attribute, so it is
+// still found after the user renames it; else the id Home Assistant first gives it.
+export function goodnightSensor(site, store) {
+  const own = store.all().find((s) => s.entity_id.startsWith('sensor.') && s.attributes?.planview_dash_site === site.id);
+  return own?.entity_id ?? `sensor.${site.id.toLowerCase().replace(/-/g, '_')}_goodnight`;
+}
 
 function startGoodnight(site, adapter) {
   const g = site.goodnight ?? {};
@@ -77,25 +83,33 @@ export function createGoodnightBanner({ site, store, adapter, signal }) {
   const cancel = el('button', { class: 'chip', type: 'button', 'data-action': 'goodnight-cancel',
     onclick: () => adapter.call('planview_dash', 'goodnight', { site: site.id, cancel: true }) }, t('goodnight.cancel'));
   const bar = el('div', { class: 'goodnight', role: 'status', 'aria-live': 'polite', hidden: true }, text, cancel);
-  const id = goodnightState(site);
+  // Found once the states are there (they arrive after the banner is made), and again if
+  // the sensor goes missing (renamed in Home Assistant).
+  let id = goodnightSensor(site, store);
   let timer = null;
   let ends = 0;
+  let unwatch = null;
   const tick = () => {
     const left = Math.max(0, Math.round((ends - Date.now()) / 1000));
     text.textContent = t('goodnight.countdown', { time: `${Math.floor(left / 60)}:${String(left % 60).padStart(2, '0')}` });
   };
   const stopTimer = () => { clearInterval(timer); timer = null; };
-  const unwatch = store.watch([id], () => {
-    const s = store.get(id);
-    const at = s?.state === 'on' ? Date.parse(s.attributes?.ends_at) : NaN;
+  const follow = () => { unwatch?.(); unwatch = store.watch([id], show); };
+  function show() {
+    if (!store.get(id)) {
+      const found = goodnightSensor(site, store);
+      if (found !== id && store.get(found)) { id = found; follow(); return; }
+    }
+    const at = Date.parse(store.get(id)?.state); // unknown while no countdown runs
     bar.hidden = !Number.isFinite(at);
     if (bar.hidden) { stopTimer(); return; }
     ends = at;
     tick();
     // Each second while it counts down; the store's own updates keep a paused page right.
     if (!timer) timer = setInterval(() => { if (!paused()) tick(); }, 1000);
-  });
-  signal?.addEventListener('abort', () => { stopTimer(); unwatch(); });
+  }
+  follow();
+  signal?.addEventListener('abort', () => { stopTimer(); unwatch?.(); });
   // A failed start (an older Home Assistant integration without the action) says so here.
   const failed = () => {
     bar.hidden = false;

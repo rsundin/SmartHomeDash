@@ -4,10 +4,14 @@ The dashboard's Goodnight button calls the `planview_dash.goodnight` action with
 dashboard's lights. The countdown runs here, in Home Assistant, so closing or reloading
 the tablet does not stop it, and it can also be started from automations or voice.
 
-Every open screen follows it through one state per site, like `sun.sun`:
+Every open screen follows it through one timestamp sensor per dashboard (sensor.py),
+an entity of the dashboard's config entry (or of the sensor platform, for dashboards
+listed in YAML):
 
-    planview_dash.goodnight_<site>   on while counting down, otherwise off
-        ends_at   when the lights turn off (ISO time), while on
+    sensor.<site>_goodnight   when the lights turn off, while counting down;
+                              unknown otherwise
+        planview_dash_site    the dashboard's site, so screens find a renamed sensor
+        minutes               the length of the countdown, while counting down
 
 A restart of Home Assistant cancels a countdown that is running.
 """
@@ -22,6 +26,7 @@ import voluptuous as vol
 from homeassistant.core import HomeAssistant, ServiceCall, callback
 from homeassistant.exceptions import ServiceValidationError
 import homeassistant.helpers.config_validation as cv
+from homeassistant.helpers.dispatcher import async_dispatcher_send
 from homeassistant.helpers.event import async_call_later
 import homeassistant.util.dt as dt_util
 
@@ -47,21 +52,28 @@ SCHEMA = vol.Schema(
 )
 
 
-def state_id(site: str) -> str:
-    """The state that screens follow, one per site."""
-    return f"{DOMAIN}.goodnight_{site.lower().replace('-', '_')}"
+def signal(site: str) -> str:
+    """Sent when a site's countdown starts or ends; its sensor listens."""
+    return f"{DOMAIN}_goodnight_{site}"
+
+
+def running(hass: HomeAssistant, site: str) -> tuple | None:
+    """(ends_at, minutes) while a site's countdown runs, else None."""
+    return hass.data.get(DOMAIN, {}).get("goodnight_running", {}).get(site)
 
 
 @callback
 def async_register(hass: HomeAssistant) -> None:
     """Register the action once."""
     timers: dict[str, callable] = hass.data[DOMAIN].setdefault("goodnight", {})
+    ends: dict[str, tuple] = hass.data[DOMAIN].setdefault("goodnight_running", {})
 
     def show(site: str, ends_at=None, minutes=None) -> None:
-        attrs = {"friendly_name": "Goodnight", "icon": "mdi:weather-night"}
         if ends_at:
-            attrs.update(ends_at=ends_at.isoformat(), minutes=minutes)
-        hass.states.async_set(state_id(site), "on" if ends_at else "off", attrs)
+            ends[site] = (ends_at, minutes)
+        else:
+            ends.pop(site, None)
+        async_dispatcher_send(hass, signal(site))
 
     def stop(site: str) -> None:
         cancel = timers.pop(site, None)
@@ -71,7 +83,7 @@ def async_register(hass: HomeAssistant) -> None:
     async def handle(call: ServiceCall) -> None:
         site = call.data["site"]
         # Only for a dashboard that exists: the action is open to every user, and each
-        # site gets a state and a timer of its own.
+        # site has a sensor and a timer of its own.
         if site not in hass.data[DOMAIN]["sites"]:
             raise ServiceValidationError(f"There is no PlanView Dash dashboard with the site \"{site}\"")
         stop(site)
@@ -101,7 +113,9 @@ def async_register(hass: HomeAssistant) -> None:
 @callback
 def async_stop(hass: HomeAssistant, site: str) -> None:
     """Cancel a site's countdown (its dashboard is unloaded)."""
-    cancel = hass.data.get(DOMAIN, {}).get("goodnight", {}).pop(site, None)
+    data = hass.data.get(DOMAIN, {})
+    cancel = data.get("goodnight", {}).pop(site, None)
     if cancel:
         cancel()
-        hass.states.async_remove(state_id(site))
+    if data.get("goodnight_running", {}).pop(site, None):
+        async_dispatcher_send(hass, signal(site))

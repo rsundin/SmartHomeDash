@@ -25,9 +25,11 @@ A Home Assistant dashboard that shows your home as a picture. Lights glow where 
 
 ## Install
 
-**Marketplace (Home Assistant 2026.11 and newer):** **Settings → Marketplace → Add from link**, paste `https://github.com/rsundin/planview-dash` and install **PlanView Dash**. Setup starts right away. *Add from link* asks you to sign in with GitHub once, and the first visit shows a notice that community code is not reviewed by Home Assistant; what PlanView Dash can reach is described in [SECURITY.md](SECURITY.md).
+**Marketplace (Home Assistant 2026.11 and newer):** **Settings → Marketplace**, search for **PlanView Dash** and install it. Setup starts right away. The first visit shows a notice that community code is not reviewed by Home Assistant; what PlanView Dash can reach is described in [SECURITY.md](SECURITY.md).
 
-*Before Home Assistant 2026.11:* HACS → *Custom repositories* → add this repository as an **Integration** → download **PlanView Dash** → restart Home Assistant.
+*Not found by the search yet?* **Settings → Marketplace → Add from link**, paste `https://github.com/rsundin/planview-dash` and install **PlanView Dash** (it asks you to sign in with GitHub once).
+
+*Before Home Assistant 2026.11:* open HACS, search for **PlanView Dash**, download it and restart Home Assistant. If the search does not find it yet: HACS → *Custom repositories* → add this repository as an **Integration** → download **PlanView Dash** → restart Home Assistant.
 
 **Manually:** copy `custom_components/planview_dash` to `<config>/custom_components/`, then restart. With SSH: `scripts/deploy.sh user@host`.
 
@@ -84,7 +86,7 @@ planview_dash:
 
 ## Updating
 
-The Marketplace offers new versions like for any other integration (HACS before Home Assistant 2026.11); restart Home Assistant after updating. Without the Marketplace, `planview_dash.update` installs the latest version from GitHub; set `github_token` (a read-only token for a private fork) and optionally `repository` and `branch` under `planview_dash:` in `configuration.yaml`. It keeps your `site.json`, adds new site files, and says whether Home Assistant needs a restart. The same action is available as **Uppdatera dashboarden** in placement mode.
+The Marketplace offers new versions like for any other integration (HACS before Home Assistant 2026.11); restart Home Assistant after updating. Your dashboards and pictures in `<config>/planview_dash/sites/` are not touched by an update. A private fork can be added to HACS as a custom repository.
 
 ## Development
 
@@ -98,10 +100,10 @@ python3 -m http.server 8000
 
 ```
 custom_components/planview_dash/
-  __init__.py              setup, panels, the update action
+  __init__.py              setup and panels
   config_flow.py           adding a dashboard from the UI
   views.py                 dashboard code (public) and site files (logged-in users)
-  updater.py               installing a version from GitHub
+  goodnight.py, sensor.py  the goodnight action and its countdown sensor
   frontend/
     panel.js               panel entry point (runs in the Home Assistant iframe)
     js/main.js             startup, views and navigation

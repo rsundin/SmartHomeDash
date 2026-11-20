@@ -44,16 +44,6 @@
     }
   },
   "services": {
-    "update": {
-      "name": "Aktualisieren",
-      "description": "Die neueste Version von PlanView Dash von GitHub installieren. Eine in Home Assistant gespeicherte site.json bleibt erhalten.",
-      "fields": {
-        "overwrite_site": {
-          "name": "site.json überschreiben",
-          "description": "Die gespeicherte site.json durch die aus dem Repository ersetzen (die alte bleibt als site.json.bak erhalten)."
-        }
-      }
-    },
     "goodnight": {
       "name": "Gute Nacht",
       "description": "Das Licht nach einigen Minuten ausschalten. Jedes geöffnete Dashboard zeigt den Countdown und kann ihn abbrechen.",
@@ -86,6 +76,13 @@
       "options": {
         "house": "Haus mit einem Bild von außen",
         "apartment": "Wohnung, nur Grundriss"
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "goodnight": {
+        "name": "Gute Nacht"
       }
     }
   }

@@ -44,16 +44,6 @@
     }
   },
   "services": {
-    "update": {
-      "name": "Oppdater",
-      "description": "Installer nyeste PlanView Dash fra GitHub. En site.json som er lagret i Home Assistant, beholdes.",
-      "fields": {
-        "overwrite_site": {
-          "name": "Overskriv site.json",
-          "description": "Erstatt den lagrede site.json med den fra repositoriet (den gamle beholdes som site.json.bak)."
-        }
-      }
-    },
     "goodnight": {
       "name": "God natt",
       "description": "Slå av lysene etter noen minutter. Alle åpne dashbord viser nedtellingen og kan avbryte den.",
@@ -86,6 +76,13 @@
       "options": {
         "house": "Hus med et bilde utenfra",
         "apartment": "Leilighet, bare plantegning"
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "goodnight": {
+        "name": "God natt"
       }
     }
   }

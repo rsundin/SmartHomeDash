@@ -44,16 +44,6 @@
     }
   },
   "services": {
-    "update": {
-      "name": "Uppdatera",
-      "description": "Installera senaste PlanView Dash från GitHub. En site.json som sparats i Home Assistant behålls.",
-      "fields": {
-        "overwrite_site": {
-          "name": "Skriv över site.json",
-          "description": "Ersätt den sparade site.json med den i repot (den gamla sparas som site.json.bak)."
-        }
-      }
-    },
     "goodnight": {
       "name": "Godnatt",
       "description": "Släck lamporna efter några minuter. Alla öppna dashboards visar nedräkningen och kan avbryta den.",
@@ -86,6 +76,13 @@
       "options": {
         "house": "Hus med bild utifrån",
         "apartment": "Lägenhet, bara planlösning"
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "goodnight": {
+        "name": "Godnatt"
       }
     }
   }

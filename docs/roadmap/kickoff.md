@@ -56,12 +56,13 @@ python3.14 -m venv .venv-ha && .venv-ha/bin/pip install -r tests/ha/requirements
 
 ```
 custom_components/planview_dash/
-  __init__.py      setup (YAML and config entries), panel registration, starter site, update action
+  __init__.py      setup (YAML and config entries), panel registration, starter site
   config_flow.py   add a dashboard from the UI; options (title, icon, admin-only)
   views.py         FrontendView (public code, no-cache) and SitesView (auth): site.json, pictures,
                    backup zip, restore points; safe_path, read_limited, write_atomic, site.json check
   diagnostics.py   redacted diagnostics
-  updater.py       install from a GitHub tarball (for setups without the Marketplace)
+  goodnight.py     the planview_dash.goodnight action: the countdown and its timers
+  sensor.py        the goodnight sensor, one timestamp entity per dashboard
   example/         fictional house and apartment: pictures, site*.json, apartment*.json (en + sv)
   frontend/
     panel.js       <planview-dash-panel>: runs in HA's iframe, gets `hass`, calls main.start()

@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.8.35
+
+What the review for the HACS default catalog asked for.
+
+- **The self-updater is gone.** The action `planview_dash.update`, the **Update the dashboard** button in placement mode and the YAML options `github_token`, `repository` and `branch` are removed. Installs are managed by the Marketplace (HACS before Home Assistant 2026.11), and an integration that replaces its own files behind their back leaves them out of step. The old YAML options are ignored with a warning in the log, so nothing fails to start; remove them from `configuration.yaml` when you can. A private fork can be added to HACS as a custom repository
+- **Goodnight is a real entity.** Each dashboard has a timestamp sensor, `sensor.<site>_goodnight`: the time the lights turn off while a countdown runs, otherwise *unknown*. It is in the entity registry, so it can be renamed, hidden or used in automations, and it is removed with its dashboard. A dashboard added from the UI shows it under a device of its own. The hand-written state `planview_dash.goodnight_<site>` is gone: an automation that used it should use the sensor instead. The screens follow the sensor, also after a rename
+- **Site files no longer touch the disk on the event loop.** Finding a file under the site and frontend folders (which follows every link on the way) and checking that it is there now run together in Home Assistant's executor, so slow storage (an SD card, a network share) does not hold up other integrations
+- **The README leads with searching for PlanView Dash** in the Marketplace or HACS; adding it from a link stays as the fallback
+- Python changed: restart Home Assistant once after updating, then reload the dashboard
+
 ## 0.8.34
 
 Showing PlanView Dash to the community (roadmap G1). Nothing in the dashboard changed.

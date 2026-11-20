@@ -149,6 +149,12 @@ export function createMockAdapter(site) {
       list.push(S(id, 'off', { friendly_name: (typeof x === 'object' && x.name) || id, ...((typeof x === 'object' && x.attributes) || {}) }));
     }
     list.push(sunState());
+    // The dashboard's goodnight sensor (sensor.py), unless the test data has it under an id
+    // of its own (renamed by the user): mock.entities with attributes.planview_dash_site.
+    if (!list.some((s) => s.attributes?.planview_dash_site === site.id)) {
+      list.push(S(`sensor.${site.id.toLowerCase().replace(/-/g, '_')}_goodnight`, 'unknown',
+        { friendly_name: 'Goodnight', device_class: 'timestamp', planview_dash_site: site.id }));
+    }
     for (const sc of site.scenes) list.push(S(sc.entity, sc.entity.startsWith('script.') ? 'off' : 'scening', { friendly_name: sc.name }));
     // Entities on a test device get the friendly_name Home Assistant composes: device + entity.
     for (const s of list) {
@@ -268,14 +274,16 @@ export function createMockAdapter(site) {
         }
         tick();
       } else if (domain === 'planview_dash' && service === 'goodnight') {
-        // As goodnight.py in Home Assistant: one countdown per site, shown as a state.
-        const id = `planview_dash.goodnight_${String(data.site).toLowerCase().replace(/-/g, '_')}`;
+        // As goodnight.py in Home Assistant: one countdown per site, shown by its sensor.
+        const id = store.all().find((s) => s.attributes?.planview_dash_site === data.site)?.entity_id
+          ?? `sensor.${String(data.site).toLowerCase().replace(/-/g, '_')}_goodnight`;
+        const attrs = { device_class: 'timestamp', planview_dash_site: data.site };
         clearTimeout(goodnightTimer);
-        if (data.cancel) { set(id, 'off', { ends_at: null }); return; }
+        if (data.cancel) { set(id, 'unknown', { ...attrs, minutes: null }); return; }
         const ms = (data.minutes ?? 5) * 60000;
-        set(id, 'on', { ends_at: new Date(Date.now() + ms).toISOString(), minutes: data.minutes ?? 5 });
+        set(id, new Date(Date.now() + ms).toISOString(), { ...attrs, minutes: data.minutes ?? 5 });
         goodnightTimer = setTimeout(() => {
-          set(id, 'off', { ends_at: null });
+          set(id, 'unknown', { ...attrs, minutes: null });
           for (const l of [].concat(data.entity_id ?? [])) if (store.get(l)) set(l, 'off', { brightness: null });
         }, ms);
       } else if (domain === 'scene' && service === 'turn_on') {

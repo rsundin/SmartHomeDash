@@ -44,16 +44,6 @@
     }
   },
   "services": {
-    "update": {
-      "name": "Update",
-      "description": "Install the latest PlanView Dash from GitHub. A site.json saved on Home Assistant is kept.",
-      "fields": {
-        "overwrite_site": {
-          "name": "Overwrite site.json",
-          "description": "Replace the saved site.json with the one in the repository (the old one is kept as site.json.bak)."
-        }
-      }
-    },
     "goodnight": {
       "name": "Goodnight",
       "description": "Turn the lights off after a few minutes. Every open dashboard shows the countdown and can cancel it.",
@@ -86,6 +76,13 @@
       "options": {
         "house": "House with a picture from outside",
         "apartment": "Apartment, floor plan only"
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "goodnight": {
+        "name": "Goodnight"
       }
     }
   }
