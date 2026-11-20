@@ -78,10 +78,10 @@ async def test_the_old_update_options_are_ignored(hass: HomeAssistant, caplog) -
     """The self-updater is gone (installs are managed by the Marketplace or HACS); its
     options in configuration.yaml still set up, with a warning."""
     config = {DOMAIN: {"github_token": "x", "repository": "someone/fork", "branch": "dev",
-                       "dashboards": [{"site": "home"}]}}
+                       "dashboards": [{"site": "attic"}]}}
     assert await async_setup_component(hass, DOMAIN, config)
     await hass.async_block_till_done()
-    assert "home" in panels(hass)
+    assert "attic" in panels(hass)
     assert not hass.services.has_service(DOMAIN, "update")
     assert "github_token" in caplog.text
 
