@@ -44,16 +44,6 @@
     }
   },
   "services": {
-    "update": {
-      "name": "Bijwerken",
-      "description": "Installeer de nieuwste PlanView Dash vanaf GitHub. Een site.json die in Home Assistant is opgeslagen, blijft behouden.",
-      "fields": {
-        "overwrite_site": {
-          "name": "site.json overschrijven",
-          "description": "Vervang de opgeslagen site.json door die uit de repository (de oude blijft bewaard als site.json.bak)."
-        }
-      }
-    },
     "goodnight": {
       "name": "Welterusten",
       "description": "Doe de lampen na een paar minuten uit. Elk geopend dashboard toont het aftellen en kan het annuleren.",
@@ -86,6 +76,13 @@
       "options": {
         "house": "Huis met een foto van buiten",
         "apartment": "Appartement, alleen plattegrond"
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "goodnight": {
+        "name": "Welterusten"
       }
     }
   }

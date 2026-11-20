@@ -259,7 +259,7 @@ export async function start(opts) {
   // ---- views
   let view = null;
   const plans = new Map();
-  const editor = editing ? createEditor({ site, store, saveSite, reload: opts.reload, exit: opts.navigateEdit ? () => opts.navigateEdit(false) : null, update: opts.updateDashboard, reloadPage: opts.reloadPage }) : null;
+  const editor = editing ? createEditor({ site, store, saveSite, reload: opts.reload, exit: opts.navigateEdit ? () => opts.navigateEdit(false) : null }) : null;
 
   // Rooms open on their floor plan; a device without a plan (heat pump) opens its panel directly.
   const openRoom = (room) => { if (room.plan) showPlan(room.plan, room.id); else panel.open(room); };

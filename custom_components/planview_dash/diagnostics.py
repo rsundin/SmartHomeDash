@@ -20,7 +20,7 @@ from homeassistant.core import HomeAssistant
 
 from .const import CONF_SITE, DOMAIN, KEEP_VERSIONS, MAX_SITE_JSON
 
-TO_REDACT = {"title", "site", "url_path", "github_token", "token", "name"}
+TO_REDACT = {"title", "site", "url_path", "name"}
 ENTITY = re.compile(r"^[a-z_]+\.[a-z0-9_]+$")
 PICTURE = re.compile(r"\.(jpg|jpeg|png|webp)$", re.IGNORECASE)
 
@@ -32,7 +32,6 @@ async def async_get_config_entry_diagnostics(hass: HomeAssistant, entry: ConfigE
     site = await hass.async_add_executor_job(_site_summary, sites_dir, dash.get(CONF_SITE)) if sites_dir else {}
     known = site.pop("_entities", set())
     site["missing_entities"] = sum(1 for e in known if hass.states.get(e) is None)
-    update = data.get("update", {})
     return {
         "planview_dash": data.get("version"),
         "home_assistant": HA_VERSION,
@@ -44,10 +43,6 @@ async def async_get_config_entry_diagnostics(hass: HomeAssistant, entry: ConfigE
         "dashboards": {
             "from_ui": len(data.get("entries", {})),
             "from_yaml": len(data.get("yaml_sites", ())),
-        },
-        "update_action": {
-            "custom_repository": update.get("repository") not in (None, "rsundin/planview-dash"),
-            "token_set": bool(update.get("token")),
         },
         "site": site,
     }

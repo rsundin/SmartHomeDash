@@ -16,13 +16,14 @@ Plan for about an hour, most of it spent on the pictures.
 
 **From the Marketplace** (Home Assistant 2026.11 and newer)
 
-1. **Settings → Marketplace → Add from link.** The first time, the Marketplace shows a notice that community code is not reviewed by Home Assistant, and asks you to sign in with GitHub.
-2. Paste `https://github.com/rsundin/planview-dash` and install **PlanView Dash**.
-3. Setup starts right away: continue with step 2 below.
+1. **Settings → Marketplace**, search for **PlanView Dash** and install it. The first time, the Marketplace shows a notice that community code is not reviewed by Home Assistant.
+2. Setup starts right away: continue with step 2 below.
+
+Not found by the search yet? **Settings → Marketplace → Add from link**, paste `https://github.com/rsundin/planview-dash` and install **PlanView Dash** (it asks you to sign in with GitHub once).
 
 New versions show up in the Marketplace like for any other integration. Restart Home Assistant after an update.
 
-*Before Home Assistant 2026.11:* HACS → three-dot menu → *Custom repositories* → add the repository URL with category **Integration** → download **PlanView Dash** → restart Home Assistant.
+*Before Home Assistant 2026.11:* open HACS, search for **PlanView Dash**, download it and restart Home Assistant. If the search does not find it yet: HACS → three-dot menu → *Custom repositories* → add the repository URL with category **Integration** → download **PlanView Dash** → restart Home Assistant.
 
 **Manually**
 

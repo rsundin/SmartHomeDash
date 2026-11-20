@@ -181,14 +181,6 @@ class PlanViewDashPanel extends HTMLElement {
             return res.json();
           },
         } : null,
-        // Installs the latest version from GitHub (planview_dash.update, admins only).
-        // Only offered when the update action exists (a configured repository or token).
-        updateDashboard: hass.user?.is_admin && hass.services?.planview_dash?.update ? async () => {
-          const res = await this._hass.callService('planview_dash', 'update', {}, undefined, false, true);
-          return res?.response ?? {};
-        } : null,
-        // New code needs a fresh page: modules already loaded in this frame stay cached.
-        reloadPage: () => window.top.location.reload(),
       });
     } catch (e) {
       showFatal(root, e);

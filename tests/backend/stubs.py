@@ -124,7 +124,6 @@ _module("homeassistant.components")
 _module("homeassistant.components.http", HomeAssistantView=HomeAssistantView)
 _anything("homeassistant.components.frontend")
 _anything("homeassistant.components.panel_custom")
-_anything("homeassistant.components.persistent_notification")
 
 
 def async_redact_data(data, to_redact):
@@ -144,6 +143,8 @@ _anything("homeassistant.helpers.config_validation")
 _anything("homeassistant.helpers.service")
 _anything("homeassistant.helpers.aiohttp_client")
 _anything("homeassistant.helpers.event")
+_anything("homeassistant.helpers.discovery")
+_anything("homeassistant.helpers.dispatcher")
 _module("homeassistant.util")
 _anything("homeassistant.util.dt")
 _module("homeassistant.helpers.typing", ConfigType=dict)
@@ -185,7 +186,14 @@ class Request(dict):
 
 
 class Hass:
-    """Runs executor jobs inline; that is all the views ask of Home Assistant."""
+    """Runs executor jobs inline; that is all the views ask of Home Assistant.
+    in_executor says whether one is running, for tests of what runs where."""
+
+    in_executor = False
 
     async def async_add_executor_job(self, func, *args):
-        return func(*args)
+        self.in_executor = True
+        try:
+            return func(*args)
+        finally:
+            self.in_executor = False

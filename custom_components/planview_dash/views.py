@@ -228,7 +228,10 @@ def validate_site(data) -> str | None:
 
 
 def safe_path(base: Path, *parts: str) -> Path | None:
-    """Resolve parts under base, refusing anything that escapes it."""
+    """Resolve parts under base, refusing anything that escapes it.
+
+    It touches the filesystem (resolve() reads every link on the way), so the views
+    run it in the executor, never on the event loop."""
     base = base.resolve()
     try:
         path = base.joinpath(*parts).resolve()
@@ -237,6 +240,18 @@ def safe_path(base: Path, *parts: str) -> Path | None:
     if path != base and base not in path.parents:
         return None
     return path
+
+
+def safe_file(base: Path, *parts: str) -> Path | None:
+    """safe_path, and only if it is a file: one executor job per request."""
+    path = safe_path(base, *parts)
+    return path if path is not None and path.is_file() else None
+
+
+def site_folder(root: Path, site: str) -> Path | None:
+    """A site's folder under root (not root itself), resolved."""
+    folder = safe_path(root, site) if SITE_ID.match(site) else None
+    return None if folder is None or folder == root.resolve() else folder
 
 
 class FrontendView(HomeAssistantView):
@@ -251,8 +266,8 @@ class FrontendView(HomeAssistantView):
         self._root = root
 
     async def get(self, request: web.Request, filename: str) -> web.StreamResponse:
-        path = safe_path(self._root, filename)
-        if path is None or not await self._hass.async_add_executor_job(path.is_file):
+        path = await self._hass.async_add_executor_job(safe_file, self._root, filename)
+        if path is None:
             return web.Response(status=HTTPStatus.NOT_FOUND)
         return web.FileResponse(path, headers={"Cache-Control": "no-cache", **_NOSNIFF})
 
@@ -276,14 +291,16 @@ class SitesView(HomeAssistantView):
         self._hass = hass
         self._root = root
 
-    def _path(self, site: str, filename: str) -> Path | None:
+    async def _path(self, site: str, filename: str, file: bool = False) -> Path | None:
+        """The resolved path of a site file (only an existing file with file=True),
+        worked out in the executor."""
         if not SITE_ID.match(site):
             return None
-        return safe_path(self._root / site, filename)
+        return await self._hass.async_add_executor_job(safe_file if file else safe_path, self._root / site, filename)
 
     async def get(self, request: web.Request, site: str, filename: str) -> web.StreamResponse:
-        path = self._path(site, filename)
-        if path is None or not await self._hass.async_add_executor_job(path.is_file):
+        path = await self._path(site, filename, file=True)
+        if path is None:
             return web.Response(status=HTTPStatus.NOT_FOUND)
         headers = {"Cache-Control": "no-store", **_NOSNIFF}
         if filename == "site.json":
@@ -296,7 +313,7 @@ class SitesView(HomeAssistantView):
     async def put(self, request: web.Request, site: str, filename: str) -> web.Response:
         if not request["hass_user"].is_admin:
             return self.json_message("Only administrators can change the dashboard", HTTPStatus.FORBIDDEN)
-        path = self._path(site, filename)
+        path = await self._path(site, filename)
         if path is None:
             return web.Response(status=HTTPStatus.NOT_FOUND)
         if filename == "site.json":
@@ -579,16 +596,16 @@ class BackupView(HomeAssistantView):
         self._hass = hass
         self._root = root
 
-    def _folder(self, request: web.Request, site: str) -> tuple[Path | None, web.Response | None]:
+    async def _folder(self, request: web.Request, site: str) -> tuple[Path | None, web.Response | None]:
         if not request["hass_user"].is_admin:
             return None, self.json_message("Only administrators can export, import or restore", HTTPStatus.FORBIDDEN)
-        folder = safe_path(self._root, site) if SITE_ID.match(site) else None
-        if folder is None or folder == self._root.resolve():
+        folder = await self._hass.async_add_executor_job(site_folder, self._root, site)
+        if folder is None:
             return None, web.Response(status=HTTPStatus.NOT_FOUND)
         return folder, None
 
     async def get(self, request: web.Request, site: str, action: str) -> web.StreamResponse:
-        folder, refused = self._folder(request, site)
+        folder, refused = await self._folder(request, site)
         if refused is not None:  # an aiohttp response can be falsy (it is a mapping)
             return refused
         if action == "versions":
@@ -609,7 +626,7 @@ class BackupView(HomeAssistantView):
         })
 
     async def post(self, request: web.Request, site: str, action: str) -> web.Response:
-        folder, refused = self._folder(request, site)
+        folder, refused = await self._folder(request, site)
         if refused is not None:  # an aiohttp response can be falsy (it is a mapping)
             return refused
         if action == "import":

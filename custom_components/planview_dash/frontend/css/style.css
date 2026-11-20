@@ -499,7 +499,6 @@ input[type='range'] { width: 100%; accent-color: var(--glow); }
 .seg-wrap { flex-wrap: wrap; border-radius: 16px; }
 .seg[hidden] { display: none !important; }
 
-.editor-update { border-top: 1px solid var(--line); padding-top: 8px; }
 
 /* ---------- empty site */
 .stage.is-empty { aspect-ratio: 16 / 9; display: grid; place-items: center; }

@@ -29,7 +29,6 @@ LAYOUT_HOUSE = "house"          # overview picture of the property + floor plans
 LAYOUT_APARTMENT = "apartment"  # floor plans only
 
 DEFAULT_ICON = "mdi:home-lightbulb"
-DEFAULT_REPOSITORY = "rsundin/planview-dash"
 
 # Dashboard languages (frontend/js/i18n.js LANGUAGES) and the locale a new dashboard
 # gets for each when Home Assistant's language names no region.

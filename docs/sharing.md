@@ -21,4 +21,4 @@ The [online demo](https://rsundin.github.io/planview-dash/) runs on test data: i
 
 ## Tokens and addresses
 
-PlanView Dash runs behind Home Assistant's own login and needs no access token in the browser. If you set `github_token` for `planview_dash.update`, leave it out when you share your `configuration.yaml`. Also check that a screenshot or a pasted log shows no long-lived access token, no `?token=` in an address, and no outside address of your Home Assistant (a Nabu Casa link, a duckdns name, your public IP).
+PlanView Dash runs behind Home Assistant's own login and needs no access token in the browser. Check that a screenshot or a pasted log shows no long-lived access token, no `?token=` in an address, and no outside address of your Home Assistant (a Nabu Casa link, a duckdns name, your public IP).

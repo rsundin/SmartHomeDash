@@ -53,7 +53,6 @@ class DiagnosticsTest(unittest.TestCase):
         hass = stubs.Hass()
         hass.data = {"planview_dash": {
             "sites_dir": self.sites, "version": "0.8.14", "entries": {"a": {}}, "yaml_sites": set(),
-            "update": {"repository": "rsundin/planview-dash", "branch": "main", "token": "ghp_secret_token"},
         }}
         hass.states = States(known)
         hass.config = SimpleNamespace(language="sv")
@@ -76,13 +75,13 @@ class DiagnosticsTest(unittest.TestCase):
         self.assertGreater(site["lamps"], 0)
         self.assertGreater(site["pictures"], 0)
         self.assertEqual(site["missing_entities"], 2)
-        self.assertTrue(out["update_action"]["token_set"])
-        # Redacted or left out: the title, folder and address, the token, every entity id and name.
+        self.assertNotIn("update_action", out)
+        # Redacted or left out: the title, folder and address, every entity id and name.
         self.assertEqual(out["entry"]["data"]["title"], "**REDACTED**")
         self.assertEqual(out["entry"]["data"]["site"], "**REDACTED**")
         self.assertEqual(out["entry"]["options"]["url_path"], "**REDACTED**")
         self.assertEqual(out["entry"]["data"]["layout"], "house")
-        for private in ["Sundins hus", "sundins-hus", "sundin", "ghp_secret_token", *self.ids]:
+        for private in ["Sundins hus", "sundins-hus", "sundin", *self.ids]:
             self.assertNotIn(private, text)
         names = {s for p in self.config["floorplans"] for r in p.get("rooms", []) for s in [r.get("name")] if s}
         for name in names:

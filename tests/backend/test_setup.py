@@ -1,20 +1,17 @@
-"""Starter sites and the self-updater."""
+"""Starter sites and the move from the earlier folder name."""
 
 from __future__ import annotations
 
-import io
 import json
 import re
-import tarfile
 import tempfile
 import unittest
 from pathlib import Path
 
 import stubs  # noqa: F401  (installs the stand-ins first)
-from stubs import ROOT, HomeAssistantError
+from stubs import ROOT
 
 import custom_components.planview_dash as integration
-from custom_components.planview_dash import updater
 
 EXAMPLE = ROOT / "custom_components" / "planview_dash" / "example"
 ENTITY = re.compile(r"^[a-z_]+\.[a-z0-9_]+$")
@@ -100,119 +97,6 @@ class StarterSiteTest(unittest.TestCase):
             (folder / "site.json").write_text('{"mine": true}')
             integration._create_starter_site(Path(tmp), {"site": "home"}, "sv", "SEK")
             self.assertEqual((folder / "site.json").read_text(), '{"mine": true}')
-
-
-def tarball(files: dict[str, bytes], top: str = "rsundin-planview-dash-abc1234def") -> bytes:
-    buf = io.BytesIO()
-    with tarfile.open(fileobj=buf, mode="w:gz") as tar:
-        for name, data in files.items():
-            info = tarfile.TarInfo(name if name.startswith("..") or name.startswith("/") else f"{top}/{name}")
-            info.size = len(data)
-            tar.addfile(info, io.BytesIO(data))
-    return buf.getvalue()
-
-
-class UpdaterTest(unittest.TestCase):
-    def setUp(self):
-        tmp = tempfile.TemporaryDirectory()
-        self.addCleanup(tmp.cleanup)
-        self.tmp = Path(tmp.name)
-        self.integration = self.tmp / "custom_components" / "planview_dash"
-        self.integration.mkdir(parents=True)
-        (self.integration / "manifest.json").write_text('{"version": "1"}')
-        (self.integration / "views.py").write_text("old")
-        (self.integration / "stale.js").write_text("old")
-        self.sites = self.tmp / "sites"
-        (self.sites / "home").mkdir(parents=True)
-        (self.sites / "home" / "site.json").write_text('{"mine": true}')
-
-    def install(self, files, overwrite=False):
-        return updater.install(tarball(files), self.integration, self.sites, ["home"], overwrite)
-
-    def test_installs_github_tarball(self):
-        result = self.install({
-            "custom_components/planview_dash/manifest.json": b'{"version": "2"}',
-            "custom_components/planview_dash/views.py": b"old",
-            "custom_components/planview_dash/frontend/panel.js": b"//",
-            "sites/home/site.json": b'{"theirs": true}',
-            "sites/home/roof.jpg": b"\xff\xd8\xff",
-            "sites/other/site.json": b"{}",
-        })
-        self.assertEqual(result.commit, "abc1234")
-        self.assertTrue(result.restart_required)  # manifest.json changed
-        self.assertEqual((self.integration / "manifest.json").read_text(), '{"version": "2"}')
-        self.assertTrue((self.integration / "frontend" / "panel.js").is_file())
-        self.assertFalse((self.integration / "stale.js").exists())  # replaced as a whole
-        # A saved site.json is kept; missing files are added; other sites are left alone.
-        self.assertEqual((self.sites / "home" / "site.json").read_text(), '{"mine": true}')
-        self.assertEqual(result.added_site_files, ["home/roof.jpg"])
-        self.assertFalse((self.sites / "other").exists())
-        self.assertEqual([p.name for p in self.tmp.joinpath("custom_components").iterdir()], ["planview_dash"])
-
-    def test_frontend_only_needs_no_restart(self):
-        result = self.install({
-            "custom_components/planview_dash/manifest.json": b'{"version": "1"}',
-            "custom_components/planview_dash/views.py": b"old",
-            "custom_components/planview_dash/frontend/panel.js": b"// new",
-        })
-        self.assertFalse(result.restart_required)
-
-    def test_any_python_file_or_translation_needs_a_restart(self):
-        # Not a fixed list of names: goodnight.py and diagnostics.py were once left out of it.
-        same = {
-            "custom_components/planview_dash/manifest.json": b'{"version": "1"}',
-            "custom_components/planview_dash/views.py": b"old",
-        }
-        for name, old in [("goodnight.py", "old"), ("diagnostics.py", "old"), ("brand_new.py", None),
-                          ("translations/de.json", "{}"), ("services.yaml", "old")]:
-            with self.subTest(changed=name):
-                path = self.integration / name
-                path.parent.mkdir(exist_ok=True)
-                files = dict(same)
-                if old is not None:
-                    path.write_text(old)
-                    # Still there, unchanged: no restart.
-                    unchanged = self.install({**files, f"custom_components/planview_dash/{name}": old.encode()})
-                    self.assertFalse(unchanged.restart_required)
-                changed = self.install({**files, f"custom_components/planview_dash/{name}": b"new"})
-                self.assertTrue(changed.restart_required)
-                # And once more when the file is gone from the new version.
-                self.assertTrue(self.install(files).restart_required)
-
-    def test_overwrite_site_keeps_backup(self):
-        self.install({
-            "custom_components/planview_dash/manifest.json": b"{}",
-            "sites/home/site.json": b'{"theirs": true}',
-        }, overwrite=True)
-        self.assertEqual((self.sites / "home" / "site.json").read_text(), '{"theirs": true}')
-        self.assertEqual((self.sites / "home" / "site.json.bak").read_text(), '{"mine": true}')
-
-    def test_refuses_parent_paths(self):
-        archive = {
-            "custom_components/planview_dash/manifest.json": b"{}",
-            "../../escaped.txt": b"x",
-        }
-        with self.assertRaises(tarfile.FilterError):
-            self.install(archive)
-        self.assertFalse((self.tmp / "escaped.txt").exists())
-        self.assertEqual((self.integration / "views.py").read_text(), "old")
-
-    def test_absolute_paths_stay_inside(self):
-        """The data filter strips the leading slash; the extra top folder is refused."""
-        target = self.tmp / "absolute.txt"
-        with self.assertRaises((tarfile.FilterError, HomeAssistantError)):
-            self.install({"custom_components/planview_dash/manifest.json": b"{}", str(target): b"x"})
-        self.assertFalse(target.exists())
-        self.assertEqual((self.integration / "views.py").read_text(), "old")
-
-    def test_refuses_archive_without_integration(self):
-        with self.assertRaises(HomeAssistantError):
-            self.install({"README.md": b"hi"})
-        self.assertEqual((self.integration / "views.py").read_text(), "old")
-
-
-if __name__ == "__main__":
-    unittest.main()
 
 
 class OldFolderTest(unittest.TestCase):

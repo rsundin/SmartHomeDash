@@ -44,16 +44,6 @@
     }
   },
   "services": {
-    "update": {
-      "name": "Opdater",
-      "description": "Installer den nyeste PlanView Dash fra GitHub. En site.json, der er gemt i Home Assistant, beholdes.",
-      "fields": {
-        "overwrite_site": {
-          "name": "Overskriv site.json",
-          "description": "Erstat den gemte site.json med den fra repositoriet (den gamle beholdes som site.json.bak)."
-        }
-      }
-    },
     "goodnight": {
       "name": "Godnat",
       "description": "Sluk lyset efter nogle minutter. Alle åbne dashboards viser nedtællingen og kan afbryde den.",
@@ -86,6 +76,13 @@
       "options": {
         "house": "Hus med et billede udefra",
         "apartment": "Lejlighed, kun plantegning"
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "goodnight": {
+        "name": "Godnat"
       }
     }
   }

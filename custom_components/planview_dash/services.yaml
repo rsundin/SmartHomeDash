@@ -1,9 +1,3 @@
-update:
-  fields:
-    overwrite_site:
-      default: false
-      selector:
-        boolean:
 goodnight:
   fields:
     site:
