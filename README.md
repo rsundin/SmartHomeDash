@@ -12,7 +12,7 @@ A Home Assistant dashboard that shows your home as a picture. Lights glow where 
 - Set up entirely in the UI: upload a picture of your home and your floor plans, draw rooms, tap where each light and thermostat is.
 - Built for wall screens and tablets, with a kiosk mode that shows only the dashboard; on phones, pinch to zoom into the picture. Works in the companion app.
 - Houses with a picture from outside, or apartments with just a floor plan. Several homes, each with its own panel.
-- Dashboard text in Swedish or English.
+- Dashboard text in Swedish, English, Danish, German, Finnish, Norwegian and Dutch.
 
 <p>
   <img src="docs/images/house-evening.webp" alt="Example house in the evening: outdoor lamps and windows lit on the picture" width="49%">
@@ -38,6 +38,8 @@ Then **Settings → Devices & services → Add integration → PlanView Dash**, 
 **→ [Setting up a new dashboard](docs/setup.md)**: the full walkthrough, with tips for the pictures.
 
 **→ [An overview picture without a drone](docs/overview-picture.md)**: a day and evening picture from a 3D map and an AI image model.
+
+**→ [Troubleshooting](docs/troubleshooting.md)**: nothing shows, a lamp does not glow, the energy flow points the wrong way, the card cannot find its dashboard.
 
 ## What it shows
 
@@ -86,11 +88,19 @@ planview_dash:
   sites_dir: planview_dash/sites   # optional; relative to the config folder
 ```
 
-These keys, the goodnight action, the card's options and the other names you can type stay the same through 1.x: [Stable in 1.x](docs/configuration.md#stable-in-1x).
+These keys, the goodnight action, the card's options and the other names you can type stay the same through 1.x: see [What stays the same](#what-stays-the-same).
 
-## Updating
+## Upgrading
 
-The Marketplace offers new versions like for any other integration (HACS before Home Assistant 2026.11); restart Home Assistant after updating. Your dashboards and pictures in `<config>/planview_dash/sites/` are not touched by an update. A private fork can be added to HACS as a custom repository.
+New versions are offered with your other updates in Home Assistant, like for any other integration (HACS before Home Assistant 2026.11). When an update changes the part that runs inside Home Assistant, restart it; when only the dashboard changed, reloading the page is enough. The [changelog](CHANGELOG.md) says which for every version. Your dashboards and pictures in `<config>/planview_dash/sites/` are not touched by an update. More, including going back a version and moving over from SmartHomeDash: [Upgrading](docs/setup.md#upgrading).
+
+## What stays the same
+
+- **Your dashboard keeps working.** A `site.json` saved by any 1.x version opens in every later 1.x version, and is upgraded by itself when the format grows. Nothing you set up has to be redone.
+- **Names stay.** The domain `planview_dash`, the `configuration.yaml` keys, the card `custom:planview-dash-card` and its options, the action `planview_dash.goodnight` and its fields, the sensor `sensor.<site>_goodnight` and the dashboard addresses do not change in 1.x. The full list: [Stable in 1.x](docs/configuration.md#stable-in-1x).
+- **Breaking changes wait for 2.0**, are announced one minor release ahead in the changelog and in Home Assistant's repairs, and come with an automatic migration where one is possible.
+- **Supported Home Assistant versions** are the ones the tests run on: the newest, and the oldest named in `hacs.json`, now 2025.6. Raising the oldest is announced in the changelog.
+- **Version numbers** follow [SemVer](https://semver.org) from 1.0: 1.0.1 fixes, 1.1.0 features, 2.0.0 breaking changes.
 
 ## Development
 
@@ -132,11 +142,11 @@ See [SECURITY.md](SECURITY.md) for how access is handled and how to report a pro
 
 ## Roadmap
 
-Next up: a listing in Home Assistant's Marketplace catalog, people and appliances on the picture, the house as a wall-screen screensaver, and a summer house mode. See [ROADMAP.md](ROADMAP.md).
+Next up: a 0.9 beta and then 1.0, with no new features until then. After 1.0: people and appliances on the picture, the house as a wall-screen screensaver, and a summer house mode. See [ROADMAP.md](ROADMAP.md).
 
 ## Help, questions and ideas
 
-- **Something wrong?** Tap **?** in the dashboard (or **Report a problem** in the setup guide). It shows the text first, then opens a GitHub issue filled in with versions, browser, screen and counts, never the names of your rooms or devices. Administrators can attach Home Assistant's *Download diagnostics* for PlanView Dash too (Settings → Devices & services → PlanView Dash → ⋮), which holds counts and sizes only.
+- **Something wrong?** Start with [Troubleshooting](docs/troubleshooting.md). Still stuck? Tap **?** in the dashboard (or **Report a problem** in the setup guide). It shows the text first, then opens a GitHub issue filled in with versions, browser, screen and counts, never the names of your rooms or devices. Administrators can attach Home Assistant's *Download diagnostics* for PlanView Dash too (Settings → Devices & services → PlanView Dash → ⋮), which holds counts and sizes only.
 - **Questions, ideas and pictures of your dashboard** are welcome in [Discussions](https://github.com/rsundin/planview-dash/discussions): Q&A, Ideas (with votes) and Show and tell.
 - **Sharing your dashboard?** A picture of a home says a lot about it. Before posting, see [Sharing your dashboard safely](docs/sharing.md).
 

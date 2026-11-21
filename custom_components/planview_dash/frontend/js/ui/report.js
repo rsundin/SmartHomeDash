@@ -12,6 +12,7 @@ import { liteSetting } from './wall.js';
 
 export const REPO_URL = 'https://github.com/rsundin/planview-dash';
 export const DISCUSSIONS_URL = `${REPO_URL}/discussions`;
+export const TROUBLESHOOTING_URL = `${REPO_URL}/blob/main/docs/troubleshooting.md`;
 
 // The last refused save (Home Assistant's config check, Q5) in this page, or null.
 // Those messages name keys and positions only, such as `floorplans[0].rooms[2].area …`.
@@ -94,6 +95,8 @@ export function createReport(ctx) {
       el('header', { class: 'panel-head' },
         el('div', {}, el('p', { class: 'eyebrow' }, t('report.eyebrow')), el('h2', { class: 'panel-title' }, t('report.title'))),
         el('button', { class: 'icon-btn', type: 'button', 'aria-label': t('settings.close'), onclick: close }, '×')),
+      el('p', { class: 'small' }, t('report.troubleshootHelp')),
+      el('div', { class: 'row' }, el('a', { class: 'chip', id: 'report-troubleshoot', href: TROUBLESHOOTING_URL, target: '_blank', rel: 'noopener noreferrer' }, t('report.troubleshoot'))),
       el('p', { class: 'small' }, t('report.intro')),
       el('label', { class: 'eyebrow', for: 'report-text' }, t('report.preview')),
       area,

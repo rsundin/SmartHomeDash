@@ -298,6 +298,8 @@
   "report.button": "Report a problem",
   "report.eyebrow": "Help",
   "report.title": "Report a problem",
+  "report.troubleshootHelp": "Many problems have a quick fix: a lamp that does not glow, an energy flow pointing the wrong way, a card that cannot find its dashboard.",
+  "report.troubleshoot": "Troubleshooting",
   "report.intro": "This opens a new issue on GitHub with the text below filled in. It holds versions, browser, screen and counts, never the names of your rooms, devices or pictures. Issues are public: read it first, and change it if you like.",
   "report.preview": "Sent with the issue",
   "report.open": "Open the issue on GitHub",

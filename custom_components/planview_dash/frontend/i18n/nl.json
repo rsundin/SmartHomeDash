@@ -299,6 +299,8 @@
   "report.button": "Probleem melden",
   "report.eyebrow": "Hulp",
   "report.title": "Probleem melden",
+  "report.troubleshootHelp": "Veel problemen zijn snel opgelost: een lamp die niet oplicht, een energiestroom die de verkeerde kant op wijst, een kaart die zijn dashboard niet vindt.",
+  "report.troubleshoot": "Problemen oplossen (in het Engels)",
   "report.intro": "Dit opent een nieuw issue op GitHub met de tekst hieronder ingevuld. Die bevat versies, browser, scherm en aantallen, nooit de namen van je kamers, apparaten of afbeeldingen. Issues zijn openbaar: lees het eerst en pas het aan als je wilt.",
   "report.preview": "Wordt meegestuurd met het issue",
   "report.open": "Open het issue op GitHub",

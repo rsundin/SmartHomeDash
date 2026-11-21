@@ -52,5 +52,57 @@ class LaunchDocsTest(unittest.TestCase):
         self.assertLess(len(data), 3_000_000)
 
 
+def _slug(heading: str) -> str:
+    """GitHub's anchor for a heading: lower case, punctuation dropped, spaces to -."""
+    text = re.sub(r"[`*_]|\[([^\]]*)\]\([^)]*\)", lambda m: m.group(1) or "", heading)
+    return re.sub(r"[^\w\- ]", "", text.strip().lower()).replace(" ", "-")
+
+
+def _anchors(path: Path) -> set[str]:
+    out, in_code = set(), False
+    for line in path.read_text().splitlines():
+        if line.startswith("```"):
+            in_code = not in_code
+        elif not in_code and (m := re.match(r"#+\s+(.*)", line)):
+            out.add(_slug(m.group(1)))
+    return out
+
+
+class UserDocsTest(unittest.TestCase):
+    """Roadmap V4: docs for people who are not the owner. Every link between the user
+    docs leads to a file and heading that exist, and Troubleshooting is easy to find."""
+
+    PAGES = ["README.md", "docs/setup.md", "docs/troubleshooting.md", "docs/configuration.md"]
+
+    def test_links_between_docs_lead_somewhere(self):
+        link = re.compile(r"\]\(([^)\s]+)\)")
+        for name in self.PAGES:
+            page = ROOT / name
+            text = re.sub(r"```.*?```", "", page.read_text(), flags=re.S)
+            for target in link.findall(text):
+                if re.match(r"[a-z]+:", target):
+                    continue  # https:, mailto:
+                file, _, anchor = target.partition("#")
+                dest = (page.parent / file).resolve() if file else page
+                self.assertTrue(dest.is_file(), f"{name} links to {target}, which does not exist")
+                if anchor and dest.suffix == ".md":
+                    self.assertIn(anchor, _anchors(dest), f"{name} links to {target}: no such heading")
+
+    def test_troubleshooting_is_linked(self):
+        self.assertIn("(docs/troubleshooting.md)", (ROOT / "README.md").read_text())
+        self.assertIn("(troubleshooting.md)", (ROOT / "docs/setup.md").read_text())
+        report = (ROOT / "custom_components/planview_dash/frontend/js/ui/report.js").read_text()
+        url = re.search(r"TROUBLESHOOTING_URL = `\$\{REPO_URL\}/blob/main/([^`]+)`", report)
+        self.assertIsNotNone(url, "the ? sheet links to Troubleshooting")
+        self.assertTrue((ROOT / url.group(1)).is_file())
+
+    def test_readme_states_the_promise(self):
+        text = (ROOT / "README.md").read_text()
+        for words in ("## What stays the same", "Breaking changes wait for 2.0", "## Upgrading"):
+            self.assertIn(words, text)
+        self.assertIn('"homeassistant": "2025.6', (ROOT / "hacs.json").read_text())
+        self.assertIn("2025.6", text)
+
+
 if __name__ == "__main__":
     unittest.main()
