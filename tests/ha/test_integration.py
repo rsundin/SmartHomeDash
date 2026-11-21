@@ -300,7 +300,13 @@ async def test_admin_reads_and_writes(hass: HomeAssistant, entry, hass_client, s
     assert resp.status == HTTPStatus.OK, await resp.text()
     saved = json.loads((sites_in_tmp / "test_home" / "site.json").read_text(encoding="utf-8"))
     assert "setup_pending" not in saved
+    assert saved["format"] == 1, "saved in the current format"
     assert (sites_in_tmp / "test_home" / "site.json.1").is_file(), "the replaced file is kept as a restore point"
+
+    # A file from a newer version of PlanView Dash is never saved over.
+    resp = await client.put(f"{SITES}/test_home/site.json", data=json.dumps({**site, "format": 99}))
+    assert resp.status == HTTPStatus.BAD_REQUEST
+    assert "newer version" in await resp.text()
 
     # Two editors: a save based on a version that is no longer the file's is refused.
     current = await client.get(f"{SITES}/test_home/site.json")

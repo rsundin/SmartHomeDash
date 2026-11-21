@@ -43,6 +43,7 @@
   "status.error": "Feil",
   "site.invalidId": "Ugyldig site-id: {id}",
   "site.notFound": "Finner ikke {path} ({status})",
+  "site.tooNew": "Dette dashbordet ble lagret av en nyere versjon av PlanView Dash (format {format}). Oppdater PlanView Dash for å endre det; denne versjonen lagrer ingenting.",
   "site.invalidJson": "{path} er ikke gyldig JSON: {msg}",
   "ha.notConnected": "Ikke tilkoblet",
   "ha.badToken": "Ugyldig token",

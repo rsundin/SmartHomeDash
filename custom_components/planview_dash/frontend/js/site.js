@@ -14,6 +14,34 @@ export const draftBaseKey = (id) => `pvd:${id}:draftBase`;
 // Set by the missing-devices warning: placement mode then lists only those devices.
 export const missingFilterKey = (id) => `pvd:${id}:editmissing`;
 
+// The site.json format this version reads and writes. A file without "format" is
+// format 1. When the format changes, FORMAT goes up by one and a step that turns a
+// format n file into n + 1 is added to MIGRATIONS (index 0 upgrades 1 to 2, and so on).
+// The same steps are in Python (views.py migrate_site), which runs them before the check
+// on save and import. A file from a newer version than this is shown but never saved over.
+export const FORMAT = 1;
+export const MIGRATIONS = [];
+
+// The format a config says it has: a whole number from 1, or null when it says
+// something that is not a format.
+export function formatOf(raw) {
+  const f = raw?.format ?? 1;
+  return Number.isInteger(f) && f >= 1 ? f : null;
+}
+
+// Upgrades a config to FORMAT in place, and returns it. A config from a newer version
+// (or with a format that is not a number) is left as it is: see site.tooNew.
+export function migrate(raw) {
+  let f = formatOf(raw);
+  if (f === null || f > FORMAT) return raw;
+  for (; f < FORMAT; f++) MIGRATIONS[f - 1](raw);
+  // "format" first, so it is the first thing seen when the file is opened by hand.
+  const rest = { ...raw };
+  delete rest.format;
+  for (const k of Object.keys(raw)) delete raw[k];
+  return Object.assign(raw, { format: FORMAT }, rest);
+}
+
 // Where site files come from:
 // - standalone page: plain fetches from sites/<id>/ next to index.html
 // - Home Assistant panel: a `loader` that fetches through HA's authenticated API,
@@ -39,8 +67,15 @@ export async function loadSite(id, { useDraft = false, loader = null, allPicture
     try { raw = await res.json(); }
     catch (e) { await languageReady(); throw new Error(t('site.invalidJson', { path: `${base}site.json`, msg: e.message })); }
   }
+  // Older files are upgraded here, so everything after this (views, placement mode, the
+  // setup guide, saving, Copy site.json) sees the current format.
+  const format = formatOf(raw);
+  const tooNew = format === null || format > FORMAT;
+  if (!tooNew) migrate(raw);
   const site = structuredClone(raw);
   site.raw = raw;
+  // Saved by a newer PlanView Dash (or "format" is not a number): shown, never saved over.
+  site.tooNew = tooNew;
   site.fromDraft = fromDraft;
   site.version = version;
   site.id = id;

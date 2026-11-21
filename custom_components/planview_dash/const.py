@@ -13,6 +13,7 @@ URL_PATH = re.compile(r"^[a-z0-9][a-z0-9_-]*$")
 UPLOAD_NAME = re.compile(r"^[a-z0-9][a-z0-9_.-]*\.(jpg|jpeg|png|webp)$", re.IGNORECASE)
 
 MAX_SITE_JSON = 2 * 1024 * 1024
+SITE_FORMAT = 1                  # the site.json "format" this version reads and writes (frontend/js/site.js FORMAT)
 MAX_UPLOAD = 25 * 1024 * 1024
 MAX_IMPORT = 100 * 1024 * 1024    # a whole dashboard as .zip, and its unpacked size
 MAX_IMPORT_FILES = 200

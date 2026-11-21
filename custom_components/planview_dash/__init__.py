@@ -63,10 +63,11 @@ from .const import (
     LAYOUT_APARTMENT,
     LOCALES,
     PANEL_ELEMENT,
+    SITE_FORMAT,
     SITE_ID,
     URL_PATH,
 )
-from .views import BackupView, FrontendView, SitesView, write_atomic
+from .views import BackupView, FrontendView, SitesView, migrate_site, site_format, write_atomic
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -181,6 +182,11 @@ def _set_site_name(sites_dir: Path, site: str, name: str) -> None:
         return
     if not isinstance(config, dict) or config.get("name") == name:
         return
+    fmt = site_format(config)
+    if fmt is None or fmt > SITE_FORMAT:
+        # Saved by a newer PlanView Dash: never written over by this one.
+        return
+    config = migrate_site(config)
     config["name"] = name
     write_atomic(path, (json.dumps(config, ensure_ascii=False, indent=2) + "\n").encode("utf-8"), True)
 
@@ -289,6 +295,7 @@ def _create_starter_site(sites_dir: Path, dash: dict, language: str, currency: s
         "currency": currency or "EUR",
         "setup_pending": True,
     })
+    starter = migrate_site(starter)
     write_atomic(path, (json.dumps(starter, ensure_ascii=False, indent=2) + "\n").encode("utf-8"), False)
     _LOGGER.info("Created a starter config at %s", path)
 

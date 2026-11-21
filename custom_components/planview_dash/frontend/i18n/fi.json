@@ -43,6 +43,7 @@
   "status.error": "Virhe",
   "site.invalidId": "Virheellinen sivuston tunnus: {id}",
   "site.notFound": "Tiedostoa {path} ei löydy ({status})",
+  "site.tooNew": "Tämä kojelauta tallennettiin PlanView Dashin uudemmalla versiolla (muoto {format}). Päivitä PlanView Dash muuttaaksesi sitä; tämä versio ei tallenna mitään.",
   "site.invalidJson": "{path} ei ole kelvollista JSONia: {msg}",
   "ha.notConnected": "Ei yhdistetty",
   "ha.badToken": "Virheellinen tunnus",

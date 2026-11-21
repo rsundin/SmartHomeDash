@@ -15,7 +15,9 @@ import stubs  # noqa: F401  (installs the stand-ins first)
 from stubs import Hass, Request, Stream
 
 from custom_components.planview_dash import views
-from custom_components.planview_dash.const import MAX_SITE_JSON, MAX_UPLOAD
+from custom_components.planview_dash.const import MAX_SITE_JSON, MAX_UPLOAD, SITE_FORMAT
+
+FIXTURES = Path(__file__).resolve().parents[1] / "fixtures"
 
 JPEG = b"\xff\xd8\xff\xe0" + b"\0" * 16
 PNG = b"\x89PNG\r\n\x1a\n" + b"\0" * 16
@@ -249,6 +251,61 @@ class SitesViewTest(unittest.TestCase):
                 self.assertEqual(res.status, 400)
                 self.assertIn(reason, res.json()["message"])
                 self.assertEqual(self.config.read_text(), '{"floorplans": []}\n')
+
+    # ---- format
+
+    def test_file_without_format_is_saved_as_the_current_one(self):
+        self.assertEqual(self.put("site.json", b'{"name": "A", "floorplans": []}').status, 200)
+        saved = json.loads(self.config.read_text())
+        self.assertEqual(saved, {"format": SITE_FORMAT, "name": "A", "floorplans": []})
+        self.assertEqual(next(iter(saved)), "format", "format comes first")
+
+    def test_newer_format_is_never_saved_over(self):
+        self.config.write_text('{"format": 99, "floorplans": []}\n')
+        res = self.put("site.json", b'{"format": 99, "name": "A", "floorplans": []}')
+        self.assertEqual(res.status, 400)
+        self.assertIn("newer version of PlanView Dash", res.json()["message"])
+        self.assertEqual(self.config.read_text(), '{"format": 99, "floorplans": []}\n')
+
+    def test_format_must_be_a_whole_number(self):
+        for value in ("1", 0, -1, 1.5, True, None, [1]):
+            with self.subTest(value=value):
+                res = self.put("site.json", json.dumps({"format": value, "floorplans": []}).encode())
+                self.assertEqual(res.status, 400)
+                self.assertIn("format should be", res.json()["message"])
+
+    def test_examples_say_the_current_format(self):
+        base = Path(__file__).resolve().parents[2]
+        for path in [*base.glob("sites/*/site.json"), *base.glob("custom_components/planview_dash/example/*.json")]:
+            with self.subTest(path=path.name):
+                self.assertEqual(json.loads(path.read_text())["format"], SITE_FORMAT)
+        js = (base / "custom_components/planview_dash/frontend/js/site.js").read_text()
+        self.assertIn(f"export const FORMAT = {SITE_FORMAT};", js, "site.js and const.py agree on the format")
+        perf = (base / "tests/fixtures/perf-site.js").read_text()
+        self.assertIn(f"format: {SITE_FORMAT},", perf)
+
+    def test_every_migration_step_from_format_1(self):
+        # A file saved before site.json had a format (the example house of 0.8.35).
+        old = json.loads((FIXTURES / "site-format-1.json").read_text())
+        self.assertNotIn("format", old)
+        self.assertEqual(len(views._MIGRATIONS), SITE_FORMAT - 1, "one step per format after 1")
+        new = views.migrate_site(old)
+        self.assertEqual(new["format"], SITE_FORMAT)
+        self.assertIsNone(views.validate_site(new))
+        self.assertEqual(views.migrate_site(new), new, "running it again changes nothing")
+
+    def test_steps_run_in_order_up_to_the_current_format(self):
+        # How a future format 3 would be reached from a format 1 file.
+        calls = []
+        steps = [lambda d: calls.append(("1→2", d.get("format", 1))), lambda d: calls.append(("2→3", d.get("format", 1)))]
+        with unittest.mock.patch.object(views, "_MIGRATIONS", steps), unittest.mock.patch.object(views, "SITE_FORMAT", 3):
+            self.assertEqual(views.migrate_site({"floorplans": []})["format"], 3)
+            self.assertEqual([c[0] for c in calls], ["1→2", "2→3"])
+            calls.clear()
+            self.assertEqual(views.migrate_site({"format": 2, "floorplans": []})["format"], 3)
+            self.assertEqual([c[0] for c in calls], ["2→3"])
+            self.assertIsNone(views.validate_site({"format": 3}))
+            self.assertIn("newer version", views.validate_site({"format": 4}))
 
     def test_examples_pass_validation(self):
         base = Path(__file__).resolve().parents[2]

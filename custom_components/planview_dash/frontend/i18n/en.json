@@ -42,6 +42,7 @@
   "status.error": "Error",
   "site.invalidId": "Invalid site id: {id}",
   "site.notFound": "Cannot find {path} ({status})",
+  "site.tooNew": "This dashboard was saved by a newer version of PlanView Dash (format {format}). Update PlanView Dash to change it; this version saves nothing.",
   "site.invalidJson": "{path} is not valid JSON: {msg}",
   "ha.notConnected": "Not connected",
   "ha.badToken": "Invalid token",

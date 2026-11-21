@@ -28,6 +28,7 @@ from .const import (
     MAX_IMPORT_FILES,
     MAX_SITE_JSON,
     MAX_UPLOAD,
+    SITE_FORMAT,
     SITE_ID,
     SITES_URL,
     UPLOAD_NAME,
@@ -59,6 +60,30 @@ async def read_limited(stream, limit: int) -> bytes | None:
         if len(data) > limit:
             return None
     return bytes(data)
+
+
+# Steps that upgrade an older site.json, the same as MIGRATIONS in frontend/js/site.js:
+# index 0 turns a format 1 file into format 2, and so on. Empty while the format is 1.
+_MIGRATIONS: list = []
+
+
+def site_format(data: dict):
+    """The format a config says it has (1 without "format"), or None when it is not one."""
+    value = data.get("format", 1)
+    if isinstance(value, int) and not isinstance(value, bool) and value >= 1:
+        return value
+    return None
+
+
+def migrate_site(data: dict) -> dict:
+    """data upgraded to SITE_FORMAT, with "format" as its first key.
+
+    Only for a config validate_site has accepted, so its format is known and not newer."""
+    fmt = site_format(data)
+    for step in _MIGRATIONS[fmt - 1:SITE_FORMAT - 1]:
+        step(data)
+    rest = {k: v for k, v in data.items() if k != "format"}
+    return {"format": SITE_FORMAT, **rest}
 
 
 _TOP_LEVEL = {
@@ -133,6 +158,14 @@ def validate_site(data) -> str | None:
     """
     if not isinstance(data, dict):
         return "the file should hold one JSON object"
+    fmt = site_format(data)
+    if fmt is None:
+        return "format should be a whole number from 1"
+    if fmt > SITE_FORMAT:
+        return (
+            f"it was saved by a newer version of PlanView Dash (format {fmt}, this version knows "
+            f"up to {SITE_FORMAT}); update PlanView Dash first"
+        )
     for key, kind in _TOP_LEVEL.items():
         if key in data and not isinstance(data[key], kind):
             return f"{key} should be {_type_name(kind)}"
@@ -333,6 +366,7 @@ class SitesView(HomeAssistantView):
         problem = validate_site(data)
         if problem:
             return self.json_message(f"site.json was not saved: {problem}", HTTPStatus.BAD_REQUEST)
+        data = migrate_site(data)
         text = (json.dumps(data, ensure_ascii=False, indent=2) + "\n").encode("utf-8")
         base = request.headers.get("If-Match")
         if not await self._hass.async_add_executor_job(save_config, path, text, base):
@@ -446,6 +480,18 @@ def _site_files(folder: Path) -> list[Path]:
     return out
 
 
+def _with_format(body: bytes) -> bytes:
+    """site.json for an export: an older file is upgraded so the .zip says its format.
+    Anything else (a newer or broken file) goes out as it is."""
+    try:
+        data = json.loads(body)
+    except ValueError:
+        return body
+    if not isinstance(data, dict) or data.get("format") == SITE_FORMAT or validate_site(data):
+        return body
+    return (json.dumps(migrate_site(data), ensure_ascii=False, indent=2) + "\n").encode("utf-8")
+
+
 def export_site(folder: Path) -> bytes:
     """site.json and the pictures of one site folder, as a .zip (nothing else)."""
     config = safe_path(folder, "site.json")
@@ -453,7 +499,7 @@ def export_site(folder: Path) -> bytes:
         raise BackupProblem("this dashboard has no site.json yet")
     buf = io.BytesIO()
     with zipfile.ZipFile(buf, "w") as zf:
-        zf.writestr(zipfile.ZipInfo("site.json", time.localtime()[:6]), config.read_bytes(), zipfile.ZIP_DEFLATED)
+        zf.writestr(zipfile.ZipInfo("site.json", time.localtime()[:6]), _with_format(config.read_bytes()), zipfile.ZIP_DEFLATED)
         base = folder.resolve()
         for path in _site_files(folder):
             rel = path.relative_to(folder).as_posix()
@@ -519,6 +565,7 @@ def read_import(data: bytes) -> tuple[dict, dict[str, bytes]]:
                 problem = validate_site(config)
                 if problem:
                     raise BackupProblem(f"site.json: {problem}")
+                config = migrate_site(config)
             elif _is_picture(body):
                 pictures[rel] = body
             else:

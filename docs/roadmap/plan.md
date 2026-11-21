@@ -19,9 +19,10 @@ Take these in order. L1, L2, H4 and L3 come before S5 because they are what the 
 11. **S6** A Marketplace listing
 12. **A1** Accessibility and large text
 13. **G1** Launch: show the project to the community
-14. **F1** Summer house mode, then **F2** warm-up before arrival
-15. **W2** Screen profiles and guest mode, then **W1** the house as screensaver
-16. **H2**, **H1**, **H3**, **H5**, **H6**, **E1**, then the rest in file order
+14. **V1**–**V5** Hardening for 1.0, alongside G1 (agreed 18 November 2026, see [v1.md](v1.md)), then **V6** the 0.9.0 beta and **V7** the 1.0 checklist. No new features until 1.0.0 ships
+15. **F1** Summer house mode, then **F2** warm-up before arrival
+16. **W2** Screen profiles and guest mode, then **W1** the house as screensaver
+17. **H2**, **H1**, **H3**, **H5**, **H6**, **E1**, then the rest in file order
 
 ## How to work this plan
 
@@ -226,6 +227,54 @@ Setup effort is the main barrier for every floor plan project [R5][R6][R11]. Pla
   - Draft posts for the owner to publish: a Home Assistant Community thread (Dashboards / Share your projects) and r/homeassistant, pointing to the demo, the Marketplace and Discussions.
   - A "Show and tell" Discussion with how to share your own dashboard without private details.
 - **Done when:** the recording is in the README, and the owner has the post texts.
+
+---
+
+## 1.0 release: stable
+
+Features for 1.0 are in place; what is left is the promise that a dashboard set up today keeps working through 1.x, and core features that behave on any home. The reasoning, the promise itself and the owner's decisions (all accepted 18 November 2026) are in [v1.md](v1.md). Path: V1–V5 as patch releases, V6 ships them as 0.9.0 (the beta), fixes only in 0.9.x, and 1.0.0 is the last 0.9.x once V7 is ticked.
+
+### V1: A versioned, frozen config format. Status: done (v0.8.36). Size: M
+- **Why:** `site.json` has no version field and nothing upgrades an older file. After 1.0 every format change must open old files unchanged.
+- **What:**
+  - `"format": 1` in `site.json`; a file without it counts as 1. New sites, the starter site, both examples and export get it.
+  - One migration step list, run on load in `site.js` and before the check in `views.py`, with a test that runs every step from format 1 on a saved fixture.
+  - A file with a higher `format` than this version knows opens read-only with a message, and is never saved over.
+  - A review of the format before freezing: rename what is awkward now (with a migration), keep `mock` out of the user reference, mark anything experimental.
+- **Done when:** both examples and the fixtures carry `format`, an old file without it loads and saves as format 1, a newer file is refused for saving with a clear message, and `docs/configuration.md` documents `format` and the compatibility rule.
+- **Format review (0.8.36):** no key renamed. The names read consistently (`area` is always a polygon, `ha_area` always a Home Assistant area, `lights` entity ids and `lamps` drawn points), and renaming any of them would cost every existing file a migration for little gain. `mock` and `scenes[].mock` are test data, documented apart and outside the promise; `setup_pending` is written and removed by the dashboard itself. Nothing is marked experimental.
+
+### V2: Final public names, and the self-updater. Status: todo. Size: S
+- **Why:** after 1.0, action names, fields, card options, states and `configuration.yaml` keys cannot change in 1.x. `planview_dash.update` predates the Marketplace, is the only outside call, and is a second update path.
+- **What:** go through every name a user can type and rename now if needed (with a migration or a repairs notice). Remove `planview_dash.update`, `updater.py`, its `configuration.yaml` options (`github_token`, `repository`, `branch`) and the **Uppdatera dashboarden** button (owner's decision, 18 November 2026), with a changelog note telling users to update through the Marketplace. Keep `migrate.py` (the move from SmartHomeDash) through 1.x.
+- **Done when:** the list of public names is in `docs/configuration.md` under a "Stable in 1.x" heading, and no code, test, doc or string refers to the updater.
+
+### V3: Lights, temperature and energy flow on any home. Status: todo. Size: M
+- **Why:** the owner's three priorities were built against one home. No test covers `unavailable` or `unknown`, failed actions are silent, and power units and sign conventions vary.
+- **What:**
+  - `unavailable` and `unknown` for a lamp, an LED strip, a temperature sensor, a thermostat, every energy sensor and the price sensor: shown as unavailable (not off, 0 °C or 0 kW), and the energy sentence and flow lines still make sense.
+  - One shared error message when a call to Home Assistant fails (lamp, all on/off, scene, thermostat, preset, blinds, goodnight), in all seven languages, announced to screen readers.
+  - Power from `W`, `kW` and `MW`; an unknown unit gives a warning instead of a silent guess.
+  - Both sign conventions for grid, battery and charger, and solar reading slightly negative at night, with the picture and the sentence agreeing.
+  - Temperature in °F, a thermostat without current temperature, presets or HVAC modes.
+- **Done when:** each point has a browser test, light mode and the performance budget still pass, and no unhandled promise rejection is logged when a call fails.
+
+### V4: Docs for people who are not the owner. Status: todo. Size: S. Depends: V1, V2
+- **What:** the 1.0 promise (from v1.md) in the README; `docs/troubleshooting.md` (nothing shows, a lamp does not glow, the flow points the wrong way, the card cannot find the site, sending diagnostics); an **Upgrading** section; a pass over `docs/setup.md` from a clean install.
+- **Done when:** the pages exist, are linked from the README and the **?** button's help, and `tests/backend/test_docs.py` checks the links.
+
+### V5: Cleanups before the freeze. Status: todo. Size: S
+- **What:** Home Assistant (newest, oldest) as required checks (owner); newest Home Assistant in `tests/ha/requirements.txt` raised to 2026.11; the oldest supported version stays 2025.6 (owner's decision) and the README says so; a security pass over save, pictures, import and restore against `SECURITY.md`.
+- **Done when:** CI runs the chosen versions, and the security pass is written up in the PR with any fixes made.
+
+### V6: The 0.9.0 beta. Status: todo. Size: S. Depends: V1, V2, V3, V4, V5, G1
+- **What:** release V1–V5 as 0.9.0 with a changelog that says "beta for 1.0". A `bug` label and issue triage within a few days. From here, 0.9.x is fixes only.
+- **Done when:** 0.9.0 is published and `ROADMAP.md` says the beta is open.
+
+### V7: The 1.0 release checklist. Status: todo. Size: S. Depends: V6
+- **What (owner, on real hardware):** a week on the wall tablet (idle, night dimming, motion wake, light mode, **Aa**); an iPad and a phone; the card in a sections view; a clean Marketplace install following only `docs/setup.md`; an upgrade with a real `site.json`; no open `bug` affecting lights, temperature or energy flow; two weeks since the last 0.9.x fix.
+- **A fresh start for the public history (owner's wish, 21 November 2026):** 1.0.0 is presented as the first version. `CHANGELOG.md` starts over with one section, "1.0.0: the first stable release", that walks through every feature with links to the docs, and the 0.x sections are removed; `ROADMAP.md` drops its "Done in 0.8.x" notes; the docs (V4) describe what is there without version history. One short line on upgrading from SmartHomeDash or 0.x stays, since that migration lives until 2.0. Git history, closed pull requests and the 0.x tags stay as they are: Marketplace users already run 0.8.x, and rewritten history would break their updates.
+- **Done when:** every point is ticked, and 1.0.0 is published with the same code as the last 0.9.x.
 
 ---
 

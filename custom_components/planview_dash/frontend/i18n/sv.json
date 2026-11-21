@@ -42,6 +42,7 @@
   "status.error": "Fel",
   "site.invalidId": "Ogiltigt objekt-id: {id}",
   "site.notFound": "Hittar inte {path} ({status})",
+  "site.tooNew": "Den här dashboarden sparades av en nyare version av PlanView Dash (format {format}). Uppdatera PlanView Dash för att ändra den; den här versionen sparar ingenting.",
   "site.invalidJson": "{path} är inte giltig JSON: {msg}",
   "ha.notConnected": "Inte ansluten",
   "ha.badToken": "Fel token",
