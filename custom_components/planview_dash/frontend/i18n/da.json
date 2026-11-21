@@ -299,6 +299,8 @@
   "report.button": "Rapportér et problem",
   "report.eyebrow": "Hjælp",
   "report.title": "Rapportér et problem",
+  "report.troubleshootHelp": "Mange problemer har en hurtig løsning: en lampe, der ikke lyser, et energiflow, der peger den forkerte vej, et kort, der ikke kan finde sit dashboard.",
+  "report.troubleshoot": "Fejlfinding (på engelsk)",
   "report.intro": "Dette åbner en ny sag på GitHub med teksten nedenfor udfyldt. Den indeholder versioner, browser, skærm og antal, aldrig navnene på dine rum, enheder eller billeder. Sager er offentlige: læs den først, og ret den, hvis du vil.",
   "report.preview": "Sendes med sagen",
   "report.open": "Åbn sagen på GitHub",

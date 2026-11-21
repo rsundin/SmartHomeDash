@@ -299,6 +299,8 @@
   "report.button": "Problem melden",
   "report.eyebrow": "Hilfe",
   "report.title": "Problem melden",
+  "report.troubleshootHelp": "Viele Probleme lassen sich schnell beheben: eine Lampe, die nicht leuchtet, ein Energiefluss in die falsche Richtung, eine Karte, die ihr Dashboard nicht findet.",
+  "report.troubleshoot": "Fehlerbehebung (auf Englisch)",
   "report.intro": "Damit wird ein neues Issue auf GitHub mit dem Text unten geöffnet. Er enthält Versionen, Browser, Bildschirm und Anzahlen, nie die Namen deiner Räume, Geräte oder Bilder. Issues sind öffentlich: Lies ihn zuerst und ändere ihn, wenn du möchtest.",
   "report.preview": "Wird mit dem Issue gesendet",
   "report.open": "Issue auf GitHub öffnen",

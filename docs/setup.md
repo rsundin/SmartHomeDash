@@ -2,7 +2,7 @@
 
 This guide takes a new installation from nothing to a working dashboard: a picture of your home with live lights, floor plans you can tap into, heating and energy. Everything is done in the Home Assistant UI; no files need editing.
 
-Plan for about an hour, most of it spent on the pictures.
+Plan for about an hour, most of it spent on the pictures. Buttons are named as they read in English; the dashboard's own buttons follow the language you pick for it.
 
 ## What you need
 
@@ -21,7 +21,7 @@ Plan for about an hour, most of it spent on the pictures.
 
 Not found by the search yet? **Settings → Marketplace → Add from link**, paste `https://github.com/rsundin/planview-dash` and install **PlanView Dash** (it asks you to sign in with GitHub once).
 
-New versions show up in the Marketplace like for any other integration. Restart Home Assistant after an update.
+New versions are offered like updates of any other integration; see [Upgrading](#upgrading).
 
 *Before Home Assistant 2026.11:* open HACS, search for **PlanView Dash**, download it and restart Home Assistant. If the search does not find it yet: HACS → three-dot menu → *Custom repositories* → add the repository URL with category **Integration** → download **PlanView Dash** → restart Home Assistant.
 
@@ -32,7 +32,7 @@ Copy `custom_components/planview_dash` from this repository to `<config>/custom_
 ## 2. Add a dashboard
 
 1. **Settings → Devices & services → Add integration → PlanView Dash.**
-2. Give it a name (shown in the sidebar; renaming it later in the setup guide or under the integration's **Configure** renames the sidebar entry too), choose **House** or **Apartment**, an icon and optionally an address. Without one, the address is made from the name; if Home Assistant already uses it for a page of its own (as with *Home*), `-dash` is added.
+2. Give it a **Name** (shown in the sidebar; renaming it later in the setup guide or under the integration's **Configure** renames the sidebar entry too), choose the **Type of home** (house or apartment), a **Sidebar icon** and optionally an **Address**. Without one, the address is made from the name; if Home Assistant already uses it for a page of its own (as with *Home*), `-dash` is added. **Only for administrators** hides it from the sidebar of other users.
 3. The dashboard appears in the sidebar. Add the integration again for another home.
 
 Each dashboard has its own folder, `<config>/planview_dash/sites/<name>/`, holding its config and pictures. These files are only served to logged-in users. Removing the integration entry removes the panel but keeps the folder.
@@ -46,7 +46,7 @@ Keep the example to try the dashboard out, place your own lights in it, or repla
 
 ## 3. Run the setup guide
 
-Open the dashboard. On the first visit the setup guide opens by itself; later it is under **Inställningar** / **Setup** in the header (administrators only). Work through the steps on the left, then **Save**. **Undo** and **Redo** at the top (or Ctrl/Cmd+Z and Ctrl/Cmd+Shift+Z) step through everything changed since the guide opened, until you save.
+Open the dashboard. On the first visit the setup guide opens by itself; later it is under **Setup** in the header (administrators only). Work through the steps on the left, then **Save**. **Undo** and **Redo** at the top (or Ctrl/Cmd+Z and Ctrl/Cmd+Shift+Z) step through everything changed since the guide opened, until you save.
 
 ### Basics
 
@@ -54,7 +54,7 @@ The dashboard's name, the language on screen and the currency for prices. Swedis
 
 **Start from my Home Assistant** is offered here, and under **Floor plans**, until the dashboard has floor plans of its own. It makes a floor plan for each floor in Home Assistant, with a tile for each area on that floor, linked to the area; a room with more devices gets a wider tile. Areas on no floor share a plan named *Other rooms* (or *Home* when Home Assistant has no floors). Lights, thermostats and temperature sensors show up in their tiles by themselves, and the area's sensors work as in a drawn room. The example pictures are replaced. **Save**, and the dashboard opens on the first floor.
 
-Later, a tile plan can get a real picture under **Floor plans**: **Upload a picture of the plan** stretches the tiles over it, and each room gets a **Draw** button to draw it where it really is. Its area link and the lights you have placed stay.
+Later, a tile plan can get a real picture under **Floor plans**: **Upload a picture of the plan** stretches the tiles over it, and each room gets a button to draw it where it really is. Its area link and the lights you have placed stay.
 
 ### Overview picture
 
@@ -70,7 +70,7 @@ Optional for an apartment: without it the dashboard opens on the floor plan. **R
 
 1. **Upload floor plan picture.** One per building or storey.
 2. **Draw a room** for every room: click the corners, pick its Home Assistant area in the bar, **Done**.
-3. **Pick the room's Home Assistant area.** The room takes the area's name and its lights, thermostat and temperature sensor. The lights are set out in the middle of the room; move them to their real spots in placement mode. Rooms already named like an area can be linked all at once with **Link rooms to areas with the same name**. Without areas, type the room's name instead and place everything by hand.
+3. **Pick the room's Home Assistant area.** The room takes the area's name and its lights, thermostat and temperature sensor. The lights are set out in the middle of the room; move them to their real spots in placement mode. Rooms already named like an area can be linked all at once with **Link rooms and floors with the same name**. Without areas, type the room's name instead and place everything by hand.
 4. **Pick the building on the overview picture** that opens the plan. Tapping that building lifts its roof and shows the plan. The same link can be set under **Overview picture**, where each building says which plan it opens. With a single building and a single plan they are linked by themselves.
 
 **Edit shape** next to a room (and next to a building under **Overview picture**) opens it on the picture to adjust:
@@ -117,7 +117,7 @@ All optional, for tablets and screens on the wall (see [configuration.md](config
 
 ### Lights and heating
 
-Opens placement mode (also available as **Placera** / **Place** in the header):
+Opens placement mode (also available as **Place** in the header):
 
 1. Pick a light, switch, thermostat or temperature sensor in the list. Unplaced ones are listed first, with their Home Assistant area; the search also finds entities by area.
 2. Tap where it is. On a floor plan the room is found from the tap: a light is placed at that spot, a thermostat or sensor is linked to the room. On the overview picture a light becomes an outdoor lamp; tap again to add more fixtures switched by the same entity. Outdoor lamps in the same Home Assistant area share one switch in the lights card.
@@ -126,7 +126,7 @@ Opens placement mode (also available as **Placera** / **Place** in the header):
 5. **LED strips** are drawn as what they are. Select a placed light and pick **Line** or **Surface** under **Drawn as**. A line starts across the lamp's spot: drag its ends to where the strip starts and stops, and drag the small dot on the line to add a bend, for example around the corner of a worktop. A surface starts as a small rectangle: drag its corners over a ceiling cove or a backlit panel. **Done** puts it on the picture, where it glows along its whole length in the light's own colour. **Width** sets how wide a line is drawn. Drag a strip to move all of it, pick **Line** or **Surface** again to change its shape, and **Spot** makes it a round lamp again. Outdoor lamps on the overview picture can be drawn the same way.
 6. **Cameras** have a group of their own. Tap where a camera sits, anywhere on a floor plan or the overview picture. Once placed, **↺** and **↻** turn its field of view in steps of 45°, and **Motion sensor** picks the sensor that turns it red. A tap on a camera in the dashboard opens it.
 7. **Undo** and **Redo** (or Ctrl/Cmd+Z and Ctrl/Cmd+Shift+Z) step back through the changes in placement mode until you save or throw the draft away.
-7. **Save to Home Assistant.**
+8. **Save to Home Assistant.**
 
 New outdoor lamps are drawn as wall lamps. To make one a flood or deck light, change its `type` to `ground` in `site.json` (see [configuration.md](configuration.md)).
 
@@ -242,28 +242,24 @@ The dashboard is measured on a large test home (3 floor plans, 40 rooms, 120 lam
 
 In landscape at 1024 pixels or wider the dashboard fills the screen without scrolling. On a phone, pinch with two fingers to zoom into the picture or a floor plan, and drag to move around; **Reset zoom** goes back. iPad Safari has no full screen for web pages; use the companion app, or *Add to Home Screen*, for the most screen space.
 
+## Upgrading
+
+**From the Marketplace.** A new version is offered with your other updates in Home Assistant's settings, like for any other integration (HACS before Home Assistant 2026.11). What each version changes is in the [changelog](../CHANGELOG.md).
+
+**Restart or reload.** Home Assistant may ask for a restart after updating an integration. A restart is needed when the update changed the part that runs inside Home Assistant (the goodnight action, the sensor, the setup of the dashboards); when only the dashboard itself changed, reloading the dashboard page is enough, and the restart can wait. The changelog ends each version with which of the two it needs. Reload each screen that shows the dashboard, and once on a dashboard with the card, so they all run the new version.
+
+**Your dashboards are kept.** An update does not touch `<config>/planview_dash/sites/`: your settings and pictures stay as they are. When a version changes the layout of `site.json`, it upgrades older files by itself as they are opened. The names you can type into Home Assistant, such as the card's options and the goodnight action, keep working: see [Stable in 1.x](configuration.md#stable-in-1x).
+
+**Going back to an older version.** A dashboard saved by the newer version opens read-only in the older one, with a note saying so, and is never saved over. Update again to change it.
+
+**Installed by hand.** Copy the new `custom_components/planview_dash` over the old one, then restart Home Assistant.
+
+**From SmartHomeDash**, PlanView Dash's earlier name, once:
+
+1. In the Marketplace, remove SmartHomeDash and install PlanView Dash (see [step 1](#1-install-the-integration)). Delete `custom_components/smarthomedash` if it is still there, and restart Home Assistant.
+2. **Settings → Devices & services → Add integration → PlanView Dash** finds the dashboards set up under the old name and offers to move them over, with their names, addresses, settings and pictures. The folder `<config>/smarthomedash/` becomes `<config>/planview_dash/`.
+3. By hand, where you use them: `smarthomedash:` in `configuration.yaml` becomes `planview_dash:`, `custom:smarthomedash-card` becomes `custom:planview-dash-card`, and `smarthomedash.goodnight` in automations and scripts becomes `planview_dash.goodnight`. Settings on each screen (text size, kiosk mode, unsaved drafts) come along by themselves.
+
 ## Troubleshooting
 
-**The dashboard shows "Nothing to show yet" to some users.** Only administrators can run the setup guide. Set it up with an administrator account once.
-
-**A picture does not upload.** Pictures must be jpg, png or webp and at most 25 MB.
-
-**A light does not glow on the overview.** Check in placement mode that it is placed outdoors (on the overview picture), and that the entity turns on in Home Assistant.
-
-**Temperatures look wrong.** A room shows its temperature sensor if one is linked, otherwise the thermostat's own reading. Link a temperature sensor to the room in placement mode.
-
-**A lamp, a temperature or an energy reading says "not responding".** Home Assistant knows the device but has no reading from it (*unavailable* or *unknown*): it is offline, its battery is flat, or its integration is still starting. The dashboard shows that rather than off, 0° or 0 kW, and lamps on the floor plan are dimmed with a broken ring. It clears by itself when the device answers again.
-
-**"Couldn't turn on …" at the bottom of the screen.** Home Assistant refused what you tapped, or did not answer: the device is offline, or the connection dropped. Nothing changed. The message names the lamp, scene or thermostat; the browser console has Home Assistant's own reason.
-
-**A warning says a power sensor has a unit PlanView Dash doesn't recognise.** Power is read in W, kW, MW and Home Assistant's other power units. A sensor in kWh (energy, not power) is not read; pick its power sensor instead. One without a unit is read as watts.
-
-**A warning says devices no longer exist in Home Assistant.** An entity in site.json was renamed or removed in Home Assistant. Unfold the warning to see which, and where each is used. **Show in placement mode** lists only those; place one again under its new name, or remove it from the dashboard.
-
-**Saving says "site.json was not saved".** The file failed Home Assistant's check, and the message says which part, such as a room outline that is not a list of number pairs. The file on disk is unchanged. Fix that part in placement mode or in the file.
-
-**An import says "Nothing was imported".** The message names the file in the .zip that failed, for example a file that is not a picture, or a `site.json` that fails the check above. Nothing in the dashboard changed. Export from PlanView Dash again, or remove that file from the .zip.
-
-**The sidebar entry is missing after a restart.** Check *Settings → System → Logs* for messages from `planview_dash`.
-
-**Still stuck, or something looks like a bug.** Tap **?** in the dashboard's top bar, or **Report a problem** at the bottom of the setup guide's steps. It shows what will be sent: PlanView Dash and Home Assistant versions, browser, screen size, kiosk and light mode, counts of plans, rooms and devices, and the config check messages, never entity ids, names or pictures. You can change the text, then **Open the issue on GitHub** fills in the bug report form with it. Administrators can add *Download diagnostics* from *Settings → Devices & services → PlanView Dash → ⋮*: versions, the dashboard's options with its name and address redacted, and counts and sizes for its site folder, including how many devices site.json names that Home Assistant does not know. Questions that are not bugs go to [Discussions](https://github.com/rsundin/planview-dash/discussions).
+Something not showing, a lamp that does not glow, an energy flow pointing the wrong way, a card that cannot find its dashboard: see [Troubleshooting](troubleshooting.md), which also says how to report a problem.

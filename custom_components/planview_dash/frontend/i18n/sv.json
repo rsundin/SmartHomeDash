@@ -298,6 +298,8 @@
   "report.button": "Rapportera ett problem",
   "report.eyebrow": "Hjälp",
   "report.title": "Rapportera ett problem",
+  "report.troubleshootHelp": "Många problem har en snabb lösning: en lampa som inte lyser, ett energiflöde åt fel håll, ett kort som inte hittar sin dashboard.",
+  "report.troubleshoot": "Felsökning (på engelska)",
   "report.intro": "Öppnar ett nytt ärende på GitHub med texten nedan ifylld. Den innehåller versioner, webbläsare, skärm och antal, aldrig namnen på dina rum, enheter eller bilder. Ärenden är offentliga: läs igenom texten först och ändra den om du vill.",
   "report.preview": "Skickas med ärendet",
   "report.open": "Öppna ärendet på GitHub",

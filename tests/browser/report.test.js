@@ -55,6 +55,8 @@ describe('Report a problem', () => {
       const all = decodeURIComponent(url.href);
       const leaked = privateWords(siteId).filter((w) => all.includes(w));
       assert.deepEqual(leaked, [], 'no entity ids or names in the issue');
+      // Troubleshooting comes first, for problems that are not bugs.
+      assert.equal(await page.locator('#report-troubleshoot').getAttribute('href'), 'https://github.com/rsundin/planview-dash/blob/main/docs/troubleshooting.md');
       // Questions go to Discussions.
       assert.equal(await page.locator('#report-discuss').getAttribute('href'), 'https://github.com/rsundin/planview-dash/discussions');
       check(page);

@@ -299,6 +299,8 @@
   "report.button": "Ilmoita ongelmasta",
   "report.eyebrow": "Ohje",
   "report.title": "Ilmoita ongelmasta",
+  "report.troubleshootHelp": "Moneen ongelmaan on nopea ratkaisu: lamppu, joka ei pala, väärään suuntaan osoittava energiavirta, kortti, joka ei löydä kojelautaansa.",
+  "report.troubleshoot": "Vianmääritys (englanniksi)",
   "report.intro": "Tämä avaa GitHubiin uuden issuen, jossa on valmiina alla oleva teksti. Siinä on versiot, selain, näyttö ja lukumäärät, ei koskaan huoneidesi, laitteidesi tai kuviesi nimiä. Issuet ovat julkisia: lue se ensin ja muokkaa halutessasi.",
   "report.preview": "Lähetetään issuen mukana",
   "report.open": "Avaa issue GitHubissa",

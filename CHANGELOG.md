@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.8.39
+
+Docs for everyone who is not the author (roadmap V4).
+
+- **Troubleshooting** ([docs/troubleshooting.md](docs/troubleshooting.md)): what to do when nothing shows, a lamp does not glow, a window does not light up, temperatures look wrong, the energy flow points the wrong way, the price card is empty, the card cannot find its dashboard, a save or an import is refused, or a wall screen does not dim or wake, and how to ask for help with diagnostics. The **?** button's sheet links to it first
+- **Upgrading** in [docs/setup.md](docs/setup.md#upgrading): updates through the Marketplace, when a restart is needed and when a reload is enough, what happens to your dashboards, going back a version, and moving over from SmartHomeDash
+- **What stays the same** in the README: the promise for 1.x (your `site.json` keeps working, names stay, breaking changes wait for 2.0, supported Home Assistant versions, version numbers)
+- **A pass over the setup guide** from a clean install: buttons named as they read in English, the fields when adding a dashboard, **Link rooms and floors with the same name**, numbering in placement mode. The README lists all seven languages
+- A test checks every link between the README and the docs, including the headings they point to
+- Frontend only: reload the dashboard after updating
+
 ## 0.8.38
 
 Lights, temperature and energy flow on any home, not just the one they were built in (roadmap V3).
