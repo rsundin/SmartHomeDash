@@ -295,6 +295,22 @@ Changes are kept as a draft in that browser and shown immediately. In the panel,
 - When a later version changes the layout, it raises the number and upgrades older files by itself when it opens or saves them. Nothing you set up has to be redone.
 - A file with a higher `format` than the installed version knows (saved by a newer PlanView Dash, for example after going back to an older release) is shown, with a message, but never saved over: the setup guide does not open, placement mode can only copy it, and Home Assistant refuses to save, import or restore it. Update PlanView Dash to change it. (Versions before 0.8.36 do not know `format` and would save over it.)
 
+## Stable in 1.x
+
+Everything you can type into Home Assistant, or into an address, keeps its name and meaning through every 1.x version. A later 1.x can add to this list but not rename or remove anything on it; such a change waits for 2.0, and comes with a migration or a repair notice in Home Assistant. (The names from before the rename, SmartHomeDash, are taken over by themselves until 2.0.)
+
+| What | Names |
+| --- | --- |
+| Integration | domain `planview_dash` |
+| `configuration.yaml` | `planview_dash:` with `sites_dir` (the folder that holds the site folders; relative to the config folder, default `planview_dash/sites`) and `dashboards:`, a list of `site` (required: the folder name, letters, digits, `_` and `-`), `title` (default "PlanView Dash"), `icon` (default `mdi:home-lightbulb`), `url_path` (default the `site`) and `require_admin` (default `false`) |
+| Action | `planview_dash.goodnight` with `site`, `entity_id` (lights and switches), `minutes` (0 to 120, default 5), `then` (a script) and `cancel` (default `false`); see [Goodnight](#goodnight) |
+| Entity | `sensor.<site>_goodnight` per dashboard (unique id `<site>_goodnight`): a timestamp while a countdown runs, otherwise *unknown*, with the attributes `planview_dash_site` and, while it runs, `minutes`. You can rename it; the screens find it by `planview_dash_site` |
+| Card | `type: custom:planview-dash-card` with `site`, `view` (`overview`, `plan:<floor plan id>` or `room:<room id>`; default `overview`) and `height` (pixels, 120 to 2000; leave out in a sections view) |
+| Addresses | `/<url_path>` for the dashboard, `/<url_path>/edit` for placement mode, `?kiosk` for kiosk mode, `?lite` and `?lite=0` for light mode on and off |
+| Files | `<config>/planview_dash/sites/<site>/` (or under `sites_dir`) with `site.json`, its restore points `site.json.1` to `site.json.10`, and the pictures it names. `site.json` follows the rule in [Format and compatibility](#format-and-compatibility) |
+
+Not part of the promise, because only the dashboard's own code uses them and they may change in any version: the web addresses under `/api/planview_dash/` and `/planview_dash/frontend/`, what is kept in the browser's storage, the page's elements and CSS classes, the layout of diagnostics and problem reports, what a dashboard added from the UI stores in its config entry (Home Assistant upgrades that itself), and `mock` below.
+
 ## Test data: mock
 
 `mock` is only read when the dashboard shows test data (the standalone page without a connection, and the tests), and is not part of the format promise above: it can change in any version. For example sunrise and sunset times. `mock.prices` sets the test prices: `{ "minutes": 15, "format": "raw" }` (`minutes` 60 or 15; `format` `list`, `raw` with start and end times, or `action` for the Nord Pool action). `mock.devices` gives test entities a device, named the Home Assistant 2026.11 way: `[{ "id": "kitchen_hub", "name": "Kitchen", "entities": { "light.kitchen_ceiling": "Ceiling" } }]` shows that light as "Kitchen Ceiling" (`null` for the device's name alone). `mock.floors` and `mock.areas` replace the test floors and areas made from the plans and rooms: `[{ "floor_id": "ground", "name": "Ground floor", "level": 0 }]` and `[{ "area_id": "kitchen", "name": "Kitchen", "floor_id": "ground", "entities": ["light.kitchen_ceiling"] }]`. An entry in `mock.entities` can carry `"entity_category": "diagnostic"` or `"hidden": true`, as Home Assistant's entity registry does

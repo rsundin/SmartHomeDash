@@ -55,6 +55,18 @@ async def test_setup_from_yaml(hass: HomeAssistant, sites_in_tmp) -> None:
     assert hass.states.get("sensor.cabin_goodnight").state == STATE_UNKNOWN
 
 
+async def test_sites_dir_is_read_from_the_config_folder(hass: HomeAssistant, sites_in_tmp) -> None:
+    """A relative sites_dir is under the config folder, not wherever Home Assistant runs from."""
+    own = sites_in_tmp.parent.parent / "dashboards" / "mine"
+    own.mkdir(parents=True)
+    (own / "site.json").write_text(json.dumps({"name": "Mine", "floorplans": []}), encoding="utf-8")
+    # Not "home": newer Home Assistant versions have a panel of their own at /home.
+    config = {DOMAIN: {"sites_dir": "dashboards", "dashboards": [{"site": "mine"}]}}
+    assert await async_setup_component(hass, DOMAIN, config)
+    await hass.async_block_till_done()
+    assert hass.data[DOMAIN]["sites_dir"] == own.parent
+
+
 async def test_the_card_is_loaded_with_every_dashboard(hass: HomeAssistant, entry, hass_client_no_auth) -> None:
     """`custom:planview-dash-card` needs no resource added by hand: its module is among the
     frontend's extra modules, once however many dashboards are set up, and is served."""

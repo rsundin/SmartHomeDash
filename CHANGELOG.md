@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.8.37
+
+Final public names before 1.0 (roadmap V2). Nothing is renamed: what you have set up keeps working as it is.
+
+- **A list of what stays put through 1.x.** [docs/configuration.md](docs/configuration.md#stable-in-1x) now has a "Stable in 1.x" section: the `configuration.yaml` keys, the action `planview_dash.goodnight` and its fields, the sensor `sensor.<site>_goodnight` and its attributes, the card's `type`, `site`, `view` and `height`, the addresses (`/edit`, `?kiosk`, `?lite`) and the site folder. None of these is renamed or removed before 2.0. It also says what is not promised: the internal web addresses, browser storage and diagnostics layout
+- **A relative `sites_dir` is under the config folder.** `sites_dir: dashboards` in `configuration.yaml` was read from wherever Home Assistant's process happened to run (the config folder in the usual installs, but not always); it now always means `<config>/dashboards`. An absolute path works as before
+- **The README's YAML example** shows `require_admin` and `sites_dir`
+- Python changed: restart Home Assistant once after updating, then reload the dashboard
+
 ## 0.8.36
 
 A versioned `site.json`, the first step towards 1.0 (roadmap V1): a dashboard you set up now keeps working through every later 1.x version.

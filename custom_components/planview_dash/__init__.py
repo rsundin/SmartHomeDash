@@ -217,7 +217,8 @@ async def _async_setup_shared(hass: HomeAssistant, conf: dict) -> dict:
     if not conf.get("sites_dir"):
         # Sites kept under the integration's earlier name move along (migrate.py).
         await hass.async_add_executor_job(migrate.move_old_folder, hass.config.config_dir)
-    sites_dir = Path(conf.get("sites_dir") or hass.config.path(DOMAIN, "sites"))
+    # A relative sites_dir is under Home Assistant's config folder, wherever the process runs.
+    sites_dir = Path(hass.config.path(conf.get("sites_dir") or Path(DOMAIN, "sites")))
     manifest = await hass.async_add_executor_job(lambda: json.loads((root / "manifest.json").read_text()))
     data = hass.data[DOMAIN] = {
         "sites_dir": sites_dir,
