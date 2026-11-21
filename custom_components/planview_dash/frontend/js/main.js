@@ -98,11 +98,12 @@ export async function start(opts) {
   // Connection, in order: a token saved under Anslutning, the Home Assistant login of
   // this browser (when served from HA), otherwise test data. ?mock forces test data.
   // The setup guide needs to save the config and upload pictures (panel, admins).
-  const canSetup = !embed && !!(opts.saveSite && opts.uploadFile && opts.navigateEdit);
+  // A site.json from a newer PlanView Dash is shown but never saved over (site.js tooNew).
+  const canSetup = !embed && !site.tooNew && !!(opts.saveSite && opts.uploadFile && opts.navigateEdit);
   // Saving names the version of site.json the changes build on. If someone else (or
   // another tab) has saved since, nothing is written until the user has chosen: save
   // anyway, with the other version kept as a restore point, or cancel.
-  const saveSite = opts.saveSite ? async (raw) => {
+  const saveSite = opts.saveSite && !site.tooNew ? async (raw) => {
     let saved;
     try { saved = await opts.saveSite(raw, site.version); }
     catch (e) {
@@ -232,6 +233,12 @@ export async function start(opts) {
     app.prepend(el('aside', { class: 'banner banner-mock', 'aria-label': t('app.notice') },
       el('span', {}, t('app.mockBanner')),
       el('button', { class: 'chip chip-primary', type: 'button', onclick: () => settings.open() }, t('app.connectNow'))));
+  }
+
+  // Saved by a newer version: say why nothing can be changed here.
+  if (site.tooNew && !embed) {
+    app.prepend(el('aside', { class: 'banner', role: 'alert', 'aria-label': t('app.notice') },
+      t('site.tooNew', { format: String(site.raw.format) })));
   }
 
   setStatus('connecting');

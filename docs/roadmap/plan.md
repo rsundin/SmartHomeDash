@@ -234,7 +234,7 @@ Setup effort is the main barrier for every floor plan project [R5][R6][R11]. Pla
 
 Features for 1.0 are in place; what is left is the promise that a dashboard set up today keeps working through 1.x, and core features that behave on any home. The reasoning, the promise itself and the owner's decisions (all accepted 18 November 2026) are in [v1.md](v1.md). Path: V1–V5 as patch releases, V6 ships them as 0.9.0 (the beta), fixes only in 0.9.x, and 1.0.0 is the last 0.9.x once V7 is ticked.
 
-### V1: A versioned, frozen config format. Status: todo. Size: M
+### V1: A versioned, frozen config format. Status: done (v0.8.36). Size: M
 - **Why:** `site.json` has no version field and nothing upgrades an older file. After 1.0 every format change must open old files unchanged.
 - **What:**
   - `"format": 1` in `site.json`; a file without it counts as 1. New sites, the starter site, both examples and export get it.
@@ -242,6 +242,7 @@ Features for 1.0 are in place; what is left is the promise that a dashboard set 
   - A file with a higher `format` than this version knows opens read-only with a message, and is never saved over.
   - A review of the format before freezing: rename what is awkward now (with a migration), keep `mock` out of the user reference, mark anything experimental.
 - **Done when:** both examples and the fixtures carry `format`, an old file without it loads and saves as format 1, a newer file is refused for saving with a clear message, and `docs/configuration.md` documents `format` and the compatibility rule.
+- **Format review (0.8.36):** no key renamed. The names read consistently (`area` is always a polygon, `ha_area` always a Home Assistant area, `lights` entity ids and `lamps` drawn points), and renaming any of them would cost every existing file a migration for little gain. `mock` and `scenes[].mock` are test data, documented apart and outside the promise; `setup_pending` is written and removed by the dashboard itself. Nothing is marked experimental.
 
 ### V2: Final public names, and the self-updater. Status: todo. Size: S
 - **Why:** after 1.0, action names, fields, card options, states and `configuration.yaml` keys cannot change in 1.x. `planview_dash.update` predates the Marketplace, is the only outside call, and is a second update path.

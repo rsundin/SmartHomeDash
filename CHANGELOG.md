@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.8.36
+
+A versioned `site.json`, the first step towards 1.0 (roadmap V1): a dashboard you set up now keeps working through every later 1.x version.
+
+- **`site.json` says its format.** New dashboards, both examples and every save, import and export write `"format": 1` at the top. A file without it (everything saved up to 0.8.35) is format 1: it opens unchanged and gets the field the next time it is saved. Nothing to do by hand
+- **Older files are upgraded by themselves.** When a later version changes the layout of `site.json`, it raises the number and upgrades older files in one place, the same steps in the dashboard (on load) and in Home Assistant (before a save or import is checked), with a test that runs every step on a file saved before formats existed
+- **A file from a newer version is never saved over.** If `site.json` was saved by a newer PlanView Dash (after going back to an older release, say), the dashboard still shows it, says why it cannot be changed here, and neither opens the setup guide nor offers to save; Home Assistant refuses to save, import or restore it, and a new name from the integration's options is not written into it
+- **Diagnostics** include the format
+- **`docs/configuration.md`** documents `format` and the compatibility rule, and `mock` (test data only, outside that promise) moved out of the main table into a section of its own
+- Python changed: restart Home Assistant once after updating, then reload the dashboard
+
 ## 0.8.35
 
 What the review for the HACS default catalog asked for.

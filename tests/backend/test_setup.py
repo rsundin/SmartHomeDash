@@ -13,6 +13,8 @@ from stubs import ROOT
 
 import custom_components.planview_dash as integration
 
+from custom_components.planview_dash.const import SITE_FORMAT
+
 EXAMPLE = ROOT / "custom_components" / "planview_dash" / "example"
 ENTITY = re.compile(r"^[a-z_]+\.[a-z0-9_]+$")
 PICTURE = re.compile(r"\.(jpg|jpeg|png|webp)$")
@@ -55,6 +57,8 @@ class StarterSiteTest(unittest.TestCase):
                 self.assertEqual(site["name"], "Hemma")
                 self.assertEqual(site["language"], language.split("-")[0])
                 self.assertTrue(site["setup_pending"])
+                self.assertEqual(next(iter(site)), "format", "format comes first")
+                self.assertEqual(site["format"], SITE_FORMAT)
                 self.assertEqual(site["currency"], "SEK")
                 # The drawing is kept.
                 self.assertEqual([p["id"] for p in site["floorplans"]], [p["id"] for p in example["floorplans"]])
@@ -97,6 +101,25 @@ class StarterSiteTest(unittest.TestCase):
             (folder / "site.json").write_text('{"mine": true}')
             integration._create_starter_site(Path(tmp), {"site": "home"}, "sv", "SEK")
             self.assertEqual((folder / "site.json").read_text(), '{"mine": true}')
+
+
+class SiteNameTest(unittest.TestCase):
+    """A name chosen in the integration's options is written into site.json."""
+
+    def write_and_rename(self, text):
+        with tempfile.TemporaryDirectory() as tmp:
+            folder = Path(tmp) / "home"
+            folder.mkdir()
+            (folder / "site.json").write_text(text)
+            integration._set_site_name(Path(tmp), "home", "Stugan")
+            return (folder / "site.json").read_text()
+
+    def test_older_file_gets_the_name_and_the_format(self):
+        self.assertEqual(json.loads(self.write_and_rename('{"name": "Hemma"}')), {"format": SITE_FORMAT, "name": "Stugan"})
+
+    def test_newer_file_is_left_alone(self):
+        newer = '{"format": 99, "name": "Hemma"}'
+        self.assertEqual(self.write_and_rename(newer), newer)
 
 
 class OldFolderTest(unittest.TestCase):

@@ -10,6 +10,7 @@ Everything except `name` and at least one floor plan is optional. A card whose e
 
 | Field | Type | Description |
 | --- | --- | --- |
+| `format` | number | The version of this file's layout, written by the dashboard: `1` today. A file without it counts as `1`. See [Format and compatibility](#format-and-compatibility) |
 | `name` | text | Shown in the header |
 | `language` | text | Dashboard language: `sv` (default), `en`, `da`, `de`, `fi`, `nb` or `nl`. Danish, German, Finnish, Norwegian and Dutch are machine-assisted; see [translating.md](translating.md) |
 | `locale` | text | Number and time format. Default: the language's own (`sv-SE`, `en-GB`, `da-DK`, `de-DE`, `fi-FI`, `nb-NO`, `nl-NL`) |
@@ -24,7 +25,6 @@ Everything except `name` and at least one floor plan is optional. A card whose e
 | `all_lights` | object | The **All on** and **All off** buttons in the header and the lights card. They switch every light on the dashboard, including the ones found in linked areas. `{ "exclude": ["light.garden"] }` leaves lights out (garden lights on a schedule, a night light); `{ "enabled": false }` hides the buttons. All on takes one tap, all off two |
 | `goodnight` | object | The **Goodnight** button beside All on and All off: the lights stay as they are for `minutes` (default 5), then the same lights as All off turn off and the script in `then` runs, if set. `{ "minutes": 5, "then": "script.lock_up" }`; `{ "enabled": false }` hides the button. See [Goodnight](#goodnight) |
 | `wall_screen` | object | Doorbell camera, idle mode and light mode for wall screens, see [Wall screens](#wall-screens) |
-| `mock` | object | Test data only, for example sunrise and sunset times. `mock.prices` sets the test prices: `{ "minutes": 15, "format": "raw" }` (`minutes` 60 or 15; `format` `list`, `raw` with start and end times, or `action` for the Nord Pool action). `mock.devices` gives test entities a device, named the Home Assistant 2026.11 way: `[{ "id": "kitchen_hub", "name": "Kitchen", "entities": { "light.kitchen_ceiling": "Ceiling" } }]` shows that light as "Kitchen Ceiling" (`null` for the device's name alone). `mock.floors` and `mock.areas` replace the test floors and areas made from the plans and rooms: `[{ "floor_id": "ground", "name": "Ground floor", "level": 0 }]` and `[{ "area_id": "kitchen", "name": "Kitchen", "floor_id": "ground", "entities": ["light.kitchen_ceiling"] }]`. An entry in `mock.entities` can carry `"entity_category": "diagnostic"` or `"hidden": true`, as Home Assistant's entity registry does |
 
 ### Names
 
@@ -286,6 +286,18 @@ In the Home Assistant panel, administrators tap **Placera** in the header (or op
 - **Draw area:** click corners to get a polygon for `area`, `outline` or a solar panel.
 
 Changes are kept as a draft in that browser and shown immediately. In the panel, **Spara i Home Assistant** writes `site.json` (the last 10 versions are kept as `site.json.1`, the newest, to `site.json.10`, and can be restored under *Backup* in the setup guide). Home Assistant checks the file before writing it: the top-level keys must have the types in this reference, floor plans and rooms must be objects, and every `area`, `outline` and solar panel must be at least three `[x, y]` number pairs. An LED strip's `line` must be at least two pairs, its `area` at least three, and its `width` a number above zero. A file that fails is not written, and the message says where, for example `floorplans[0].rooms[2].area should be a list of at least three [x, y] number pairs`. **Kopiera site.json** puts the result on the clipboard instead; **Släng utkast** goes back to the saved file.
+
+## Format and compatibility
+
+`"format": 1` at the top of `site.json` says which layout of this file it follows. The dashboard writes it; you do not need to.
+
+- A file without `format` is format 1, the layout every version up to 0.8.35 wrote. It opens as it is and gets `"format": 1` the next time it is saved, imported or exported.
+- When a later version changes the layout, it raises the number and upgrades older files by itself when it opens or saves them. Nothing you set up has to be redone.
+- A file with a higher `format` than the installed version knows (saved by a newer PlanView Dash, for example after going back to an older release) is shown, with a message, but never saved over: the setup guide does not open, placement mode can only copy it, and Home Assistant refuses to save, import or restore it. Update PlanView Dash to change it. (Versions before 0.8.36 do not know `format` and would save over it.)
+
+## Test data: mock
+
+`mock` is only read when the dashboard shows test data (the standalone page without a connection, and the tests), and is not part of the format promise above: it can change in any version. For example sunrise and sunset times. `mock.prices` sets the test prices: `{ "minutes": 15, "format": "raw" }` (`minutes` 60 or 15; `format` `list`, `raw` with start and end times, or `action` for the Nord Pool action). `mock.devices` gives test entities a device, named the Home Assistant 2026.11 way: `[{ "id": "kitchen_hub", "name": "Kitchen", "entities": { "light.kitchen_ceiling": "Ceiling" } }]` shows that light as "Kitchen Ceiling" (`null` for the device's name alone). `mock.floors` and `mock.areas` replace the test floors and areas made from the plans and rooms: `[{ "floor_id": "ground", "name": "Ground floor", "level": 0 }]` and `[{ "area_id": "kitchen", "name": "Kitchen", "floor_id": "ground", "entities": ["light.kitchen_ceiling"] }]`. An entry in `mock.entities` can carry `"entity_category": "diagnostic"` or `"hidden": true`, as Home Assistant's entity registry does
 
 ## Pictures
 

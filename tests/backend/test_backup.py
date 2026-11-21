@@ -21,7 +21,7 @@ from custom_components.planview_dash.const import KEEP_VERSIONS, MAX_IMPORT, MAX
 
 JPEG = b"\xff\xd8\xff\xe0" + b"\0" * 16
 PNG = b"\x89PNG\r\n\x1a\n" + b"\1" * 16
-SITE = {"name": "Testhuset", "floorplans": [{"id": "ground", "image": "ground.png", "rooms": [{"id": "hall", "area": [[0, 0], [1, 0], [1, 1]]}]}],
+SITE = {"format": 1, "name": "Testhuset", "floorplans": [{"id": "ground", "image": "ground.png", "rooms": [{"id": "hall", "area": [[0, 0], [1, 0], [1, 1]]}]}],
         "overview": {"image": "pics/overview.jpg", "size": [100, 50]}}
 
 
@@ -98,6 +98,12 @@ class BackupViewTest(unittest.TestCase):
             self.assertEqual(sorted(zf.namelist()), ["ground.png", "pics/overview.jpg", "site.json"])
             self.assertEqual(json.loads(zf.read("site.json")), SITE)
 
+    def test_export_of_an_older_file_says_its_format(self):
+        old = {k: v for k, v in SITE.items() if k != "format"}
+        (self.home / "site.json").write_text(json.dumps(old))
+        with zipfile.ZipFile(io.BytesIO(self.get("export").body)) as zf:
+            self.assertEqual(json.loads(zf.read("site.json")), SITE)
+
     def test_export_leaves_out_versions(self):
         (self.home / "site.json.1").write_text("{}")
         with zipfile.ZipFile(io.BytesIO(self.get("export").body)) as zf:
@@ -129,7 +135,7 @@ class BackupViewTest(unittest.TestCase):
                 self.assertEqual(read(a.read(n)), read(b.read(n)), n)
 
     def test_import_keeps_the_replaced_config_as_restore_point(self):
-        other = {"name": "Annat", "floorplans": []}
+        other = {"format": 1, "name": "Annat", "floorplans": []}
         self.assertEqual(self.import_zip({"site.json": json.dumps(other).encode()}).status, 200)
         self.assertEqual(json.loads((self.home / "site.json").read_text()), other)
         self.assertEqual(json.loads((self.home / "site.json.1").read_text()), SITE)
@@ -172,6 +178,16 @@ class BackupViewTest(unittest.TestCase):
         self.assertIn("no site.json", self.assert_refused(make_zip({"roof.jpg": JPEG})))
         self.assertIn("not valid JSON", self.assert_refused(make_zip({"site.json": b"nope"})))
         self.assertIn("floorplans", self.assert_refused(make_zip({"site.json": b'{"floorplans": "x"}'})))
+
+    def test_older_file_is_imported_in_the_current_format(self):
+        old = {"name": "Gammal", "floorplans": []}
+        self.assertEqual(self.import_zip({"site.json": json.dumps(old).encode()}).status, 200)
+        self.assertEqual(json.loads((self.home / "site.json").read_text()), {"format": 1, **old})
+
+    def test_newer_format_is_refused(self):
+        newer = json.dumps({**SITE, "format": 99}).encode()
+        self.assertIn("newer version", self.assert_refused(make_zip({"site.json": newer})))
+        self.assertEqual(json.loads((self.home / "site.json").read_text()), SITE)
 
     def test_not_a_zip(self):
         self.assertIn("not a .zip", self.assert_refused(b"PK\3\4 but not really"))

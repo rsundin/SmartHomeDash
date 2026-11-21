@@ -19,6 +19,7 @@ const OPENINGS = 20;
 
 function perfSite() {
   const site = {
+    format: 1,
     name: 'Performance test',
     language: 'en',
     locale: 'en-GB',
