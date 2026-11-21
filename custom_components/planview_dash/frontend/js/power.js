@@ -13,9 +13,13 @@ export const MIN_KW = 0.05;
 
 export const powerIds = (E) => [E.pv_power, E.grid_power, E.battery_power, E.charger_power, E.load_power, E.battery_soc].filter(Boolean);
 
-// Current readings in kW, or null for a sensor that is missing or unavailable.
-// house is what the house itself uses: from the balance when the grid is known
-// (so the split always adds up), otherwise load_power.
+// Current readings in kW, or null for a sensor that is missing, not responding or in a
+// unit that is not power. house is what the house itself uses: from the balance when
+// every sensor in it has a reading (so the split always adds up), otherwise load_power.
+// `silent` lists the parts that are set up but have no reading: 'solar', 'grid',
+// 'battery', 'car'.
+//
+// Solar is never below zero (many inverters read a few watts negative at night).
 export function readPower(store, E, pvId = E.pv_power) {
   const val = (id) => (id ? kw(store, id) : null);
   const pv = val(pvId), g = val(E.grid_power), b = val(E.battery_power), c = val(E.charger_power);
@@ -23,10 +27,12 @@ export function readPower(store, E, pvId = E.pv_power) {
   const grid = g == null ? null : E.grid_invert ? -g : g;
   const battery = b == null ? null : E.battery_invert ? -b : b;
   const car = c == null ? null : Math.abs(c);
-  const house = grid != null
+  const silent = [['solar', pvId, pv], ['grid', E.grid_power, g], ['battery', E.battery_power, b], ['car', E.charger_power, c]]
+    .filter(([, id, v]) => id && v == null).map(([k]) => k);
+  const house = grid != null && !silent.length
     ? Math.max(0, (solar ?? 0) + grid + (battery ?? 0) - (car ?? 0))
     : val(E.load_power);
-  return { solar, grid, battery, car, house };
+  return { solar, grid, battery, car, house, silent };
 }
 
 // Source -> sink pairs [{ from, to, kw }]. Solar is used first, then the battery, then
@@ -49,15 +55,19 @@ export function splitPower(p) {
 export const kwText = (v, locale) => `${fmt(v, 1, locale)} kW`;
 
 // "The sun gives 6.2 kW: 1.8 kW to the house, 2.0 kW to the battery and 2.4 kW to the grid."
-export function powerSentence(pairs, locale) {
+// Parts without a reading are named at the end ("No reading from the grid."), so the
+// sentence never passes a guess off as the whole picture.
+export function powerSentence(pairs, locale, silent = []) {
   const by = new Map();
   for (const f of pairs) by.set(f.from, [...(by.get(f.from) ?? []), f]);
-  return [...by].map(([from, fs]) => {
+  const said = [...by].map(([from, fs]) => {
     const parts = fs.map((f) => t(`flow.to.${f.to}`, { kw: kwText(f.kw, locale) }));
     const list = parts.length > 1 ? parts.slice(0, -1).join(', ') + t('flow.and') + parts.at(-1) : parts[0];
     const total = fs.reduce((a, f) => a + f.kw, 0);
     return fs.length > 1
       ? t('flow.many', { src: t(`flow.from.${from}`), total: kwText(total, locale), parts: list })
       : t('flow.one', { src: t(`flow.from.${from}`), part: list });
-  }).join(' ');
+  });
+  if (silent.length) said.push(t('flow.noReading', { what: silent.map((k) => t(`flow.part.${k}`)).join(', ') }));
+  return said.join(' ');
 }

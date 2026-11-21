@@ -31,6 +31,7 @@ Every feature planned for 1.0 is in. Before 1.0.0, the work is making it last: a
 
 - **A versioned `site.json`**: every file says its format, older files are upgraded by themselves, and a file from a newer version is never saved over. Done in 0.8.36.
 - **Final public names**: the self-updater is gone (0.8.35), and every name you can type into Home Assistant (the YAML keys, the goodnight action and sensor, the card's options, the addresses) is listed as stable through 1.x. Done in 0.8.37.
+- **Lights, temperature and energy on any home**: a device that drops out shows as not responding instead of off, 0° or 0 kW; a command Home Assistant refuses says so on the screen; power in any of Home Assistant's units; both sign conventions for grid, battery and charger; homes in Fahrenheit. Done in 0.8.38.
 
 ## Whole-house control
 

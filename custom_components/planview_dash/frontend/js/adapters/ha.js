@@ -83,6 +83,11 @@ export function createHaAdapter({ url, token }) {
       return send({ type: 'call_service', domain, service, service_data: data, return_response: true }).then((r) => r?.response ?? null);
     },
 
+    // °C or °F, from Home Assistant's unit system.
+    tempUnit() {
+      return send({ type: 'get_config' }).then((r) => r?.unit_system?.temperature ?? null, () => null);
+    },
+
     // Home Assistant's version, for a problem report.
     haVersion() {
       return send({ type: 'get_config' }).then((r) => r?.version ?? null, () => null);

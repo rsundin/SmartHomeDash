@@ -9,7 +9,7 @@
 // a lit room shows warm windows, producing solar panels glow green.
 
 import { el, sv, pts, centroid, bbox, press, clamp, fmt, stripOf } from '../util.js';
-import { zoneLevel, kw } from '../entities.js';
+import { zoneLevel, kw, noReading } from '../entities.js';
 import { t } from '../i18n.js';
 import { mixColor, createTints } from '../glow.js';
 import { roomStatus, statusIds, isClosedCover } from '../status.js';
@@ -95,16 +95,26 @@ export function createOverview({ site, store, adapter, onOpenBuilding }) {
   // ---------- lamps per zone
   const lampsG = sv('g', { class: 'ov-glows' });
   const zoneBtns = new Map(); // zone id → its tappable lamps, for their on/off state
+  const zoneDraws = []; // run again once the tappable lamps exist
   for (const z of ov.zones) {
     const g = sv('g', { class: 'ov-zone', 'data-zone': z.id }, z.lamps.map((l) => lampShape(l, k)));
     lampsG.append(g);
-    store.watch(z.lights, () => {
+    const draw = () => {
       const lv = zoneLevel(store, z.lights);
       g.style.opacity = String(lv);
       g.classList.toggle('is-on', lv > 0);
-      for (const b of zoneBtns.get(z.id) ?? []) b.setAttribute('aria-pressed', String(lv > 0));
+      // Every light in the zone not responding: read out as such, not as off.
+      const dead = z.lights.length > 0 && z.lights.every((id) => noReading(store.get(id)));
+      g.classList.toggle('is-silent', dead);
+      for (const b of zoneBtns.get(z.id) ?? []) {
+        b.setAttribute('aria-pressed', String(lv > 0));
+        b.classList.toggle('is-silent', dead);
+        if (dead) b.setAttribute('aria-description', t('status.unavailable')); else b.removeAttribute('aria-description');
+      }
       paint(g, z.lights);
-    });
+    };
+    zoneDraws.push(draw);
+    store.watch(z.lights, draw);
   }
 
   // ---------- solar: green glow scaled by current production
@@ -172,6 +182,7 @@ export function createOverview({ site, store, adapter, onOpenBuilding }) {
       zoneHits.append(c);
     }
   }
+  zoneDraws.forEach((draw) => draw());
 
   // ---------- a badge on each building with an alarm, or doors, windows or locks open
   const badgesG = sv('g', { class: 'ov-badges' });

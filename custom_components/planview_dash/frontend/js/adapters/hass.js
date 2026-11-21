@@ -48,6 +48,11 @@ export function createHassAdapter(initialHass) {
       return r?.response ?? null;
     },
 
+    // °C or °F, from Home Assistant's unit system.
+    tempUnit() {
+      return hass?.config?.unit_system?.temperature ?? null;
+    },
+
     // Home Assistant's version, for a problem report.
     haVersion() {
       return hass?.config?.version ?? null;

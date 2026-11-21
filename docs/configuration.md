@@ -15,7 +15,7 @@ Everything except `name` and at least one floor plan is optional. A card whose e
 | `language` | text | Dashboard language: `sv` (default), `en`, `da`, `de`, `fi`, `nb` or `nl`. Danish, German, Finnish, Norwegian and Dutch are machine-assisted; see [translating.md](translating.md) |
 | `locale` | text | Number and time format. Default: the language's own (`sv-SE`, `en-GB`, `da-DK`, `de-DE`, `fi-FI`, `nb-NO`, `nl-NL`) |
 | `currency` | text | For price and cost, default `SEK` |
-| `comfort` | `{ low, high }` | Temperature range for rooms without a thermostat, default 19–23 °C |
+| `comfort` | `{ low, high }` | Temperature range for rooms without a thermostat, in Home Assistant's temperature unit: default 19–23 °C, or 66–73 °F in a home set to Fahrenheit |
 | `overview` | object | The overview image, see below. Leave out to open straight into the floor plan |
 | `floorplans` | list | One or more floor plans, for example one per storey or building |
 | `energy` | object | Entities for power, energy and price |
@@ -194,7 +194,8 @@ A row above the picture shows, most serious first: alarms (smoke, gas, carbon mo
 - One line for each real flow, from where the power comes from (solar panels, battery, grid) to where it goes (house, car charger, battery, grid), in the colour of the source. Wider and faster with more power, with the kilowatts on the line. Labels at the battery, the grid, the charger and the house say what each one does. Read from `energy.pv_power`, `grid_power`, `battery_power` and `charger_power`; the energy card says the same in one sentence.
 - The split follows the balance: solar is used first, then the battery, then the grid; the house is served first, then the car, the battery and export. The house's own use is worked out from that balance when `grid_power` is set, so it always adds up.
 - `energy_points` are image pixels, placed in the setup guide. Without `house` the middle of the building under the solar panels is used; without `grid` the bottom edge below the house. The battery and the charger are drawn only once placed.
-- `grid_power` above zero is bought from the grid and `battery_power` above zero is the battery discharging. If your sensors count the other way, set `"grid_invert": true` or `"battery_invert": true` under `energy`, or tick **Direction** in the setup guide's Energy step, which shows how each one reads right now.
+- `grid_power` above zero is bought from the grid and `battery_power` above zero is the battery discharging. If your sensors count the other way, set `"grid_invert": true` or `"battery_invert": true` under `energy`, or tick **Direction** in the setup guide's Energy step, which shows how each one reads right now. The energy card's rows use the same direction as the picture and the sentence. `charger_power` counts as a load whichever sign it has, and solar is never read below zero (many inverters report a few watts negative at night).
+- A sensor that is *unavailable* or *unknown* in Home Assistant is shown as not responding: in its row on the energy card, at its point on the picture, and at the end of the sentence ("No reading from: Grid."). Nothing is drawn for it, and the house's own use then comes from `load_power` instead of the balance, so a missing reading is never passed off as 0 kW.
 - `"energy_flow": false` and `"weather_effects": false` turn them off.
 - With the header set to Auto, the day picture fades into the evening picture from 3° above the horizon to 6° below it (`sun.sun` elevation). The `weather` entity adds a light veil for cloud, fog, rain or snow.
 
@@ -266,7 +267,7 @@ A touch on the dimmed screen only wakes it; it does not switch what is under the
 }
 ```
 
-Power may be in W or kW; the unit is read from the entity. `battery_soc` is shown next to the battery row; `load_power` adds a house usage row. Prices come from an attribute: `today` matches Nordpool from HACS, and `raw_today` and `prices_today` are recognised automatically. They are kept at the resolution they come in: 24 hourly prices, 96 quarter-hour prices (92 or 100 on the days the clocks change), or a list of `{ start, end, value }` (or `price`) placed by its times.
+Power may be in any of Home Assistant's power units (W, kW, MW, mW, GW, BTU/h); the unit is read from the entity. A power sensor with another unit (kWh, say) is not read, and one without a unit is read as watts; either shows a warning above the picture naming the sensor. `battery_soc` is shown next to the battery row; `load_power` adds a house usage row. Prices come from an attribute: `today` matches Nordpool from HACS, and `raw_today` and `prices_today` are recognised automatically. They are kept at the resolution they come in: 24 hourly prices, 96 quarter-hour prices (92 or 100 on the days the clocks change), or a list of `{ start, end, value }` (or `price`) placed by its times.
 
 ### Electricity price
 
@@ -313,7 +314,7 @@ Not part of the promise, because only the dashboard's own code uses them and the
 
 ## Test data: mock
 
-`mock` is only read when the dashboard shows test data (the standalone page without a connection, and the tests), and is not part of the format promise above: it can change in any version. For example sunrise and sunset times. `mock.prices` sets the test prices: `{ "minutes": 15, "format": "raw" }` (`minutes` 60 or 15; `format` `list`, `raw` with start and end times, or `action` for the Nord Pool action). `mock.devices` gives test entities a device, named the Home Assistant 2026.11 way: `[{ "id": "kitchen_hub", "name": "Kitchen", "entities": { "light.kitchen_ceiling": "Ceiling" } }]` shows that light as "Kitchen Ceiling" (`null` for the device's name alone). `mock.floors` and `mock.areas` replace the test floors and areas made from the plans and rooms: `[{ "floor_id": "ground", "name": "Ground floor", "level": 0 }]` and `[{ "area_id": "kitchen", "name": "Kitchen", "floor_id": "ground", "entities": ["light.kitchen_ceiling"] }]`. An entry in `mock.entities` can carry `"entity_category": "diagnostic"` or `"hidden": true`, as Home Assistant's entity registry does
+`mock` is only read when the dashboard shows test data (the standalone page without a connection, and the tests), and is not part of the format promise above: it can change in any version. For example sunrise and sunset times. `mock.temperature_unit: "°F"` makes the test data a Fahrenheit home (Home Assistant's unit system otherwise). `mock.prices` sets the test prices: `{ "minutes": 15, "format": "raw" }` (`minutes` 60 or 15; `format` `list`, `raw` with start and end times, or `action` for the Nord Pool action). `mock.devices` gives test entities a device, named the Home Assistant 2026.11 way: `[{ "id": "kitchen_hub", "name": "Kitchen", "entities": { "light.kitchen_ceiling": "Ceiling" } }]` shows that light as "Kitchen Ceiling" (`null` for the device's name alone). `mock.floors` and `mock.areas` replace the test floors and areas made from the plans and rooms: `[{ "floor_id": "ground", "name": "Ground floor", "level": 0 }]` and `[{ "area_id": "kitchen", "name": "Kitchen", "floor_id": "ground", "entities": ["light.kitchen_ceiling"] }]`. An entry in `mock.entities` can carry `"entity_category": "diagnostic"` or `"hidden": true`, as Home Assistant's entity registry does
 
 ## Pictures
 

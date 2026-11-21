@@ -2,7 +2,7 @@
 // Every card is skipped when the site config has no entity for it.
 
 import { el, sv, fmt, hhmm, num } from '../util.js';
-import { isOn, zoneLevel, kw, priceSlots, priceSlotsTomorrow, slotAt, cheapestWindow, dayBounds, nordpoolSlots, roomTemp, climate, heating, comfort } from '../entities.js';
+import { isOn, noReading, zoneLevel, kw, priceSlots, priceSlotsTomorrow, slotAt, cheapestWindow, dayBounds, nordpoolSlots, roomTemp, climate, heating, comfort, fahrenheit } from '../entities.js';
 import { areaOf, areaName } from '../areas.js';
 import { t } from '../i18n.js';
 import { allLightsOn, allOnButton, allOffButton, goodnightOn, goodnightButton } from './lights.js';
@@ -43,8 +43,10 @@ const fact = (k, v) => el('div', {}, el('dt', {}, k), el('dd', {}, v));
 
 function energyCard({ site, store }) {
   const E = site.energy;
+  // [label, entity, part of the power balance]
   const rows = [
-    [t('cards.load'), E.load_power], [t('cards.grid'), E.grid_power], [t('cards.solar'), E.pv_power], [t('cards.battery'), E.battery_power], [t('cards.charger'), E.charger_power],
+    [t('cards.load'), E.load_power, null], [t('cards.grid'), E.grid_power, 'grid'], [t('cards.solar'), E.pv_power, 'solar'],
+    [t('cards.battery'), E.battery_power, 'battery'], [t('cards.charger'), E.charger_power, 'car'],
   ].filter(([, id]) => id);
   if (!rows.length) return null;
   const says = el('p', { class: 'energy-says' });
@@ -52,17 +54,21 @@ function energyCard({ site, store }) {
   const today = el('dl', { class: 'facts' });
   const ids = rows.map(([, id]) => id).concat(E.energy_today, E.pv_energy_today, E.cost_today, E.savings_today, E.battery_soc);
   store.watch(ids, () => {
+    const p = readPower(store, E);
     // Where the power comes from and goes, in one sentence. Needs at least solar or the
     // battery next to the grid to say more than the rows below.
-    says.textContent = E.grid_power && (E.pv_power || E.battery_power) ? powerSentence(splitPower(readPower(store, E)), site.locale) : '';
+    says.textContent = E.grid_power && (E.pv_power || E.battery_power) ? powerSentence(splitPower(p), site.locale, p.silent) : '';
     says.hidden = !says.textContent;
-    list.replaceChildren(...rows.map(([name, id]) => {
-      const v = kw(store, id);
+    list.replaceChildren(...rows.map(([name, id, part]) => {
+      // The same readings as the sentence and the picture: grid and battery with the
+      // site's sign convention, solar never below zero.
+      const v = part ? p[part] : kw(store, id);
+      const dead = noReading(store.get(id));
       const soc = id === E.battery_power ? num(store.get(E.battery_soc)?.state) : null;
-      return el('li', { class: Math.abs(v ?? 0) > 0.01 ? 'is-active' : '' },
+      return el('li', { class: dead ? 'is-silent' : Math.abs(v ?? 0) > 0.01 ? 'is-active' : '' },
         el('span', { class: 'dot', 'aria-hidden': 'true' }),
         el('span', {}, name, soc != null ? el('span', { class: 'muted' }, ` · ${fmt(soc, 0, site.locale)} %`) : ''),
-        el('span', { class: 'mono' }, `${fmt(v, 2, site.locale)} kW`));
+        el('span', { class: 'mono' }, dead ? t('status.unavailable') : `${fmt(v, 2, site.locale)} kW`));
     }));
     const facts = [];
     if (E.energy_today) facts.push(fact(t('cards.usedToday'), `${fmt(num(store.get(E.energy_today)?.state), 1, site.locale)} kWh`));
@@ -100,7 +106,7 @@ function priceCard({ site, store, adapter }) {
     const value = cur?.value ?? num(store.get(cfg.entity)?.state);
     now.replaceChildren(fmt(value, 2, site.locale), el('span', { class: 'unit' }, `${site.currency}/kWh`), level);
     const ok = slots.filter((x) => x.value != null);
-    if (!ok.length) { range.textContent = t('cards.noPrices'); chart.replaceChildren(); best.textContent = ''; level.textContent = ''; return; }
+    if (!ok.length) { range.textContent = t(noReading(store.get(cfg.entity)) ? 'cards.priceSilent' : 'cards.noPrices'); chart.replaceChildren(); best.textContent = ''; level.textContent = ''; return; }
     const lo = ok.reduce((a, b) => (b.value < a.value ? b : a));
     const hi = ok.reduce((a, b) => (b.value > a.value ? b : a));
     range.textContent = t('cards.priceRange', { lo: fmt(lo.value, 2, site.locale), loH: hhmm(lo.start, site.locale), hi: fmt(hi.value, 2, site.locale), hiH: hhmm(hi.start, site.locale) });
@@ -213,12 +219,17 @@ function lightsCard({ site, store, adapter }) {
   for (const g of groups) {
     const sw = el('button', { class: 'switch', type: 'button', role: 'switch', 'aria-label': g.name,
       onclick: () => adapter.call('homeassistant', zoneLevel(store, g.lights) > 0 ? 'turn_off' : 'turn_on', { entity_id: g.lights }) });
-    const li = el('li', {}, el('span', {}, g.name), el('span', { class: 'tag' }, g.kind), sw);
+    const tag = el('span', { class: 'tag' }, g.kind);
+    const li = el('li', {}, el('span', {}, g.name), tag, sw);
     list.append(li);
     store.watch(g.lights, () => {
       const on = g.lights.some((id) => isOn(store.get(id)));
+      // Every light in the group known to Home Assistant but not responding: say so, not "off".
+      const silent = !on && g.lights.some((id) => store.get(id)) && g.lights.every((id) => !store.get(id) || noReading(store.get(id)));
       sw.setAttribute('aria-checked', String(on));
       li.classList.toggle('is-on', on);
+      li.classList.toggle('is-silent', silent);
+      tag.textContent = silent ? t('status.unavailable') : g.kind;
     });
   }
 
@@ -248,8 +259,9 @@ function heatCard({ site, store, openRoom }) {
     let warming = 0;
     for (const { r, val, li } of items) {
       const v = roomTemp(store, r);
-      const c = r.climate ? climate(store, r.climate) : null;
-      const text = `${fmt(v, 1, site.locale)}°${c?.target != null && c.mode !== 'off' ? ` / ${fmt(c.target, 1, site.locale)}°` : ''}`;
+      const c = r.climate ? climate(store, r.climate, fahrenheit(site)) : null;
+      // No reading: a dash, never 0°.
+      const text = `${v == null ? '–' : `${fmt(v, 1, site.locale)}°`}${c?.target != null && c.mode !== 'off' && !c.dead ? ` / ${fmt(c.target, 1, site.locale)}°` : ''}`;
       if (val.textContent !== text) val.textContent = text;
       const h = heating(store, r);
       if (h) warming++;

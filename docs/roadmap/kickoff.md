@@ -77,6 +77,7 @@ custom_components/planview_dash/
     js/entities.js helpers: isOn, kw, climate, prices (quarter-hours), names (nameOf)
     js/status.js   doors, windows, locks, presence, alarms per room; warnings
     js/power.js    power readings and the split into flows
+    js/calls.js    every call to Home Assistant; a failed one is said on the screen
     js/glow.js     lamp colours (rgb and colour temperature)
     js/views/      overview.js (picture), floorplan.js, flow.js (energy lines)
     js/ui/         setup/ (guide: index.js and a module per step), editor.js (placement), shape.js (corner editing), panel.js

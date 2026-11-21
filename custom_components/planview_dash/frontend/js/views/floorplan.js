@@ -2,7 +2,7 @@
 // tinted by temperature, with a lamp for every light and a chip per room.
 
 import { el, sv, pts, centroid, bbox, press, fmt, stripOf } from '../util.js';
-import { level, roomTemp, comfort, heating, climate } from '../entities.js';
+import { level, roomTemp, comfort, heating, climate, noReading, fahrenheit } from '../entities.js';
 import { t } from '../i18n.js';
 import { lightColor, createTints } from '../glow.js';
 import { roomStatus, statusIds } from '../status.js';
@@ -97,13 +97,16 @@ export function createFloorplan({ site, plan, store, adapter, onRoom }) {
     const ids = [room.climate, room.temperature];
     store.watch(ids, () => {
       const temp = roomTemp(store, room);
-      const c = room.climate ? climate(store, room.climate) : null;
+      const c = room.climate ? climate(store, room.climate, fahrenheit(site)) : null;
       const state = comfort(store, room, site);
       fill.setAttribute('data-comfort', state ?? 'none');
       const cur = temp == null ? '' : `${fmt(temp, 1, site.locale)}°`;
+      // No temperature because its sensor or thermostat is not responding: said, not shown as 0°.
+      const silent = temp == null && ids.some((id) => noReading(store.get(id)));
       // Read out after the room's name: "Bedroom, 21.2°".
-      if (cur) fill.setAttribute('aria-description', cur); else fill.removeAttribute('aria-description');
-      const showTarget = temp != null && c?.target != null && c.mode !== 'off';
+      const said = cur || (silent ? t('status.unavailable') : '');
+      if (said) fill.setAttribute('aria-description', said); else fill.removeAttribute('aria-description');
+      const showTarget = temp != null && c?.target != null && c.mode !== 'off' && !c.dead;
       const tgt = showTarget ? ` /${fmt(c.target, Number.isInteger(c.target) ? 0 : 1, site.locale)}` : '';
       tempText.replaceChildren(cur, tgt ? sv('tspan', { class: 'fp-target', 'font-size': unit * 0.8 }, tgt) : '');
       const heat = heating(store, room);
@@ -120,7 +123,7 @@ export function createFloorplan({ site, plan, store, adapter, onRoom }) {
       glows.append(halo);
       const lamp = sv('g', { class: 'fp-lamp', 'data-drag': 'light', 'data-entity': light.entity, tabindex: 0, role: 'button', 'aria-label': t('overview.toggle', { name: light.name ?? room.name }) },
         sv('circle', { class: 'fp-lamp-hit', cx: x, cy: y, r: unit * 1.1 }),
-        sv('circle', { class: 'fp-lamp-ring', cx: x, cy: y, r: unit * 0.55, 'stroke-width': unit * 0.14 }),
+        sv('circle', { class: 'fp-lamp-ring', cx: x, cy: y, r: unit * 0.55, 'stroke-width': unit * 0.14, pathLength: 12 }),
         sv('circle', { class: 'fp-lamp-core', cx: x, cy: y, r: unit * 0.3 }),
         sv('title', {}, t('plan.lampHint', { name: light.name ?? room.name })));
       press(lamp,
@@ -137,7 +140,8 @@ export function createFloorplan({ site, plan, store, adapter, onRoom }) {
         lamp.style.setProperty('--lamp-core', c.core ?? '');
         lamp.classList.toggle('is-on', lv > 0);
         lamp.setAttribute('aria-pressed', String(lv > 0));
-        lamp.classList.toggle('is-missing', !store.get(light.entity));
+        lamp.classList.toggle('is-missing', !st);
+        silent(lamp, st);
       });
     }
   }
@@ -157,7 +161,7 @@ export function createFloorplan({ site, plan, store, adapter, onRoom }) {
     const name = light.name ?? room.name;
     const lamp = sv('g', { class: `fp-lamp fp-strip is-${kind}`, 'data-drag': 'light', 'data-entity': light.entity, tabindex: 0, role: 'button', 'aria-label': t('overview.toggle', { name }) },
       sv(shape, { class: 'fp-strip-hit', points: pts(points), 'stroke-width': Math.max(width, unit * 1.6) }),
-      sv(shape, { class: 'fp-strip-mark', points: pts(points), 'stroke-width': line ? Math.max(width * 0.3, unit * 0.14) : unit * 0.14 }),
+      sv(shape, { class: 'fp-strip-mark', points: pts(points), 'stroke-width': line ? Math.max(width * 0.3, unit * 0.14) : unit * 0.14, pathLength: 24 }),
       sv('title', {}, t('plan.lampHint', { name })));
     press(lamp,
       () => adapter.call('homeassistant', 'toggle', { entity_id: light.entity }),
@@ -175,7 +179,15 @@ export function createFloorplan({ site, plan, store, adapter, onRoom }) {
       lamp.classList.toggle('is-on', lv > 0);
       lamp.setAttribute('aria-pressed', String(lv > 0));
       lamp.classList.toggle('is-missing', !st);
+      silent(lamp, st);
     });
+  }
+
+  // A lamp Home Assistant has no reading from: dimmed with a dashed ring, and read out as not responding.
+  function silent(lamp, st) {
+    const dead = noReading(st);
+    lamp.classList.toggle('is-silent', dead);
+    if (dead) lamp.setAttribute('aria-description', t('status.unavailable')); else lamp.removeAttribute('aria-description');
   }
 
   // Cameras on the plan (ui/camera.js): a tap opens the camera window, with arrows to the plan's other cameras.
