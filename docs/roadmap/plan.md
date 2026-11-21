@@ -273,6 +273,7 @@ Features for 1.0 are in place; what is left is the promise that a dashboard set 
 
 ### V7: The 1.0 release checklist. Status: todo. Size: S. Depends: V6
 - **What (owner, on real hardware):** a week on the wall tablet (idle, night dimming, motion wake, light mode, **Aa**); an iPad and a phone; the card in a sections view; a clean Marketplace install following only `docs/setup.md`; an upgrade with a real `site.json`; no open `bug` affecting lights, temperature or energy flow; two weeks since the last 0.9.x fix.
+- **A fresh start for the public history (owner's wish, 21 November 2026):** 1.0.0 is presented as the first version. `CHANGELOG.md` starts over with one section, "1.0.0: the first stable release", that walks through every feature with links to the docs, and the 0.x sections are removed; `ROADMAP.md` drops its "Done in 0.8.x" notes; the docs (V4) describe what is there without version history. One short line on upgrading from SmartHomeDash or 0.x stays, since that migration lives until 2.0. Git history, closed pull requests and the 0.x tags stay as they are: Marketplace users already run 0.8.x, and rewritten history would break their updates.
 - **Done when:** every point is ticked, and 1.0.0 is published with the same code as the last 0.9.x.
 
 ---
