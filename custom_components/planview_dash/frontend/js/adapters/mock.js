@@ -234,6 +234,8 @@ export function createMockAdapter(site) {
 
   return {
     kind: 'mock',
+    // °C, or what mock.temperature_unit says ("°F" to try a Fahrenheit home).
+    tempUnit: () => site.mock?.temperature_unit || '°C',
     setDemoMode(mode) {
       if (demoMode === mode || !store) return;
       demoMode = mode;

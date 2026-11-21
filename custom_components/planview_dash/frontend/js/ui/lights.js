@@ -65,16 +65,18 @@ export function goodnightSensor(site, store) {
   return own?.entity_id ?? `sensor.${site.id.toLowerCase().replace(/-/g, '_')}_goodnight`;
 }
 
-function startGoodnight(site, adapter) {
+// A failed start shows in the goodnight banner when there is one (onError), otherwise as
+// the shared message for failed calls (calls.js).
+function startGoodnight(site, adapter, onError) {
   const g = site.goodnight ?? {};
   const data = { site: site.id, entity_id: allLights(site), minutes: g.minutes ?? 5 };
   if (g.then) data.then = g.then;
-  return adapter.call('planview_dash', 'goodnight', data);
+  return adapter.call('planview_dash', 'goodnight', data, { onError });
 }
 
 export function goodnightButton({ site, adapter, onDone, onError }) {
   return el('button', { class: 'chip chip-goodnight', type: 'button', 'data-action': 'goodnight',
-    onclick: () => { Promise.resolve(startGoodnight(site, adapter)).catch((e) => onError?.(e)); onDone?.(); } }, t('goodnight.button'));
+    onclick: () => { startGoodnight(site, adapter, onError); onDone?.(); } }, t('goodnight.button'));
 }
 
 // The countdown on every screen: "Turning everything off in 4:12" with Cancel.

@@ -52,7 +52,7 @@ export function createFlow({ site, store, ov, size: [W, H] }) {
     const { d, mid } = bow(at[from], at[to], from === 'solar' && to === 'grid' ? 0.1 : 0.18);
     const track = sv('path', { class: 'ov-flow-track', d });
     const dots = sv('path', { class: 'ov-flow-dots', d });
-    const line = sv('g', { class: `ov-flow-line is-${from}` }, track, dots);
+    const line = sv('g', { class: `ov-flow-line is-${from}`, 'data-flow': `${from}>${to}` }, track, dots);
     const tag = label(mid, `is-${from}`);
     lines.append(line);
     tags.append(tag.g);
@@ -64,9 +64,10 @@ export function createFlow({ site, store, ov, size: [W, H] }) {
   for (const k of ['battery', 'grid', 'car', 'house']) {
     if (!at[k]) continue;
     const [x, y] = at[k];
-    const dot = sv('circle', { class: `ov-flow-end is-${k}`, cx: x, cy: y, r: 8 });
+    const dot = sv('circle', { class: `ov-flow-end is-${k}`, 'data-end': k, cx: x, cy: y, r: 8 });
     const below = k === 'house' || y < 60;
     const tag = label([x, below ? y + 38 : y - 36], `is-${k}`);
+    tag.g.dataset.end = k;
     tags.append(dot, tag.g);
     ends[k] = { dot, tag };
   }
@@ -89,12 +90,14 @@ export function createFlow({ site, store, ov, size: [W, H] }) {
     }
     const soc = E.battery_soc ? store.get(E.battery_soc)?.state : null;
     const socText = soc != null && Number.isFinite(+soc) ? `${Math.round(+soc)} %` : '';
+    // A part with no reading says so at its point instead of looking idle.
+    const quiet = (k) => [t(`flow.part.${k}`), t('status.unavailable')];
     const text = {
-      battery: Math.abs(p.battery ?? 0) >= MIN_KW
+      battery: p.silent.includes('battery') ? quiet('battery') : Math.abs(p.battery ?? 0) >= MIN_KW
         ? [t(p.battery > 0 ? 'flow.batteryOut' : 'flow.batteryIn'), kwText(Math.abs(p.battery), site.locale), socText]
         : [t('flow.battery'), socText],
-      grid: Math.abs(p.grid ?? 0) >= MIN_KW ? [t(p.grid > 0 ? 'flow.buying' : 'flow.selling'), kwText(Math.abs(p.grid), site.locale)] : null,
-      car: (p.car ?? 0) >= MIN_KW ? [t('flow.carCharging'), kwText(p.car, site.locale)] : null,
+      grid: p.silent.includes('grid') ? quiet('grid') : Math.abs(p.grid ?? 0) >= MIN_KW ? [t(p.grid > 0 ? 'flow.buying' : 'flow.selling'), kwText(Math.abs(p.grid), site.locale)] : null,
+      car: p.silent.includes('car') ? quiet('car') : (p.car ?? 0) >= MIN_KW ? [t('flow.carCharging'), kwText(p.car, site.locale)] : null,
       house: (p.house ?? 0) >= MIN_KW ? [t('flow.house'), kwText(p.house, site.locale)] : null,
     };
     for (const [k, end] of Object.entries(ends)) {
@@ -102,6 +105,7 @@ export function createFlow({ site, store, ov, size: [W, H] }) {
       const on = !!v && !!(v[1] || v[2]);
       end.dot.classList.toggle('is-on', on);
       end.tag.g.classList.toggle('is-on', on);
+      end.tag.g.classList.toggle('is-silent', p.silent.includes(k));
       if (on) end.tag.set(...v);
     }
   });

@@ -1,7 +1,7 @@
 // Room panel: thermostat, 24 h temperature, and every light in the room.
 
 import { el, sv, fmt, clamp, num } from '../util.js';
-import { isOn, level, roomTemp, climate, nameOf } from '../entities.js';
+import { isOn, level, roomTemp, climate, nameOf, noReading, fahrenheit } from '../entities.js';
 import { t, has } from '../i18n.js';
 import { kindOf, isOpen, isUnlocked, isAlarm, isDead, statusIds, isClosedCover } from '../status.js';
 
@@ -62,27 +62,31 @@ export function createPanel({ site, store, adapter }) {
     const targetVal = el('output', { class: 'target-val', 'aria-live': 'polite' });
     let pending = null, pendingTimer = null;
 
+    const f = fahrenheit(site);
+    const targetText = (c) => (c?.target == null ? '–' : `${fmt(c.target, 1, site.locale)}°`);
     const step = (dir) => {
-      const c = climate(store, room.climate);
-      if (!c) return;
-      const base = pending ?? c.target ?? 20;
+      const c = climate(store, room.climate, f);
+      if (!c || c.dead) return;
+      const base = pending ?? c.target ?? (f ? 68 : 20);
       pending = clamp(+(base + dir * c.step).toFixed(1), c.min, c.max);
       targetVal.textContent = `${fmt(pending, 1, site.locale)}°`;
       clearTimeout(pendingTimer);
       pendingTimer = setTimeout(() => {
-        adapter.call('climate', 'set_temperature', { entity_id: room.climate, temperature: pending });
+        const temperature = pending;
         pending = null;
+        // Refused: back to what the thermostat says (the error itself is shown by main.js).
+        adapter.call('climate', 'set_temperature', { entity_id: room.climate, temperature })
+          .then((ok) => { if (ok === false && pending == null) targetVal.textContent = targetText(climate(store, room.climate, f)); });
       }, 600);
     };
 
     const modes = el('div', { class: 'seg', role: 'group', 'aria-label': t('panel.mode') });
     const presets = el('div', { class: 'seg seg-wrap', role: 'group', 'aria-label': t('panel.preset') });
+    const steps = [
+      el('button', { class: 'step', type: 'button', 'aria-label': t('panel.lower'), onclick: () => step(-1) }, '−'),
+      el('button', { class: 'step', type: 'button', 'aria-label': t('panel.raise'), onclick: () => step(1) }, '+')];
     const target = room.climate
-      ? el('div', { class: 'target' },
-        el('span', { class: 'label' }, t('panel.target')),
-        el('button', { class: 'step', type: 'button', 'aria-label': t('panel.lower'), onclick: () => step(-1) }, '−'),
-        targetVal,
-        el('button', { class: 'step', type: 'button', 'aria-label': t('panel.raise'), onclick: () => step(1) }, '+'))
+      ? el('div', { class: 'target' }, el('span', { class: 'label' }, t('panel.target')), steps[0], targetVal, steps[1])
       : null;
 
     const chart = el('div', { class: 'chart' }, el('p', { class: 'muted small' }, t('panel.loadingHistory')));
@@ -99,14 +103,32 @@ export function createPanel({ site, store, adapter }) {
     unwatch.push(store.watch([room.climate, room.temperature], () => {
       const temp = roomTemp(store, room);
       now.textContent = temp == null ? '–' : `${fmt(temp, 1, site.locale)}°`;
-      const c = room.climate ? climate(store, room.climate) : null;
-      if (!c) { status.textContent = ''; return; }
-      if (pending == null) targetVal.textContent = c.target == null ? '–' : `${fmt(c.target, 1, site.locale)}°`;
+      const c = room.climate ? climate(store, room.climate, f) : null;
+      // No temperature because the sensor or thermostat is not responding.
+      const silentTemp = temp == null && [room.temperature, room.climate].some((id) => noReading(store.get(id)));
+      if (!c) { status.textContent = silentTemp ? t('cards.tempSilent') : ''; return; }
+      // A thermostat that is not responding cannot be set: no buttons to press in vain.
+      for (const b of steps) b.disabled = c.dead;
+      if (c.dead) {
+        pending = null;
+        targetVal.textContent = '–';
+        status.textContent = t('cards.thermostatSilent');
+        status.classList.remove('is-heating');
+        modes.replaceChildren();
+        modes.hidden = true;
+        presets.replaceChildren();
+        presets.hidden = true;
+        return;
+      }
+      if (pending == null) targetVal.textContent = targetText(c);
       const base = c.mode === 'off' ? t('panel.heatOff')
         : c.action === 'heating' ? t('panel.heatingNow')
           : t('panel.holding');
       status.textContent = c.preset && c.preset !== 'none' ? `${base} · ${presetLabel(c.preset)}` : base;
       status.classList.toggle('is-heating', c.action === 'heating');
+      if (silentTemp) status.textContent += ` · ${t('cards.tempSilent')}`;
+      // A thermostat without HVAC modes gets no empty mode row.
+      modes.hidden = !c.modes.length;
       modes.replaceChildren(...c.modes.map((m) => el('button', {
         type: 'button', class: m === c.mode ? 'is-active' : '', 'aria-pressed': String(m === c.mode),
         onclick: () => adapter.call('climate', 'set_hvac_mode', { entity_id: room.climate, hvac_mode: m }),
@@ -132,7 +154,8 @@ export function createPanel({ site, store, adapter }) {
       const call = (service, data = {}) => adapter.call('cover', service, { entity_id: id, ...data });
       const state = el('span', { class: 'pct' });
       const range = el('input', { type: 'range', min: 0, max: 100, 'aria-label': t('panel.coverPosition') });
-      range.addEventListener('change', () => call('set_cover_position', { position: Number(range.value) }));
+      range.addEventListener('change', () => call('set_cover_position', { position: Number(range.value) })
+        .then((ok) => { if (ok === false) { const pos = num(store.get(id)?.attributes?.current_position); if (pos != null) range.value = String(pos); } }));
       const btn = (label, aria, fn) => el('button', { class: 'step', type: 'button', 'aria-label': aria, onclick: fn }, label);
       const li = el('li', {},
         el('div', { class: 'light-top' }, el('span', { class: 'light-name' }), state,
@@ -191,23 +214,28 @@ export function createPanel({ site, store, adapter }) {
       const sw = el('button', { class: 'switch', type: 'button', role: 'switch', 'aria-label': l.name ?? room.name,
         onclick: () => adapter.call('homeassistant', 'toggle', { entity_id: l.entity }) });
       const range = el('input', { type: 'range', id, min: 1, max: 100, 'aria-label': t('panel.brightness', { name: l.name ?? room.name }),
-        onchange: (e) => adapter.call('light', 'turn_on', { entity_id: l.entity, brightness_pct: +e.target.value }) });
+        // Refused: the slider goes back to the light's brightness.
+        onchange: (e) => adapter.call('light', 'turn_on', { entity_id: l.entity, brightness_pct: +e.target.value })
+          .then((ok) => { if (ok === false) { range.blur(); draw(); } }) });
       const pct = el('span', { class: 'pct' });
       // Only lights dim; a switch gets the on/off control alone.
       const dims = l.entity.startsWith('light.');
       const li = el('li', {}, el('div', { class: 'light-top' }, el('span', { class: 'light-name' }, l.name ?? room.name), pct, sw), dims ? range : null);
       list.append(li);
-      unwatch.push(store.watch([l.entity], () => {
+      const draw = () => {
         const s = store.get(l.entity);
         const on = isOn(s);
         sw.setAttribute('aria-checked', String(on));
         li.classList.toggle('is-on', on);
         li.classList.toggle('is-missing', !s);
+        const dead = noReading(s);
+        li.classList.toggle('is-silent', dead);
         const p = Math.round(level(s) * 100);
-        pct.textContent = !s ? t('panel.missing') : on ? `${p} %` : t('panel.off');
+        pct.textContent = !s ? t('panel.missing') : dead ? t('status.unavailable') : on ? `${p} %` : t('panel.off');
         if (document.activeElement !== range) range.value = on ? p : 50;
-        range.disabled = !s;
-      }));
+        range.disabled = !s || dead;
+      };
+      unwatch.push(store.watch([l.entity], draw));
     }
     return el('section', { class: 'psec' }, el('h3', { class: 'eyebrow' }, t('panel.lights')), list);
   }

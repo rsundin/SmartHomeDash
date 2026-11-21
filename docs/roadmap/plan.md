@@ -250,7 +250,7 @@ Features for 1.0 are in place; what is left is the promise that a dashboard set 
 - **Done when:** the list of public names is in `docs/configuration.md` under a "Stable in 1.x" heading, and no code, test, doc or string refers to the updater.
 - **Name review (0.8.37):** nothing renamed. The updater went in 0.8.35; what refers to it now is only the code that ignores its old YAML options with a warning, the tests that check it is gone, and history. `site` names a dashboard's folder everywhere a user types it (YAML, the action, the card, the sensor attribute); the UI labels it "Dashboard", and renaming the key would break every automation and card for no gain. The action's fields, the sensor and its attributes, the card's options and the addresses follow Home Assistant's own naming. One fix: a relative `sites_dir` was read from wherever Home Assistant's process runs; it is now under the config folder, as documented. The internal web addresses, browser storage and config entry contents are named as outside the promise.
 
-### V3: Lights, temperature and energy flow on any home. Status: todo. Size: M
+### V3: Lights, temperature and energy flow on any home. Status: done (v0.8.38). Size: M
 - **Why:** the owner's three priorities were built against one home. No test covers `unavailable` or `unknown`, failed actions are silent, and power units and sign conventions vary.
 - **What:**
   - `unavailable` and `unknown` for a lamp, an LED strip, a temperature sensor, a thermostat, every energy sensor and the price sensor: shown as unavailable (not off, 0 °C or 0 kW), and the energy sentence and flow lines still make sense.
@@ -259,6 +259,7 @@ Features for 1.0 are in place; what is left is the promise that a dashboard set 
   - Both sign conventions for grid, battery and charger, and solar reading slightly negative at night, with the picture and the sentence agreeing.
   - Temperature in °F, a thermostat without current temperature, presets or HVAC modes.
 - **Done when:** each point has a browser test, light mode and the performance budget still pass, and no unhandled promise rejection is logged when a call fails.
+- **Done (0.8.38):** `tests/browser/core.test.js` has a test for each point. *Unknown* counts as not responding wherever a reading is shown, but the warning about devices not responding still counts only *unavailable*, so a sensor that is briefly unknown after a restart does not raise one. A failed call says "Couldn't turn on Kitchen ceiling" in a toast with `role="alert"` (`calls.js` wraps the adapter once, in `main.js`); goodnight from the header keeps its own banner. A power sensor without a unit is still read as watts, as before, but now with a warning, so no working setup breaks. °F comes from Home Assistant's unit system (`adapter.tempUnit()`): thermostat step 1° and range 45–95 °F when the thermostat does not say, comfort 66–73 °F.
 
 ### V4: Docs for people who are not the owner. Status: todo. Size: S. Depends: V1, V2
 - **What:** the 1.0 promise (from v1.md) in the README; `docs/troubleshooting.md` (nothing shows, a lamp does not glow, the flow points the wrong way, the card cannot find the site, sending diagnostics); an **Upgrading** section; a pass over `docs/setup.md` from a clean install.

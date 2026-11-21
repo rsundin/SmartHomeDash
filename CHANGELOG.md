@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.8.38
+
+Lights, temperature and energy flow on any home, not just the one they were built in (roadmap V3).
+
+- **A device that drops out says so.** A lamp, an LED strip, a temperature sensor, a thermostat, an energy sensor or the price sensor that Home Assistant reports as *unavailable* or *unknown* is shown as not responding: a dimmed lamp with a broken ring on the floor plan, "not responding" in the room panel, the lights card and the energy card, read out by screen readers. Never as off, 0° or 0 kW. A thermostat that is not responding cannot be set until it is back
+- **The energy sentence says what it cannot see.** When a power sensor has no reading, the sentence says what it can and ends with "No reading from: Grid.", the picture labels that point "not responding", and the house's own use comes from its own sensor instead of a balance with a hole in it
+- **A command Home Assistant refuses is said on the screen.** Tapping a lamp, All on or All off, a scene, goodnight, the thermostat's plus and minus, a mode or preset, a brightness slider or blinds: if the device is offline or Home Assistant says no, a message at the bottom says "Couldn't turn on Kitchen ceiling" (in all seven languages, announced by screen readers), and the thermostat's target and the sliders go back to what the device says. Before, nothing happened
+- **Power in any of Home Assistant's units.** W, kW, MW, mW, GW and BTU/h are read as such. MW was read as watts before. A power sensor in another unit (kWh, say) is not guessed at, and one without a unit is read as watts as before; both show a warning above the picture naming the sensor
+- **The energy card follows your sign convention.** With `grid_invert` or `battery_invert` set, the grid and battery rows now read the same way as the picture and the sentence. Solar reading a few watts negative at night shows as 0
+- **Homes in Fahrenheit.** The thermostat's plus and minus step 1° when the thermostat does not give its own step, its range defaults to 45–95 °F instead of a Celsius range, and rooms without a thermostat count 66–73 °F as comfortable. Taken from Home Assistant's unit system
+- **Thermostats that report little**: without a current temperature, presets or HVAC modes, the room panel shows a dash and no empty rows of buttons
+- Tests for all of it: both sign conventions on every flow, devices dropping out, failed calls with no unhandled errors, units and °F (`tests/browser/core.test.js`)
+- Frontend only: reload the dashboard after updating
+
 ## 0.8.37
 
 Final public names before 1.0 (roadmap V2). Nothing is renamed: what you have set up keeps working as it is.

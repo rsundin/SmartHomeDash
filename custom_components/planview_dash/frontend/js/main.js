@@ -26,6 +26,7 @@ import { createLightsMenu, createGoodnightBanner, allLightsOn, goodnightOn } fro
 import { loadAreas, applyAreaNames, noAreas, linkByName, autoPlace } from './areas.js';
 import { assignSensors, warnings, warningIds, configEntities } from './status.js';
 import { nameOf as entityName } from './entities.js';
+import { guardCalls } from './calls.js';
 
 // The online demo sets data-demo on <body> (see .github/workflows/pages.yml).
 // Text size is a choice for the screen, not for one dashboard: one key for the whole device.
@@ -125,6 +126,8 @@ export async function start(opts) {
     adapter = conn ? createHaAdapter(conn) : createMockAdapter(site);
   }
   const store = new Store();
+  // A call Home Assistant refuses is said on the screen and announced (calls.js).
+  adapter = guardCalls(adapter, { store, site, say: (text) => toast(text, true) });
 
   // ---- header
   const status = el('span', { class: 'pill', role: 'status' });
@@ -253,6 +256,8 @@ export async function start(opts) {
   if (run.signal.aborted) return;
   // Home Assistant areas: room names follow the area they are linked to.
   site.areas = store.all().length ? await loadAreas(adapter) : noAreas();
+  // °C or °F, from Home Assistant's unit system: thermostat steps and comfort follow it.
+  try { site.tempUnit = (await adapter.tempUnit?.()) || '°C'; } catch { site.tempUnit = '°C'; }
   if (run.signal.aborted) return;
   // Rooms named like an area count as linked; what is in a linked room's area in Home
   // Assistant but not placed yet shows up in that room by itself.
@@ -530,8 +535,11 @@ function standaloneKiosk() {
   };
 }
 
-function toast(text) {
-  const n = el('div', { class: 'toast', role: 'status' }, text);
+// A short note at the bottom. An error is an alert, which screen readers announce at once,
+// and replaces the error before it.
+function toast(text, error = false) {
+  if (error) document.querySelectorAll('.toast.is-error').forEach((n) => n.remove());
+  const n = el('div', { class: `toast${error ? ' is-error' : ''}`, role: error ? 'alert' : 'status' }, text);
   document.body.append(n);
   setTimeout(() => n.classList.add('is-gone'), 3500);
   setTimeout(() => n.remove(), 4200);

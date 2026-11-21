@@ -29,6 +29,10 @@
     window.harness.backup         export/import/restore: exports (count), imports (file names),
                                   restores (versions), versions (the list the guide shows);
                                   an import of a file named bad*.zip fails like Home Assistant
+    window.harness.failCalls      true: every call to Home Assistant fails, as when a device is
+                                  offline or Home Assistant refuses; harness.calls lists them all
+    window.harness.stopTestData() stops the test data changing by itself (power, temperatures),
+                                  so a test can set states and read them back
 -->
 <script type="module">
 window.PVD_PANEL = true; // main.js must not start the standalone page by itself
@@ -42,7 +46,7 @@ const [{ start, showFatal }, { loadSite }, { createMockAdapter }] = await Promis
 const params = new URLSearchParams(location.search);
 const siteId = params.get('site') || 'example-house';
 const root = document.getElementById('app');
-const harness = window.harness = { saved: [], uploads: [], starts: 0, editing: params.has('edit'), ready: null };
+const harness = window.harness = { saved: [], uploads: [], starts: 0, editing: params.has('edit'), ready: null, failCalls: false, calls: [] };
 const DAY = 24 * 3600 * 1000;
 harness.backup = {
   exports: 0, imports: [], restores: [],
@@ -88,6 +92,11 @@ async function boot() {
   const adapter = {
     ...mock,
     haVersion: async () => '2026.11.0', // as the panel reads it from hass.config
+    call(domain, service, data) {
+      harness.calls.push({ domain, service, data });
+      if (harness.failCalls) return new Promise((resolve, reject) => setTimeout(() => reject(new Error('Entity is unavailable')), 20));
+      return mock.call(domain, service, data);
+    },
     async connect(store, onStatus) {
       window.store = store;
       window.setInterval = (fn, ms) => { const id = realInterval(fn, ms); timers.push(id); return id; };
@@ -117,6 +126,7 @@ async function boot() {
     throw e;
   }
 }
+harness.stopTestData = () => timers.splice(0).forEach(clearInterval);
 harness.navigateEdit = (on) => { harness.editing = on; return (harness.ready = boot()); };
 harness.ready = boot();
 </script>

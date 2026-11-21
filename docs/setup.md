@@ -252,6 +252,12 @@ In landscape at 1024 pixels or wider the dashboard fills the screen without scro
 
 **Temperatures look wrong.** A room shows its temperature sensor if one is linked, otherwise the thermostat's own reading. Link a temperature sensor to the room in placement mode.
 
+**A lamp, a temperature or an energy reading says "not responding".** Home Assistant knows the device but has no reading from it (*unavailable* or *unknown*): it is offline, its battery is flat, or its integration is still starting. The dashboard shows that rather than off, 0° or 0 kW, and lamps on the floor plan are dimmed with a broken ring. It clears by itself when the device answers again.
+
+**"Couldn't turn on …" at the bottom of the screen.** Home Assistant refused what you tapped, or did not answer: the device is offline, or the connection dropped. Nothing changed. The message names the lamp, scene or thermostat; the browser console has Home Assistant's own reason.
+
+**A warning says a power sensor has a unit PlanView Dash doesn't recognise.** Power is read in W, kW, MW and Home Assistant's other power units. A sensor in kWh (energy, not power) is not read; pick its power sensor instead. One without a unit is read as watts.
+
 **A warning says devices no longer exist in Home Assistant.** An entity in site.json was renamed or removed in Home Assistant. Unfold the warning to see which, and where each is used. **Show in placement mode** lists only those; place one again under its new name, or remove it from the dashboard.
 
 **Saving says "site.json was not saved".** The file failed Home Assistant's check, and the message says which part, such as a room outline that is not a list of number pairs. The file on disk is unchanged. Fix that part in placement mode or in the file.

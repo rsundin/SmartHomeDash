@@ -6,7 +6,7 @@
 // window sensor added to the area in Home Assistant shows up without any setup.
 
 import { num } from './util.js';
-import { climate } from './entities.js';
+import { climate, powerUnitProblem } from './entities.js';
 import { t } from './i18n.js';
 
 const OPENING = new Set(['door', 'window', 'opening', 'garage_door']);
@@ -137,6 +137,14 @@ export function warnings(site, store, name) {
   const dead = warningIds(site).filter((id) => store.get(id) && isDead(store.get(id)));
   if (dead.length) {
     out.push({ level: 'info', key: 'dead', text: t(dead.length === 1 ? 'warn.dead1' : 'warn.dead', { n: dead.length }), items: dead.map(name) });
+  }
+  // A power sensor in a unit that is not power (or with no unit at all) is not guessed at silently.
+  const E = site.energy ?? {};
+  const powerSensors = [...new Set([E.pv_power, site.overview?.solar?.entity, E.grid_power, E.battery_power, E.charger_power, E.load_power].filter(Boolean))];
+  const odd = powerSensors.map((id) => [id, powerUnitProblem(store.get(id))]).filter(([, p]) => p);
+  if (odd.length) {
+    out.push({ level: 'info', key: 'unit', text: t(odd.length === 1 ? 'warn.unit1' : 'warn.unit', { n: odd.length }),
+      items: odd.map(([id, p]) => `${name(id)} · ${p === 'none' ? t('warn.noUnit') : t('warn.badUnit', { unit: p })}`) });
   }
   const missing = missingEntities(site, store);
   if (missing.length) {

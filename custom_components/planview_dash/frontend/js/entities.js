@@ -3,6 +3,13 @@ import { num } from './util.js';
 
 export const isOn = (s) => s?.state === 'on';
 
+// A device Home Assistant knows but has no reading from right now: shown as "not
+// responding", never as off, 0 °C or 0 kW. (Not in Home Assistant at all is "missing".)
+export const noReading = (s) => s?.state === 'unavailable' || s?.state === 'unknown';
+
+// Temperatures in Fahrenheit: site.tempUnit comes from Home Assistant's unit system (main.js).
+export const fahrenheit = (site) => site?.tempUnit === '°F';
+
 // The name to show for an entity, the way Home Assistant shows it (2026.11 naming:
 // device name plus entity name, with friendly_name on its way out). In this order:
 //   1. a name set for it in site.json (site.index.labels)
@@ -49,19 +56,22 @@ export function zoneLevel(store, lights) {
   return Math.max(0, ...lights.map((id) => level(store.get(id))));
 }
 
-export function climate(store, id) {
+// A thermostat's state. `f` for a home in Fahrenheit, where Home Assistant's own
+// defaults are a 1° step and 45–95 °F when the thermostat does not say.
+export function climate(store, id, f = false) {
   const s = store.get(id);
   if (!s) return null;
   const a = s.attributes || {};
   return {
+    dead: noReading(s),
     mode: s.state,
     modes: a.hvac_modes || [],
     target: num(a.temperature),
     current: num(a.current_temperature),
     action: a.hvac_action || (s.state === 'off' ? 'off' : null),
-    step: num(a.target_temp_step) || 0.5,
-    min: num(a.min_temp) ?? 5,
-    max: num(a.max_temp) ?? 30,
+    step: num(a.target_temp_step) || (f ? 1 : 0.5),
+    min: num(a.min_temp) ?? (f ? 45 : 7),
+    max: num(a.max_temp) ?? (f ? 95 : 35),
     preset: a.preset_mode ?? null,
     presets: a.preset_modes || [],
   };
@@ -74,30 +84,52 @@ export function roomTemp(store, room) {
   return room.climate ? climate(store, room.climate)?.current ?? null : null;
 }
 
-// 'cold' | 'ok' | 'warm' | null
+// 'cold' | 'ok' | 'warm' | null. In a Fahrenheit home the margins and the default
+// comfortable range are in °F (66–73 °F, as 19–23 °C).
 export function comfort(store, room, site) {
   const t = roomTemp(store, room);
   if (t == null) return null;
-  const c = room.climate ? climate(store, room.climate) : null;
-  if (c?.target != null && c.mode !== 'off') {
-    if (t < c.target - 0.5) return 'cold';
-    if (t > c.target + 1.0) return 'warm';
+  const f = fahrenheit(site);
+  const c = room.climate ? climate(store, room.climate, f) : null;
+  if (c?.target != null && c.mode !== 'off' && !c.dead) {
+    if (t < c.target - (f ? 1 : 0.5)) return 'cold';
+    if (t > c.target + (f ? 2 : 1.0)) return 'warm';
     return 'ok';
   }
-  const lo = site.comfort?.low ?? 19, hi = site.comfort?.high ?? 23;
+  const lo = site.comfort?.low ?? (f ? 66 : 19), hi = site.comfort?.high ?? (f ? 73 : 23);
   return t < lo ? 'cold' : t > hi ? 'warm' : 'ok';
 }
 
 export const heating = (store, room) =>
   room.climate ? climate(store, room.climate)?.action === 'heating' : false;
 
-// Power in kW from a sensor that may report W or kW.
+// Home Assistant's power units, in kW. Matched exactly first (mW and MW differ only in
+// case), then without case for the ones that cannot be mixed up.
+const POWER_UNITS = { mW: 1e-6, W: 1e-3, kW: 1, MW: 1e3, GW: 1e6, TW: 1e9, 'BTU/h': 0.00029307107 };
+const POWER_LOOSE = { w: 1e-3, kw: 1, gw: 1e6, tw: 1e9, 'btu/h': 0.00029307107 };
+
+function powerFactor(s) {
+  const u = s?.attributes?.unit_of_measurement;
+  if (u == null || u === '') return 1e-3; // no unit: read as watts, with a warning (powerUnitProblem)
+  return POWER_UNITS[u] ?? POWER_LOOSE[String(u).toLowerCase()] ?? null;
+}
+
+// Power in kW, or null when there is no reading or the unit is not a power unit.
 export function kw(store, id) {
   const s = store.get(id);
   const v = num(s?.state);
   if (v == null) return null;
-  const unit = (s.attributes?.unit_of_measurement || 'W').toLowerCase();
-  return unit === 'kw' ? v : v / 1000;
+  const f = powerFactor(s);
+  return f == null ? null : v * f;
+}
+
+// Why a power sensor's unit needs a word in the warnings: 'none' (read as watts), the
+// unknown unit itself, or null when it is fine (or there is no state to judge).
+export function powerUnitProblem(s) {
+  if (!s || noReading(s)) return null;
+  const u = s.attributes?.unit_of_measurement;
+  if (u == null || u === '') return 'none';
+  return powerFactor(s) == null ? String(u) : null;
 }
 
 // ---------- electricity prices
