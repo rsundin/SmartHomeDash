@@ -82,7 +82,11 @@ planview_dash:
       title: Home
       icon: mdi:home-lightbulb
       url_path: my-home
+      require_admin: false     # true: only administrators see it in the sidebar
+  sites_dir: planview_dash/sites   # optional; relative to the config folder
 ```
+
+These keys, the goodnight action, the card's options and the other names you can type stay the same through 1.x: [Stable in 1.x](docs/configuration.md#stable-in-1x).
 
 ## Updating
 
