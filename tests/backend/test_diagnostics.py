@@ -70,6 +70,7 @@ class DiagnosticsTest(unittest.TestCase):
         self.assertEqual(out["home_assistant"], "2026.11.0")
         site = out["site"]
         self.assertEqual(site["site_json"], "ok")
+        self.assertEqual(site["format"], 1)
         self.assertEqual(site["floorplans"], len(self.config["floorplans"]))
         self.assertEqual(site["rooms"], sum(len(p.get("rooms", [])) for p in self.config["floorplans"]))
         self.assertGreater(site["lamps"], 0)

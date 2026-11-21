@@ -102,6 +102,7 @@ def _counts(config: dict) -> dict[str, Any]:
     buildings = [b for b in _list(overview.get("buildings")) if isinstance(b, dict)]
     wall = _dict(config.get("wall_screen"))
     return {
+        "format": config.get("format", 1),
         "language": config.get("language"),
         "setup_pending": bool(config.get("setup_pending")),
         "overview_picture": bool(overview.get("image")),
